@@ -11,7 +11,7 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `src/db/schema.ts`; se aplica con `npm run db:push` (Javier lo ejecuta contra
   producción) o copiando `drizzle/0000_inicial.sql`. `npm run db:generate` tras
   cambiar el esquema y commitear `drizzle/` (incluida `meta/`).
-- **Auth.js v5**: enlace mágico por Resend, JWT, `trustHost: true`. **Jamás
+- **Auth.js v5**: enlace mágico por la API de Brevo (`src/lib/brevo.ts`, proveedor `email` propio en `auth.ts`; `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`), JWT, `trustHost: true`. **Jamás
   `AUTH_URL` en producción** (misma lección que wp-next-starter). Tablas de auth
   con prefijo `auth_` para no chocar con `sessions` del motor. Solo entran los
   correos de `ALLOWED_EMAILS`. `auth.config.ts` (Edge, sin adaptador) alimenta al
@@ -26,6 +26,10 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   endpoint compatible con el SDK de Anthropic), si no Anthropic
   (`ANTHROPIC_MODEL` def. `claude-opus-5`). `output_config.effort` solo se
   envía a Anthropic. `AgentConfig.model` sobreescribe el modelo por agente.
+- **Deployment Protection**: producción debe ser pública (en Vercel, Settings →
+  Deployment Protection → solo previsualizaciones). Si no, la cadena de ticks y las
+  llamadas de Olvidos/por2duros acaban en el SSO. Red de seguridad: `kickTick`
+  añade `x-vercel-protection-bypass` si existe `VERCEL_AUTOMATION_BYPASS_SECRET`.
 - **Cadena de ticks** (`src/engine/tick.ts`, `/api/engine/tick`): en Vercel
   cada invocación procesa un paso, responde 202 y en `after()` llama al
   siguiente tick con la cabecera `x-engine-secret` (= `CRON_SECRET`). Origen:
