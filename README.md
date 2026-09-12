@@ -153,3 +153,17 @@ marzo de 2026 (los tres se publicaron, así que el veredicto esperado es
 npx tsx --env-file=.env.local scripts/olvidos-prueba.ts            # envía y evalúa (minutos por texto)
 npx tsx --env-file=.env.local scripts/olvidos-prueba.ts --comparar  # imprime veredictos y objeciones
 ```
+
+## API v1 (para Olvidos y por2duros)
+
+Un solo motor, dos escaparates: olvidosdegranada.es y por2duros.com consultan
+La Banda **desde su servidor** con `Authorization: Bearer LA_BANDA_API_KEY`
+(nunca desde el navegador).
+
+| Ruta | Qué devuelve |
+|---|---|
+| `GET /api/v1/trading` | reglas, cartera, métricas, operaciones y últimas 24 sesiones con informe final |
+| `GET /api/v1/trading/sesiones/:id` | eventos, traspasos y estado de los agentes de una sesión |
+| `GET /api/v1/olvidos/manuscritos` | secciones y manuscritos recientes con veredicto |
+| `POST /api/v1/olvidos/manuscritos` | `{ title, byline?, section, text, sourceName?, createdBy? }` → guarda, abre sesión, arranca ticks (202) |
+| `GET /api/v1/olvidos/manuscritos/:id` | versiones, objeciones numeradas y veredicto |
