@@ -20,11 +20,21 @@ export function selfOrigin(requestUrl?: string): string {
   throw new Error('Falta APP_URL')
 }
 
+/**
+ * Si el proyecto tiene Deployment Protection también en producción, Vercel
+ * define VERCEL_AUTOMATION_BYPASS_SECRET (Protection Bypass for Automation) y
+ * las llamadas a uno mismo deben llevar esta cabecera para no acabar en el SSO.
+ */
+function bypassHeaders(): Record<string, string> {
+  const s = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim()
+  return s ? { 'x-vercel-protection-bypass': s } : {}
+}
+
 /** Lanza el siguiente tick. El tick responde 202 al instante, así que esto vuelve enseguida. */
 export async function kickTick(origin: string, domain: string, sessionId: string): Promise<void> {
   const res = await fetch(`${origin}/api/engine/tick`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', [TICK_HEADER]: engineSecret() },
+    headers: { 'content-type': 'application/json', [TICK_HEADER]: engineSecret(), ...bypassHeaders() },
     body: JSON.stringify({ domain, sessionId }),
     signal: AbortSignal.timeout(10_000),
     cache: 'no-store',

@@ -26,6 +26,10 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   endpoint compatible con el SDK de Anthropic), si no Anthropic
   (`ANTHROPIC_MODEL` def. `claude-opus-5`). `output_config.effort` solo se
   envía a Anthropic. `AgentConfig.model` sobreescribe el modelo por agente.
+- **Deployment Protection**: producción debe ser pública (en Vercel, Settings →
+  Deployment Protection → solo previsualizaciones). Si no, la cadena de ticks y las
+  llamadas de Olvidos/por2duros acaban en el SSO. Red de seguridad: `kickTick`
+  añade `x-vercel-protection-bypass` si existe `VERCEL_AUTOMATION_BYPASS_SECRET`.
 - **Cadena de ticks** (`src/engine/tick.ts`, `/api/engine/tick`): en Vercel
   cada invocación procesa un paso, responde 202 y en `after()` llama al
   siguiente tick con la cabecera `x-engine-secret` (= `CRON_SECRET`). Origen:
