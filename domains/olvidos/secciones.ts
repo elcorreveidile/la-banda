@@ -27,6 +27,7 @@ export const SECCIONES: SectionLimits[] = [
   { key: 'soneto500', name: 'Soneto500', description: 'Sección especial de sonetos.', minWords: null, maxWords: null, minLines: 14, maxLines: 14, notes: 'Catorce versos; forma de soneto (dos cuartetos y dos tercetos, o variante reconocible).' },
   { key: 'ensayo', name: 'Ensayo (secciones de la impresa: Mitológicas, La fábrica de sueños…)', description: 'Ensayo largo con secciones numeradas, epígrafes y citas.', minWords: 1200, maxWords: 6500, notes: 'Por encima de 4.000 palabras, avisar: solo cabe como pieza central del número.' },
   { key: 'entrevista', name: 'Entrevista', description: 'Conversación con interlocutores en negrita (formato B. P. / C. R.).', minWords: 1000, maxWords: 3000, notes: 'Preguntas cortas; cortar lo que no aporte.' },
+  { key: 'apostillas', name: 'Apostillas', description: 'Notas y comentarios de la redacción sobre la historia de la revista, presentaciones y efemérides (categoría de la web actual).', minWords: 600, maxWords: 4000, notes: 'Contexto y fuentes explícitas; los textos largos, con secciones.' },
   { key: 'resena', name: 'Reseña / crónica breve', description: 'Reseña de libro, exposición, encuentro.', minWords: 400, maxWords: 1200, notes: 'Datos completos de la obra reseñada (título, autor, editorial, año).' },
 ]
 

@@ -4,7 +4,7 @@ Sistema de diez agentes con roles fijos, veto obligatorio y traspasos
 trazables. Dos dominios intercambiables: mesa de trading simulada y
 redacción de *Olvidos de Granada*. Nombre provisional.
 
-**Estado: fase 3** (Olvidos). Dominios: `domains/toy` (dos agentes, para
+**Estado: fase 4** (panel completo). Dominios: `domains/toy` (dos agentes, para
 probar el motor), `domains/trading` (los diez roles, velas reales de BTC/USD y
 ETH/USD, cartera ficticia de 100 USD, ciclo horario por cron) y
 `domains/olvidos` (redacción de *Olvidos de Granada*: informe de objeciones y
@@ -58,7 +58,10 @@ src/lib/olvidos/
 src/lib/webSearch.ts búsqueda web por la API de z.ai
 src/app/api/cron/trading   GET horario (vercel.json); Bearer CRON_SECRET
 src/app/api/engine/tick    POST; cabecera x-engine-secret; responde 202 y procesa en after()
-src/app/panel/      panel: cabecera, lanzadores (toy y ciclo de trading), métricas, lista y log en vivo
+src/app/panel/      panel: cabecera, lanzadores, métricas y gráficos (Recharts), lista de sesiones,
+                    SessionLive (avatares con estado + grafo de traspasos con d3 + log en vivo)
+src/lib/panel/sessionView.ts  eventos, traspasos y estado de cada agente de una sesión
+scripts/olvidos-prueba.ts     prueba §8.3: envía los tres textos de docs/olvidos-prueba y compara veredictos
 src/app/login/      acceso por enlace mágico (solo correos de ALLOWED_EMAILS)
 tests/              orquestador y dominios con almacén en memoria; simulación y velas
 drizzle/            SQL generado (drizzle-kit generate); copiable a Neon
@@ -126,3 +129,27 @@ informe final de la sesión.
 La hoja de estilo (`domains/olvidos/hojaDeEstilo.ts`) y los límites por
 sección (`domains/olvidos/secciones.ts`) son una **propuesta** sacada del repo
 `olvidos` (no había hoja de estilo formal): corregir ahí.
+
+## Panel (fase 4)
+
+- Cabecera: dominio activo, sesión, reloj.
+- Fila de diez avatares con estado: inactivo / esperando (traspaso pendiente) /
+  trabajando (desde `agent_started`) / hecho.
+- Grafo de traspasos (d3): agentes en el orden de la cadena; cada traspaso es un
+  arco coloreado por estado (aceptado, devuelto, vetado, pendiente); las
+  devoluciones van por debajo.
+- Log en vivo, una línea por evento, codename coloreado.
+- Métricas del dominio: trading (patrimonio, caja, operaciones, vetos,
+  devoluciones, resultado por operación con barras y patrimonio realizado con
+  línea, Recharts) y Olvidos (sesiones, veredictos, objeciones por agente).
+
+## Prueba de Olvidos con textos publicados (§8.3)
+
+`docs/olvidos-prueba/` guarda tres textos publicados en olvidosdegranada.es en
+marzo de 2026 (los tres se publicaron, así que el veredicto esperado es
+«publicable»). En local, con `.env.local`:
+
+```bash
+npx tsx --env-file=.env.local scripts/olvidos-prueba.ts            # envía y evalúa (minutos por texto)
+npx tsx --env-file=.env.local scripts/olvidos-prueba.ts --comparar  # imprime veredictos y objeciones
+```
