@@ -19,15 +19,33 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   conexión se abre en la primera petición, así `next build` no exige env).
 - **Motor** (`src/engine/`): `createEngine(store, runAgent)`. El almacén es una
   interfaz (`EngineStore`) para poder testear con memoria (`tests/memoryStore.ts`).
-  `runAgent` usa la API de Anthropic (`ANTHROPIC_MODEL`, por defecto
-  `claude-opus-5`; `ANTHROPIC_EFFORT` low|medium|high) con bucle manual de
-  herramientas y una herramienta `decide` para la salida estructurada.
+  `step()` procesa UN traspaso; `runSession()` los encadena. `runAgent` hace un
+  bucle manual de herramientas y termina con la herramienta `decide` (salida
+  estructurada, validada con Zod). **Proveedor** (`provider.ts`, patrón de
+  wp-next-starter): z.ai si hay `ZAI_API_KEY` (`ZAI_MODEL` def. `glm-5.3`,
+  endpoint compatible con el SDK de Anthropic), si no Anthropic
+  (`ANTHROPIC_MODEL` def. `claude-opus-5`). `output_config.effort` solo se
+  envía a Anthropic. `AgentConfig.model` sobreescribe el modelo por agente.
+- **Cadena de ticks** (`src/engine/tick.ts`, `/api/engine/tick`): en Vercel
+  cada invocación procesa un paso, responde 202 y en `after()` llama al
+  siguiente tick con la cabecera `x-engine-secret` (= `CRON_SECRET`). Origen:
+  `APP_URL` (o el de la petición). Así ningún agente depende del `maxDuration`
+  y una caída deja el traspaso pendiente para el siguiente tick.
+- **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
+  2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
+  web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución
+  determinista**: Helsinki registra con `writeLedger` y el código compra al
+  último cierre (`sim.ts`: slippage 0,3 %, comisión 0,1 %) y gestiona
+  stop/objetivo/caducidad en cada ciclo (`manageOpenPositions`). Solo largos
+  al contado. Velas: Coinbase Exchange, Kraken de respaldo (Binance bloquea
+  por región). Cron `5 * * * *` en `vercel.json` (`CRON_SECRET`).
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.
-- **Panel** (`/panel`): lanza sesiones del dominio toy con una server action que
-  deja correr el orquestador en `after()`; el log sondea `/api/panel/events`
-  cada 2 s mientras la sesión esté abierta.
+- **Panel** (`/panel`): lanza sesiones toy (orquestador en `after()`) y ciclos
+  de trading (mismo camino que el cron); tarjeta de métricas de trading
+  (`metrics.ts`); el log sondea `/api/panel/events` cada 2 s mientras la
+  sesión esté abierta.
 
 ## Convenciones
 
@@ -41,7 +59,7 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 
 ## Fases (brief §8)
 
-1. Motor y log — **hecho** (este repo, v0.1.0).
-2. Trading simulado (diez roles, velas reales, cartera ficticia, cron horario).
+1. Motor y log — **hecho** (v0.1.0, #1).
+2. Trading simulado — **hecho** (v0.2.0): dejarlo correr una semana.
 3. Olvidos (segundo dominio).
 4. Panel completo (grafo, métricas, avatares).

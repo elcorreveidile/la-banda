@@ -4,15 +4,16 @@ Sistema de diez agentes con roles fijos, veto obligatorio y traspasos
 trazables. Dos dominios intercambiables: mesa de trading simulada y
 redacción de *Olvidos de Granada*. Nombre provisional.
 
-**Estado: fase 1** (motor y log). Todavía no hay ningún dominio real: solo
-`domains/toy`, con dos agentes (Tokio propone, Palermo veta), para probar el
-motor.
+**Estado: fase 2** (trading simulado). Dominios: `domains/toy` (dos agentes,
+para probar el motor) y `domains/trading` (los diez roles, velas reales de
+BTC/USD y ETH/USD, cartera ficticia de 100 USD, ciclo horario por cron).
 
 ## Stack
 
 Next.js 15 (App Router) · TypeScript · Drizzle sobre Neon (`neon-http`) ·
-Auth.js v5 con enlace mágico por Resend · API de Anthropic · Tailwind ·
-Vitest. Despliegue en Vercel.
+Auth.js v5 con enlace mágico por Resend · agentes por z.ai (GLM, endpoint
+compatible con el SDK de Anthropic; fallback a la API de Anthropic) · Tailwind ·
+Vitest. Despliegue en Vercel con cron horario.
 
 ## Arranque local
 
@@ -31,16 +32,28 @@ Validación antes de subir: `npm run lint && npm run typecheck && npm test && np
 domains/            configuración de dominios (el motor no sabe nada del contenido)
   types.ts          DomainConfig, AgentConfig, AgentDecision, ToolDef, validateDomain()
   toy/config.ts     dominio de prueba: Tokio → Palermo
+  trading/          config.ts (diez agentes, grafo) · tools.ts (getCandles, getPortfolio, now, webSearch, writeLedger, readAll)
   index.ts          registro: getDomain(), listDomains()
-src/db/             esquema Drizzle (agents, sessions, tasks, handoffs, events + tablas auth_*)
+src/db/             schema.ts (motor + auth_*) · trading.ts (prices, portfolio, orders_sim)
 src/engine/
-  orchestrator.ts   bucle: lee traspasos pendientes, invoca al destinatario, aplica su decisión
-  runAgent.ts       llamada a Anthropic con el prompt del agente y SOLO sus herramientas
+  orchestrator.ts   step(): un traspaso → una invocación; runSession() los encadena
+  runAgent.ts       llamada al modelo con el prompt del agente y SOLO sus herramientas
+  provider.ts       z.ai (GLM) si hay ZAI_API_KEY; si no, Anthropic
+  tick.ts           cadena de ticks: /api/engine/tick procesa un paso y se llama a sí mismo
   decision.ts       esquema de la decisión { action, to, payload, reason }
   store.ts          interfaz de persistencia (EngineStore) · dbStore.ts la implementa
-src/app/panel/      panel: cabecera, lanzador de sesiones, lista y log en vivo
+src/lib/trading/
+  candles.ts        velas horarias: Coinbase Exchange, Kraken de respaldo (sin clave)
+  sim.ts            simulación pura: slippage 0,3 %, comisión 0,1 %, stop/objetivo/caducidad
+  portfolio.ts      cartera y libro de órdenes sobre la base de datos
+  cycle.ts          un ciclo: velas → posiciones abiertas → sesión nueva
+  metrics.ts        saldo, operaciones, vetos de Palermo, devoluciones de Lisboa, resultado por operación
+src/lib/webSearch.ts búsqueda web por la API de z.ai
+src/app/api/cron/trading   GET horario (vercel.json); Bearer CRON_SECRET
+src/app/api/engine/tick    POST; cabecera x-engine-secret; responde 202 y procesa en after()
+src/app/panel/      panel: cabecera, lanzadores (toy y ciclo de trading), métricas, lista y log en vivo
 src/app/login/      acceso por enlace mágico (solo correos de ALLOWED_EMAILS)
-tests/              orquestador con almacén en memoria y agentes de guion
+tests/              orquestador y dominios con almacén en memoria; simulación y velas
 drizzle/            SQL generado (drizzle-kit generate); copiable a Neon
 ```
 
@@ -60,3 +73,25 @@ drizzle/            SQL generado (drizzle-kit generate); copiable a Neon
 Los agentes no comparten contexto: reciben la tarea, el traspaso que les llega
 (con motivo si es una devolución) y sus herramientas. Responden llamando a la
 herramienta `decide` una sola vez.
+
+## Ciclo de trading (fase 2)
+
+Cada hora (`5 * * * *`, Vercel cron) `GET /api/cron/trading`:
+
+1. Descarga las últimas 120 velas horarias cerradas de BTC-USD y ETH-USD
+   (Coinbase Exchange; Kraken si falla) y las guarda en `prices`.
+2. Revisa las posiciones abiertas contra el último cierre: stop, objetivo o
+   caducidad → cierre con slippage y comisión, dinero de vuelta a la caja.
+3. Abre una sesión del dominio `trading` con la foto de velas y cartera y
+   arranca la **cadena de ticks**: cada `POST /api/engine/tick` procesa un
+   traspaso (una llamada a un agente) y encadena el siguiente. Ningún agente
+   depende del tiempo máximo de una función.
+
+Cadena: Tokio → Denver → Estocolmo → Río → Berlín → Lisboa → Nairobi →
+Palermo → Helsinki → Profesor. Tokio, Denver y Estocolmo pueden ir directos
+al Profesor cuando no hay nada que operar. Lisboa devuelve a cualquiera de
+los anteriores. Palermo veta. Helsinki registra la orden con `writeLedger`, y
+es el **código** quien la ejecuta (compra al último cierre, +0,3 % de
+slippage, 0,1 % de comisión) o la rechaza. El Profesor cierra con el informe.
+
+Desde el panel, «Lanzar ciclo ahora» hace lo mismo que el cron.
