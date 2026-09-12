@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import clsx from 'clsx'
 import { Codename } from '@/components/Codename'
 import type { SessionView } from '@/lib/panel/sessionView'
@@ -26,6 +27,12 @@ export function SessionLive({ initial }: { initial: SessionView }) {
   const [view, setView] = useState(initial)
   const lastId = useRef(initial.events.at(-1)?.id ?? 0)
   const bottom = useRef<HTMLDivElement>(null)
+  const router = useRouter()
+
+  // Cabecera, lista de sesiones y métricas se renderizan en el servidor: al cerrarse la sesión, refrescamos.
+  useEffect(() => {
+    if (view.session.status !== 'open' && initial.session.status === 'open') router.refresh()
+  }, [view.session.status, initial.session.status, router])
 
   useEffect(() => {
     if (view.session.status !== 'open') return
