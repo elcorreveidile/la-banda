@@ -11,6 +11,9 @@ import { LiveLog, type LogEvent } from './LiveLog'
 import { startToySession, startTradingCycle } from './actions'
 import { tradingMetrics, type TradingMetrics } from '@/lib/trading/metrics'
 import { TradingMetricsCard } from './TradingMetrics'
+import { olvidosMetrics, type OlvidosMetrics } from '@/lib/olvidos/metrics'
+import { objectionsForSession } from '@/lib/olvidos/manuscripts'
+import { ObjectionsList, OlvidosCard } from './OlvidosCard'
 
 export const dynamic = 'force-dynamic'
 /** El orquestador corre en `after()` de la acción; le damos margen (plan Pro de Vercel). */
@@ -49,6 +52,13 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
   } catch (err) {
     console.error('[la-banda] tradingMetrics', err)
   }
+  let olvidos: OlvidosMetrics | null = null
+  try {
+    olvidos = await olvidosMetrics()
+  } catch (err) {
+    console.error('[la-banda] olvidosMetrics', err)
+  }
+  const objections = selected?.domain === 'olvidos' ? await objectionsForSession(selected.id).catch(() => []) : []
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-4">
@@ -118,7 +128,9 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
         </aside>
 
         <div className="flex flex-col gap-4">
+        {olvidos && <OlvidosCard m={olvidos} />}
         {metrics && <TradingMetricsCard m={metrics} />}
+        <ObjectionsList items={objections} />
         {selected ? (
           <LiveLog
             key={selected.id}

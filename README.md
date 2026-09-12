@@ -4,9 +4,11 @@ Sistema de diez agentes con roles fijos, veto obligatorio y traspasos
 trazables. Dos dominios intercambiables: mesa de trading simulada y
 redacción de *Olvidos de Granada*. Nombre provisional.
 
-**Estado: fase 2** (trading simulado). Dominios: `domains/toy` (dos agentes,
-para probar el motor) y `domains/trading` (los diez roles, velas reales de
-BTC/USD y ETH/USD, cartera ficticia de 100 USD, ciclo horario por cron).
+**Estado: fase 3** (Olvidos). Dominios: `domains/toy` (dos agentes, para
+probar el motor), `domains/trading` (los diez roles, velas reales de BTC/USD y
+ETH/USD, cartera ficticia de 100 USD, ciclo horario por cron) y
+`domains/olvidos` (redacción de *Olvidos de Granada*: informe de objeciones y
+veredicto sobre un manuscrito).
 
 ## Stack
 
@@ -33,8 +35,10 @@ domains/            configuración de dominios (el motor no sabe nada del conten
   types.ts          DomainConfig, AgentConfig, AgentDecision, ToolDef, validateDomain()
   toy/config.ts     dominio de prueba: Tokio → Palermo
   trading/          config.ts (diez agentes, grafo) · tools.ts (getCandles, getPortfolio, now, webSearch, writeLedger, readAll)
+  olvidos/          config.ts (diez agentes, grafo) · tools.ts (readManuscript, readStyleSheet, getSectionLimits, webSearch, writeLedger, readAll)
+                    hojaDeEstilo.ts (PROPUESTA) · secciones.ts (límites por sección, PROPUESTA)
   index.ts          registro: getDomain(), listDomains()
-src/db/             schema.ts (motor + auth_*) · trading.ts (prices, portfolio, orders_sim)
+src/db/             schema.ts (motor + auth_*) · trading.ts (prices, portfolio, orders_sim) · olvidos.ts (manuscripts, versions, objections)
 src/engine/
   orchestrator.ts   step(): un traspaso → una invocación; runSession() los encadena
   runAgent.ts       llamada al modelo con el prompt del agente y SOLO sus herramientas
@@ -48,6 +52,9 @@ src/lib/trading/
   portfolio.ts      cartera y libro de órdenes sobre la base de datos
   cycle.ts          un ciclo: velas → posiciones abiertas → sesión nueva
   metrics.ts        saldo, operaciones, vetos de Palermo, devoluciones de Lisboa, resultado por operación
+src/lib/olvidos/
+  manuscripts.ts    manuscritos y versiones (lectura de .md/.txt/.docx con mammoth), objeciones
+  metrics.ts        sesiones, veredictos, objeciones por agente, devoluciones de Lisboa
 src/lib/webSearch.ts búsqueda web por la API de z.ai
 src/app/api/cron/trading   GET horario (vercel.json); Bearer CRON_SECRET
 src/app/api/engine/tick    POST; cabecera x-engine-secret; responde 202 y procesa en after()
@@ -95,3 +102,27 @@ es el **código** quien la ejecuta (compra al último cierre, +0,3 % de
 slippage, 0,1 % de comisión) o la rechaza. El Profesor cierra con el informe.
 
 Desde el panel, «Lanzar ciclo ahora» hace lo mismo que el cron.
+
+## Redacción de Olvidos (fase 3)
+
+Desde el panel se envía un manuscrito (título, firma, sección de destino y
+texto pegado o fichero `.md`/`.txt`/`.docx`). Se guarda como `manuscripts` +
+`versions` (v1) y se abre una sesión del dominio `olvidos` que corre por la
+cadena de ticks.
+
+Cadena: Tokio (tesis, estructura, extensión) → Denver (lugares comunes) →
+Berlín (hoja de estilo → condiciones de aceptación) → Río (tensión y
+repeticiones) → Lisboa (datos, nombres, fechas y citas; devuelve si la cadena
+no cuadra) → Estocolmo (extensión contra el espacio de la sección) → Nairobi
+(objeciones numeradas + informe de una página) → Palermo (veta la publicación
+si alguna condición de Berlín no se cumple) → Helsinki (registra objeciones y
+decisión con `writeLedger`) → Profesor (veredicto: publicable / con cambios /
+rechazado).
+
+**Los agentes señalan, no corrigen**: nunca sale una versión reescrita. Las
+objeciones se ven en el panel junto al log de la sesión; el veredicto en el
+informe final de la sesión.
+
+La hoja de estilo (`domains/olvidos/hojaDeEstilo.ts`) y los límites por
+sección (`domains/olvidos/secciones.ts`) son una **propuesta** sacada del repo
+`olvidos` (no había hoja de estilo formal): corregir ahí.

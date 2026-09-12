@@ -47,6 +47,18 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   (`metrics.ts`); el log sondea `/api/panel/events` cada 2 s mientras la
   sesión esté abierta.
 
+- **Olvidos** (`src/lib/olvidos/`, `domains/olvidos/`): manuscrito → `manuscripts`
+  + `versions` (v1; `.docx` con mammoth) → sesión `olvidos` por la cadena de
+  ticks. Las herramientas localizan el manuscrito por el payload de la tarea
+  (`manuscriptForTask(ctx.taskId)`). Palermo NO usa la acción `veto` del motor
+  para vetar la publicación: pasa a Helsinki con `veredictoPalermo` para que el
+  informe se emita igual (el `veto` del motor queda para procesos que no pueden
+  continuar). Helsinki registra objeciones y decisión en `objections` /
+  `versions.decision`. **Hoja de estilo y límites de sección son PROPUESTA**
+  (no había en el repo `olvidos`): Javier corrige en `hojaDeEstilo.ts` y
+  `secciones.ts`. Pendiente del brief: probar con tres textos ya publicados y
+  comparar con lo decidido en su momento.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
@@ -60,6 +72,6 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 ## Fases (brief §8)
 
 1. Motor y log — **hecho** (v0.1.0, #1).
-2. Trading simulado — **hecho** (v0.2.0): dejarlo correr una semana.
-3. Olvidos (segundo dominio).
+2. Trading simulado — **hecho** (v0.2.0, #2): dejarlo correr una semana.
+3. Olvidos — **hecho** (v0.3.0): falta la prueba con tres textos publicados.
 4. Panel completo (grafo, métricas, avatares).

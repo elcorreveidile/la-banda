@@ -2,8 +2,9 @@ import { neon } from '@neondatabase/serverless'
 import { drizzle } from 'drizzle-orm/neon-http'
 import * as core from './schema'
 import * as trading from './trading'
+import * as olvidos from './olvidos'
 
-const schema = { ...core, ...trading }
+const schema = { ...core, ...trading, ...olvidos }
 
 /**
  * Conexión a Neon por HTTP: sin transacciones (cada consulta va sola).
