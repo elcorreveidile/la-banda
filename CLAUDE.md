@@ -73,5 +73,10 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 
 1. Motor y log — **hecho** (v0.1.0, #1).
 2. Trading simulado — **hecho** (v0.2.0, #2): dejarlo correr una semana.
-3. Olvidos — **hecho** (v0.3.0): falta la prueba con tres textos publicados.
+3. Olvidos — **hecho** (v0.3.0, #3). Prueba con tres textos publicados:
+   `scripts/olvidos-prueba.ts` + `docs/olvidos-prueba/` (Javier la corre en
+   local; los tres se publicaron → veredicto esperado «publicable»).
+4. Panel completo — **hecho** (v0.4.0): `sessionView.ts` (estado por agente),
+   `SessionLive` (avatares + grafo d3 + log), gráficos Recharts en trading.
+   d3 solo para el grafo (`d3-scale`, `d3-path`), como pide el brief.
 4. Panel completo (grafo, métricas, avatares).

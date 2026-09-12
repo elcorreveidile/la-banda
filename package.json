@@ -1,6 +1,6 @@
 {
   "name": "la-banda",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -18,15 +18,20 @@
     "@auth/drizzle-adapter": "^1.11.3",
     "@neondatabase/serverless": "^1.1.0",
     "clsx": "^2.1.1",
+    "d3-path": "^3.1.0",
+    "d3-scale": "^4.0.2",
     "drizzle-orm": "^0.45.2",
     "mammoth": "^1.12.3",
     "next": "^15.5.25",
     "next-auth": "5.0.0-beta.32",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "recharts": "^2.15.4",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/d3-path": "^3.1.1",
+    "@types/d3-scale": "^4.0.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

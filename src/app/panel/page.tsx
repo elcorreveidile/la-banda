@@ -1,13 +1,13 @@
 import Link from 'next/link'
 import clsx from 'clsx'
-import { asc, desc, eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { auth, signOut } from '@/lib/auth'
 import { db } from '@/db'
-import { events, sessions } from '@/db/schema'
-import { codenameOf } from '@/engine/store'
+import { sessions } from '@/db/schema'
 import { listDomains } from '@domains/index'
 import { Clock } from '@/components/Clock'
-import { LiveLog, type LogEvent } from './LiveLog'
+import { SessionLive } from './SessionLive'
+import { sessionView } from '@/lib/panel/sessionView'
 import { startToySession, startTradingCycle } from './actions'
 import { tradingMetrics, type TradingMetrics } from '@/lib/trading/metrics'
 import { TradingMetricsCard } from './TradingMetrics'
@@ -33,15 +33,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
   const recent = await db.select().from(sessions).orderBy(desc(sessions.startedAt)).limit(20)
   const selected = (s && recent.find((r) => r.id === s)) || (s ? (await db.select().from(sessions).where(eq(sessions.id, s)).limit(1))[0] : recent[0])
 
-  const initialEvents: LogEvent[] = selected
-    ? (await db.select().from(events).where(eq(events.sessionId, selected.id)).orderBy(asc(events.id)).limit(500)).map((e) => ({
-        id: e.id,
-        type: e.type,
-        message: e.message,
-        codename: e.agentId ? codenameOf(e.agentId) : null,
-        createdAt: e.createdAt.toISOString(),
-      }))
-    : []
+  const view = selected ? await sessionView(selected.id) : null
 
   const domains = listDomains()
 
@@ -131,12 +123,8 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
         {olvidos && <OlvidosCard m={olvidos} />}
         {metrics && <TradingMetricsCard m={metrics} />}
         <ObjectionsList items={objections} />
-        {selected ? (
-          <LiveLog
-            key={selected.id}
-            initialSession={{ id: selected.id, domain: selected.domain, status: selected.status, finalReport: selected.finalReport }}
-            initialEvents={initialEvents}
-          />
+        {view ? (
+          <SessionLive key={view.session.id} initial={view} />
         ) : (
           <p className="rounded border border-stone-300 bg-white p-3 text-stone-500">Lanza una sesión para ver el log.</p>
         )}

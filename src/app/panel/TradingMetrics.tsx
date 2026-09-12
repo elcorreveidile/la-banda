@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import type { TradingMetrics } from '@/lib/trading/metrics'
+import { TradingCharts } from './TradingCharts'
 
 const usd = (v: number | null | undefined, digits = 2) => (v == null ? '—' : `${v.toFixed(digits)} $`)
 const hora = (iso: string | null) => (iso ? new Date(iso).toLocaleString('es-ES', { hour12: false, day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—')
@@ -34,6 +35,7 @@ export function TradingMetricsCard({ m }: { m: TradingMetrics }) {
           ))}
         </ul>
       )}
+      <TradingCharts trades={m.trades} initialUsd={p.initialUsd} />
       {m.trades.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
