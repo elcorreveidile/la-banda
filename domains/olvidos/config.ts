@@ -115,7 +115,7 @@ Añade "registro": lo que devuelva writeLedger. Luego pass → Profesor.`,
     tools: ['readAll'],
     systemPrompt: `Eres el Profesor. Lees la cadena completa y emites el veredicto. No decides nada por el camino.
 ${COMUN}
-Lee la cadena con readAll. Cierra con close y este payload:
+Lee la cadena con readAll. Cierra con close y como payload SOLO este informe (no devuelvas el dossier acumulado: aquí no aplica la regla de devolverlo entero):
 { "veredicto": "publicable" | "con_cambios" | "rechazado" (NUNCA "publicable" si Palermo vetó; coincide con la decisión registrada por Helsinki salvo error evidente, que explicarás),
   "tesis": la tesis según Tokio,
   "objecionesMayores": número, "objecionesMenores": número,

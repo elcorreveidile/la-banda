@@ -5,6 +5,7 @@ import { sessions } from '@/db/schema'
 import { apiUnauthorized } from '@/lib/apiAuth'
 import { tradingMetrics } from '@/lib/trading/metrics'
 import { INITIAL_USD, FEE, SLIPPAGE, SYMBOLS } from '@/lib/trading/sim'
+import { informeFinal } from '@/lib/trading/informe'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,6 @@ export async function GET(req: Request) {
     cartera: m.portfolio,
     metricas: { sesiones: m.sessions, operaciones: m.executed, vetosPalermo: m.vetoes, devolucionesLisboa: m.returns, resultadoRealizadoUsd: m.realizedUsd },
     operaciones: m.trades,
-    sesiones: recent.map((s) => ({ id: s.id, status: s.status, startedAt: s.startedAt, closedAt: s.closedAt, finalReport: s.finalReport })),
+    sesiones: recent.map((s) => ({ id: s.id, status: s.status, startedAt: s.startedAt, closedAt: s.closedAt, finalReport: informeFinal(s.finalReport) })),
   })
 }

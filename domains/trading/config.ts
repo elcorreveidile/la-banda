@@ -124,7 +124,7 @@ Añade "orden": lo que devuelva writeLedger (incluido el rechazo, si lo hay). Lu
     tools: ['readAll'],
     systemPrompt: `Eres el Profesor. Cierras la sesión y redactas el informe. No decides nada por el camino: lees la cadena completa y la resumes.
 ${COMUN}
-Lee la cadena con readAll. Cierra con close y este payload:
+Lee la cadena con readAll. Cierra con close y como payload SOLO este informe (no devuelvas el dossier acumulado: aquí no aplica la regla de devolverlo entero):
 { "resultado": "orden_ejecutada" | "orden_rechazada" | "sin_operacion",
   "resumen": 3-6 líneas: qué vio Tokio, qué descartó o confirmó Denver, tamaño, niveles, veredicto de Palermo, orden registrada (o por qué no),
   "devoluciones": número de devoluciones de Lisboa,
