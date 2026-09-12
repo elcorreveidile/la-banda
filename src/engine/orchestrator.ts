@@ -3,9 +3,17 @@ import type { Handoff, Session, Task } from '@/db/schema'
 import { agentId, codenameOf, type EngineStore } from './store'
 import type { AgentInput, RunAgent } from './runAgent'
 
+export interface StepResult {
+  session: Session
+  /** true si no queda nada por hacer (sesión cerrada o sin traspasos pendientes). */
+  done: boolean
+}
+
 export interface Engine {
   /** Abre una sesión con una tarea y siembra el primer traspaso hacia `domain.entry`. */
   openSession(domain: DomainConfig, task: { kind: string; payload: unknown; createdBy: string }): Promise<{ session: Session; task: Task; handoff: Handoff }>
+  /** Procesa UN traspaso pendiente (una invocación de agente). Base de la cadena de ticks. */
+  step(domain: DomainConfig, sessionId: string): Promise<StepResult>
   /** Bucle: consume traspasos pendientes hasta que no queden o la sesión termine. */
   runSession(domain: DomainConfig, sessionId: string): Promise<Session>
 }
@@ -44,15 +52,25 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
     },
 
     async runSession(domain, sessionId) {
-      const agentsByCodename = new Map(domain.agents.map((a) => [a.codename, a]))
-
       for (;;) {
+        const r = await this.step(domain, sessionId)
+        if (r.done) return r.session
+      }
+    },
+
+    async step(domain, sessionId) {
+      const agentsByCodename = new Map(domain.agents.map((a) => [a.codename, a]))
+      function finished(session: Session): StepResult {
+        return { session, done: true }
+      }
+
+      {
         const session = await store.getSession(sessionId)
         if (!session) throw new Error(`Sesión desconocida: ${sessionId}`)
-        if (session.status !== 'open') return session
+        if (session.status !== 'open') return finished(session)
 
         const next = await store.nextPendingHandoff(sessionId)
-        if (!next) return session
+        if (!next) return finished(session)
         const { handoff, task } = next
 
         const steps = await store.countHandoffs(sessionId)
@@ -60,7 +78,7 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
           await store.updateHandoff(handoff.id, { status: 'vetoed', reason: 'tope de pasos' })
           await store.updateTaskStatus(task.id, 'failed')
           await store.addEvent({ sessionId, agentId: null, type: 'session_failed', message: `Tope de ${domain.maxSteps} traspasos superado; sesión detenida` })
-          return store.closeSession(sessionId, 'failed')
+          return finished(await store.closeSession(sessionId, 'failed'))
         }
 
         const codename = codenameOf(handoff.toAgent)
@@ -70,7 +88,7 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
           await store.updateHandoff(handoff.id, { status: 'vetoed', reason: 'agente desconocido' })
           await store.updateTaskStatus(task.id, 'failed')
           await store.addEvent({ sessionId, agentId: null, type: 'session_failed', message: `Agente desconocido en el traspaso: ${handoff.toAgent}` })
-          return store.closeSession(sessionId, 'failed')
+          return finished(await store.closeSession(sessionId, 'failed'))
         }
 
         if (task.status === 'pending') await store.updateTaskStatus(task.id, 'in_progress')
@@ -99,7 +117,7 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
           await store.updateHandoff(handoff.id, { status: 'vetoed', reason: `error del agente: ${short(msg, 300)}` })
           await store.updateTaskStatus(task.id, 'failed')
           await store.addEvent({ sessionId, agentId: null, type: 'session_failed', message: `Sesión detenida por error de ${codename}` })
-          return store.closeSession(sessionId, 'failed')
+          return finished(await store.closeSession(sessionId, 'failed'))
         }
 
         const rejection = rejectionReason(domain, agent, decision)
@@ -108,7 +126,7 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
           await store.updateHandoff(handoff.id, { status: 'vetoed', reason: `rechazado por el motor: ${rejection}` })
           await store.updateTaskStatus(task.id, 'failed')
           await store.addEvent({ sessionId, agentId: null, type: 'session_failed', message: `Sesión detenida: ${codename} intentó una acción fuera del grafo` })
-          return store.closeSession(sessionId, 'failed')
+          return finished(await store.closeSession(sessionId, 'failed'))
         }
 
         switch (decision.action) {
@@ -128,15 +146,16 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
             await store.updateHandoff(handoff.id, { status: 'vetoed', reason: decision.reason })
             await store.updateTaskStatus(task.id, 'vetoed')
             await store.addEvent({ sessionId, agentId: thisAgentId, type: 'veto', message: `${codename} veta: ${decision.reason}` })
-            return store.closeSession(sessionId, 'vetoed', { vetoedBy: codename, reason: decision.reason, payload: decision.payload })
+            return finished(await store.closeSession(sessionId, 'vetoed', { vetoedBy: codename, reason: decision.reason, payload: decision.payload }))
           }
           case 'close': {
             await store.updateHandoff(handoff.id, { status: 'accepted' })
             await store.updateTaskStatus(task.id, 'done')
             await store.addEvent({ sessionId, agentId: thisAgentId, type: 'close', message: `${codename} cierra la sesión: ${short(decision.payload)}` })
-            return store.closeSession(sessionId, 'closed', decision.payload)
+            return finished(await store.closeSession(sessionId, 'closed', decision.payload))
           }
         }
+        return { session, done: false }
       }
     },
   }

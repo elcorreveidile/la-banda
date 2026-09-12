@@ -1,9 +1,11 @@
 import type { DomainConfig } from './types'
 import { validateDomain } from './types'
 import { toyDomain } from './toy/config'
+import { tradingDomain } from './trading/config'
 
 const DOMAINS: Record<string, DomainConfig> = {
   [toyDomain.name]: toyDomain,
+  [tradingDomain.name]: tradingDomain,
 }
 
 for (const d of Object.values(DOMAINS)) validateDomain(d)

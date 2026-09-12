@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { AgentConfig, AgentDecision, ToolContext, ToolDef } from '@domains/types'
 import { DECIDE_TOOL_SCHEMA, parseDecision } from './decision'
+import { getProvider } from './provider'
 
 /** Lo que el motor entrega a un agente en cada invocación. */
 export interface AgentInput {
@@ -17,12 +18,6 @@ export type RunAgent = (agent: AgentConfig, input: AgentInput) => Promise<AgentD
 const DECIDE = 'decide'
 const MAX_TOOL_ROUNDS = 8
 const MAX_DECIDE_RETRIES = 2
-
-let client: Anthropic | null = null
-function getClient() {
-  if (!client) client = new Anthropic({ maxRetries: 1, timeout: 90_000 })
-  return client
-}
 
 function effort(): 'low' | 'medium' | 'high' {
   const e = process.env.ANTHROPIC_EFFORT
@@ -66,10 +61,12 @@ function toAnthropicTool(t: ToolDef): Anthropic.Tool {
 /**
  * Invoca al agente con su prompt de sistema y SOLO sus herramientas.
  * Bucle manual: ejecuta herramientas hasta que el modelo llama a `decide`.
+ * Proveedor: z.ai (GLM) o Anthropic, según `getProvider()`; `agent.model` lo sobreescribe.
  */
 export const runAgentWithAnthropic: RunAgent = async (agent, input) => {
-  const anthropic = getClient()
-  const model = process.env.ANTHROPIC_MODEL || 'claude-opus-5'
+  const provider = getProvider()
+  const anthropic = provider.client
+  const model = agent.model || provider.model
   const domainTools = new Map(input.tools.map((t) => [t.name, t]))
   const tools: Anthropic.Tool[] = [
     ...input.tools.map(toAnthropicTool),
@@ -86,7 +83,7 @@ export const runAgentWithAnthropic: RunAgent = async (agent, input) => {
       system,
       tools,
       messages,
-      output_config: { effort: effort() },
+      ...(provider.native ? { output_config: { effort: effort() } } : {}),
     })
 
     if (response.stop_reason === 'refusal') {

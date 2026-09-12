@@ -39,6 +39,8 @@ export interface AgentConfig {
   /** Nombres de herramientas de `DomainConfig.tools` a las que tiene acceso. */
   tools: string[]
   canVeto: boolean
+  /** Modelo concreto para este agente (por defecto, el del proveedor). */
+  model?: string
 }
 
 export interface DomainConfig {

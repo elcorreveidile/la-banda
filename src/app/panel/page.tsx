@@ -8,7 +8,9 @@ import { codenameOf } from '@/engine/store'
 import { listDomains } from '@domains/index'
 import { Clock } from '@/components/Clock'
 import { LiveLog, type LogEvent } from './LiveLog'
-import { startToySession } from './actions'
+import { startToySession, startTradingCycle } from './actions'
+import { tradingMetrics, type TradingMetrics } from '@/lib/trading/metrics'
+import { TradingMetricsCard } from './TradingMetrics'
 
 export const dynamic = 'force-dynamic'
 /** El orquestador corre en `after()` de la acción; le damos margen (plan Pro de Vercel). */
@@ -39,6 +41,14 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
     : []
 
   const domains = listDomains()
+
+  // Métricas de trading: si las tablas del dominio aún no existen, no rompen el panel.
+  let metrics: TradingMetrics | null = null
+  try {
+    metrics = await tradingMetrics()
+  } catch (err) {
+    console.error('[la-banda] tradingMetrics', err)
+  }
 
   return (
     <main className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-4">
@@ -78,6 +88,14 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
             <span className="text-xs text-stone-500">Dominios cargados: {domains.map((d) => d.name).join(', ')}</span>
           </form>
 
+          <form action={startTradingCycle} className="flex flex-col gap-2 rounded border border-stone-300 bg-white p-3">
+            <span className="font-bold">Ciclo de trading</span>
+            <span className="text-xs text-stone-500">Descarga velas, gestiona posiciones y lanza a los diez agentes (igual que el cron horario).</span>
+            <button type="submit" className="rounded bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-700">
+              Lanzar ciclo ahora
+            </button>
+          </form>
+
           <nav className="rounded border border-stone-300 bg-white">
             <p className="border-b border-stone-200 px-3 py-2 font-bold">Sesiones</p>
             {recent.length === 0 && <p className="px-3 py-2 text-stone-500">Ninguna todavía.</p>}
@@ -99,6 +117,8 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
           </nav>
         </aside>
 
+        <div className="flex flex-col gap-4">
+        {metrics && <TradingMetricsCard m={metrics} />}
         {selected ? (
           <LiveLog
             key={selected.id}
@@ -108,6 +128,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
         ) : (
           <p className="rounded border border-stone-300 bg-white p-3 text-stone-500">Lanza una sesión para ver el log.</p>
         )}
+        </div>
       </div>
     </main>
   )

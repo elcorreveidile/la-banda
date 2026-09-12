@@ -18,7 +18,7 @@ export const DECIDE_TOOL_SCHEMA = {
       description: 'pass: entregar al siguiente; return: devolver a un agente anterior; veto: parar; close: cerrar la sesión.',
     },
     to: { type: 'string', description: 'Codename del destinatario. Obligatorio en pass y return.' },
-    payload: { description: 'Carga que viaja con el traspaso (objeto JSON). En close, el informe final.' },
+    payload: { type: 'object', additionalProperties: true, description: 'Carga que viaja con el traspaso (objeto JSON; {} si no hay nada). En close, el informe final.' },
     reason: { type: 'string', description: 'Motivo. Obligatorio en return y veto.' },
   },
   required: ['action', 'payload'],
