@@ -5,17 +5,9 @@ import { sessions } from '@/db/schema'
 import { apiUnauthorized } from '@/lib/apiAuth'
 import { tradingMetrics } from '@/lib/trading/metrics'
 import { INITIAL_USD, FEE, SLIPPAGE, SYMBOLS } from '@/lib/trading/sim'
+import { informeFinal } from '@/lib/trading/informe'
 
 export const dynamic = 'force-dynamic'
-
-/** El Profesor debe cerrar solo con el informe; si anidó el informe dentro del dossier, lo extraemos. */
-function informeFinal(report: unknown): unknown {
-  if (report && typeof report === 'object' && 'informe' in report && typeof (report as { informe: unknown }).informe === 'object') {
-    const r = report as { informe: Record<string, unknown>; vetoedBy?: unknown; reason?: unknown }
-    return { ...r.informe, ...(r.vetoedBy ? { vetoedBy: r.vetoedBy, reason: r.reason } : {}) }
-  }
-  return report
-}
 
 /**
  * GET /api/v1/trading → estado de la mesa simulada para mostrarlo en por2duros.com:
