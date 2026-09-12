@@ -11,7 +11,7 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `src/db/schema.ts`; se aplica con `npm run db:push` (Javier lo ejecuta contra
   producción) o copiando `drizzle/0000_inicial.sql`. `npm run db:generate` tras
   cambiar el esquema y commitear `drizzle/` (incluida `meta/`).
-- **Auth.js v5**: enlace mágico por Resend, JWT, `trustHost: true`. **Jamás
+- **Auth.js v5**: enlace mágico por la API de Brevo (`src/lib/brevo.ts`, proveedor `email` propio en `auth.ts`; `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`), JWT, `trustHost: true`. **Jamás
   `AUTH_URL` en producción** (misma lección que wp-next-starter). Tablas de auth
   con prefijo `auth_` para no chocar con `sessions` del motor. Solo entran los
   correos de `ALLOWED_EMAILS`. `auth.config.ts` (Edge, sin adaptador) alimenta al

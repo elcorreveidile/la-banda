@@ -5,7 +5,7 @@ import { hasProvider } from '@/engine/provider'
 
 export const dynamic = 'force-dynamic'
 
-const VARS = ['DATABASE_URL', 'AUTH_SECRET', 'AUTH_RESEND_KEY', 'EMAIL_FROM', 'ALLOWED_EMAILS', 'ZAI_API_KEY', 'ANTHROPIC_API_KEY', 'CRON_SECRET', 'APP_URL', 'LA_BANDA_API_KEY', 'VERCEL_AUTOMATION_BYPASS_SECRET'] as const
+const VARS = ['DATABASE_URL', 'AUTH_SECRET', 'BREVO_API_KEY', 'BREVO_SENDER_EMAIL', 'ALLOWED_EMAILS', 'ZAI_API_KEY', 'ANTHROPIC_API_KEY', 'CRON_SECRET', 'APP_URL', 'LA_BANDA_API_KEY', 'VERCEL_AUTOMATION_BYPASS_SECRET'] as const
 
 /**
  * GET /api/health → diagnóstico de despliegue. Público: solo dice qué variables

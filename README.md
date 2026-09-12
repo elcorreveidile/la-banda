@@ -13,7 +13,7 @@ veredicto sobre un manuscrito).
 ## Stack
 
 Next.js 15 (App Router) · TypeScript · Drizzle sobre Neon (`neon-http`) ·
-Auth.js v5 con enlace mágico por Resend · agentes por z.ai (GLM, endpoint
+Auth.js v5 con enlace mágico por Brevo · agentes por z.ai (GLM, endpoint
 compatible con el SDK de Anthropic; fallback a la API de Anthropic) · Tailwind ·
 Vitest. Despliegue en Vercel con cron horario.
 
