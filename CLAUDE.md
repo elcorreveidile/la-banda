@@ -59,6 +59,12 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `secciones.ts`. Pendiente del brief: probar con tres textos ya publicados y
   comparar con lo decidido en su momento.
 
+- **API v1** (`src/app/api/v1/`, `src/lib/apiAuth.ts`): decidido el 2026-09-12:
+  un solo motor y dos escaparates. Olvidos muestra la redacción en su panel y
+  por2duros la mesa de trading en una página pública; ambos consumen esta API
+  desde el servidor con `LA_BANDA_API_KEY`. La Banda tiene base de datos propia
+  (no la de Olvidos).
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
