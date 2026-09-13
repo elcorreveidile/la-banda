@@ -4,8 +4,15 @@ import { fetchHourlyCandles } from './candles'
 import { manageOpenPositions, snapshot, storeCandles, type ClosedPosition } from './portfolio'
 import { SYMBOLS } from './sim'
 
+/** Una sesión del cron sin cerrar tras este tiempo se da por perdida (sus velas ya no valen). */
+export const STALE_SESSION_MS = 90 * 60_000
+
 export interface CycleResult {
   sessionId: string
+  /** Sesiones abiertas recientes cuyos ticks hay que relanzar (ticks perdidos). */
+  resume: string[]
+  /** Sesiones abiertas demasiado antiguas, cerradas como fallidas. */
+  abandoned: string[]
   cycle: string
   candles: Record<string, { stored: number; source: string; lastClosed: string | null; lastClose: number | null; error?: string }>
   closedPositions: ClosedPosition[]
@@ -34,6 +41,7 @@ export async function runTradingCycle(createdBy: string): Promise<CycleResult> {
   const cartera = await snapshot()
 
   const domain = getDomain('trading')
+  const { resume, abandoned } = await engine.recoverOpen(domain, STALE_SESSION_MS)
   const { session } = await engine.openSession(domain, {
     kind: 'ciclo',
     createdBy,
@@ -45,5 +53,5 @@ export async function runTradingCycle(createdBy: string): Promise<CycleResult> {
       cierresEsteCiclo: closedPositions.map((c) => ({ symbol: c.order.symbol, reason: c.reason, pnlUsd: Number(c.pnlUsd.toFixed(4)) })),
     },
   })
-  return { sessionId: session.id, cycle, candles, closedPositions }
+  return { sessionId: session.id, resume, abandoned, cycle, candles, closedPositions }
 }

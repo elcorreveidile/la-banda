@@ -27,6 +27,8 @@ export interface EngineStore {
   createSession(domain: string): Promise<Session>
   getSession(id: string): Promise<Session | null>
   closeSession(id: string, status: Exclude<SessionStatus, 'open'>, finalReport?: unknown): Promise<Session>
+  /** Sesiones abiertas de un dominio, de más antigua a más reciente. */
+  openSessions(domain: string): Promise<Session[]>
   createTask(input: { sessionId: string; kind: string; payload: unknown; createdBy: string }): Promise<Task>
   updateTaskStatus(id: string, status: TaskStatus): Promise<void>
   createHandoff(input: { taskId: string; fromAgent: string | null; toAgent: string; payload: unknown; reason?: string | null }): Promise<Handoff>
