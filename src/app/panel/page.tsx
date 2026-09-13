@@ -14,6 +14,7 @@ import { TradingMetricsCard } from './TradingMetrics'
 import { olvidosMetrics, type OlvidosMetrics } from '@/lib/olvidos/metrics'
 import { objectionsForSession } from '@/lib/olvidos/manuscripts'
 import { ObjectionsList, OlvidosCard } from './OlvidosCard'
+import { CorpusCard } from './CorpusCard'
 
 export const dynamic = 'force-dynamic'
 /** El orquestador corre en `after()` de la acción; le damos margen (plan Pro de Vercel). */
@@ -121,6 +122,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
 
         <div className="flex flex-col gap-4">
         {olvidos && <OlvidosCard m={olvidos} />}
+        <CorpusCard />
         {metrics && <TradingMetricsCard m={metrics} />}
         <ObjectionsList items={objections} />
         {view ? (

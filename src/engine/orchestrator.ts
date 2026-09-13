@@ -23,6 +23,12 @@ export interface Engine {
    * las recientes se devuelven en `resume` para que quien llama relance sus ticks.
    */
   recoverOpen(domain: DomainConfig, maxAgeMs: number, now?: number): Promise<{ resume: string[]; abandoned: string[] }>
+  /**
+   * Purga de traza: borra las sesiones terminadas del dominio con más de `maxAgeMs`
+   * (con tareas, traspasos y eventos). Para dominios cuya traza lleva texto de personas
+   * (corpus-ele: producciones seudonimizadas de alumnos). Devuelve los ids borrados.
+   */
+  purgeClosed(domain: DomainConfig, maxAgeMs: number, now?: number): Promise<string[]>
 }
 
 function short(v: unknown, max = 160): string {
@@ -77,6 +83,15 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
         }
       }
       return { resume, abandoned }
+    },
+
+    async purgeClosed(domain, maxAgeMs, now = Date.now()) {
+      const borradas: string[] = []
+      for (const s of await store.closedSessionsBefore(domain.name, new Date(now - maxAgeMs))) {
+        await store.deleteSession(s.id)
+        borradas.push(s.id)
+      }
+      return borradas
     },
 
     async abandonSession(domain, sessionId, reason) {
