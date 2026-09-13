@@ -1,19 +1,26 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+vi.mock('@/lib/httpLimpio', () => ({ fetchLimpio: vi.fn() }))
+import { fetchLimpio, type RespuestaLimpia } from '@/lib/httpLimpio'
 import * as clinica from '@/lib/clinica'
 import { medirTexto } from '@/lib/corpus/medir'
+
+/** Respuesta mínima de fetchLimpio a partir de un cuerpo (JSON o texto) y un status. */
+const respuesta = (cuerpo: unknown, status = 200, statusText = ''): RespuestaLimpia => {
+  const texto = typeof cuerpo === 'string' ? cuerpo : JSON.stringify(cuerpo)
+  return { ok: status >= 200 && status < 300, status, statusText, text: async () => texto, json: async <T,>() => JSON.parse(texto) as T }
+}
 
 const ENV = { CLINICA_URL: 'https://clinica.test/', CLINICA_CORPUS_KEY: 'clave-de-prueba' }
 
 describe('cliente de la Clínica', () => {
-  const fetchMock = vi.fn()
+  const fetchMock = vi.mocked(fetchLimpio)
   beforeEach(() => {
-    vi.stubGlobal('fetch', fetchMock)
     fetchMock.mockReset()
     process.env.CLINICA_URL = ENV.CLINICA_URL
     process.env.CLINICA_CORPUS_KEY = ENV.CLINICA_CORPUS_KEY
   })
   afterEach(() => {
-    vi.unstubAllGlobals()
     delete process.env.CLINICA_URL
     delete process.env.CLINICA_CORPUS_KEY
   })
@@ -27,30 +34,30 @@ describe('cliente de la Clínica', () => {
   })
 
   it('manda Bearer y recorta la barra final de CLINICA_URL', async () => {
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ version: 1, capas: [], etiquetas: [] }), { status: 200 }))
+    fetchMock.mockResolvedValue(respuesta({ version: 1, capas: [], etiquetas: [] }))
     const r = await clinica.etiquetario()
     expect(clinica.esError(r)).toBe(false)
-    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe('https://clinica.test/api/corpus/etiquetario')
-    expect((init.headers as Record<string, string>).authorization).toBe('Bearer clave-de-prueba')
+    expect(init?.headers?.authorization).toBe('Bearer clave-de-prueba')
   })
 
   it('buscarPiezas construye la query y crearPieza hace POST', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ piezas: [] }), { status: 200 }))
+    fetchMock.mockResolvedValueOnce(respuesta({ piezas: [] }))
     await clinica.buscarPiezas({ nivel: 'A2', situacion: 'bar', take: 3 })
-    expect((fetchMock.mock.calls[0] as [string])[0]).toBe('https://clinica.test/api/corpus/piezas?nivel=A2&situacion=bar&take=3')
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, pieza: { id: 'x', estado: 'validada' } }), { status: 201 }))
+    expect(fetchMock.mock.calls[0][0]).toBe('https://clinica.test/api/corpus/piezas?nivel=A2&situacion=bar&take=3')
+    fetchMock.mockResolvedValueOnce(respuesta({ ok: true, pieza: { id: 'x', estado: 'validada' } }, 201))
     const r = await clinica.crearPieza({ tipo: 'muestra_habla', titulo: 'En el bar', texto: 'Un café, por favor.', nivel: 'A1', procedencia: 'generada' })
     expect(r).toMatchObject({ ok: true, pieza: { id: 'x' } })
-    const [, init] = fetchMock.mock.calls[1] as [string, RequestInit]
-    expect(init.method).toBe('POST')
-    expect(JSON.parse(String(init.body))).toMatchObject({ procedencia: 'generada' })
+    const [, init] = fetchMock.mock.calls[1]
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(String(init?.body))).toMatchObject({ procedencia: 'generada' })
   })
 
   it('401 / 503 de la Clínica vuelven como { error } con el mensaje', async () => {
-    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ error: 'no autorizado' }), { status: 401 }))
+    fetchMock.mockResolvedValueOnce(respuesta({ error: 'no autorizado' }, 401))
     expect(await clinica.pcic('funciones')).toEqual({ error: 'Clínica 401: no autorizado' })
-    fetchMock.mockResolvedValueOnce(new Response('', { status: 503, statusText: 'Service Unavailable' }))
+    fetchMock.mockResolvedValueOnce(respuesta('', 503, 'Service Unavailable'))
     const r = await clinica.produccionesPendientes(2)
     expect(clinica.esError(r) && r.error).toMatch(/503/)
   })
