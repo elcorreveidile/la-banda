@@ -8,6 +8,8 @@
  * `hasClinica()` es false y todas las llamadas devuelven { error } sin lanzar.
  */
 
+import { fetchLimpio } from '@/lib/httpLimpio'
+
 const TIMEOUT_MS = 20_000
 
 export interface EtiquetaCorpus {
@@ -79,29 +81,27 @@ function base(): string {
   return (process.env.CLINICA_URL ?? '').trim().replace(/\/+$/, '')
 }
 
-async function llamar<T>(path: string, init: RequestInit = {}): Promise<Resultado<T>> {
+async function llamar<T>(path: string, init: { method?: string; body?: string } = {}): Promise<Resultado<T>> {
   if (!hasClinica()) return { error: 'Clínica no configurada (CLINICA_URL / CLINICA_CORPUS_KEY)' }
-  const ctrl = new AbortController()
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS)
   try {
-    const res = await fetch(`${base()}${path}`, {
-      ...init,
+    // fetchLimpio y no fetch: la Clínica también es Vercel y su borde devuelve 508 si la
+    // petición llega con la traza x-vercel-id de la cadena de ticks (≥ ~6 saltos).
+    const res = await fetchLimpio(`${base()}${path}`, {
+      method: init.method ?? 'GET',
+      body: init.body,
       headers: {
         authorization: `Bearer ${process.env.CLINICA_CORPUS_KEY!.trim()}`,
         'content-type': 'application/json',
-        ...(init.headers ?? {}),
+        accept: 'application/json',
       },
-      signal: ctrl.signal,
-      cache: 'no-store',
+      timeoutMs: TIMEOUT_MS,
     })
-    const body = (await res.json().catch(() => null)) as (T & { error?: string }) | null
+    const body = (await res.json<T & { error?: string }>().catch(() => null)) as (T & { error?: string }) | null
     if (!res.ok) return { error: `Clínica ${res.status}: ${body?.error ?? res.statusText}` }
     if (!body) return { error: 'Clínica: respuesta vacía' }
     return body
   } catch (err) {
-    return { error: err instanceof Error && err.name === 'AbortError' ? `Clínica: tiempo de espera (${TIMEOUT_MS / 1000} s)` : `Clínica: ${err instanceof Error ? err.message : String(err)}` }
-  } finally {
-    clearTimeout(timer)
+    return { error: `Clínica: ${err instanceof Error ? err.message : String(err)}` }
   }
 }
 

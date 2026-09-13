@@ -55,6 +55,14 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   se puede lanzar a mano para reanudar una sesión colgada; y sin secreto, desde el panel:
   botón «Reanudar colgadas» de la tarjeta Corpus ELE (`resumeStalledSessions`, con la
   sesión del usuario; acepta `domain` por si otra tarjeta lo necesita).
+- **2026-09-14, 508 de Vercel en la cadena**: en la sesión «bar, A2» Estocolmo, Río y
+  Lisboa recibieron **508** de la Clínica (`leerEtiquetario`, `leerPcic`) y Berlín inventó
+  17 códigos por no poder leer el etiquetario. Causa comprobada desde fuera: el borde de
+  Vercel responde `508 INFINITE_LOOP_DETECTED` a toda petición cuya cabecera `x-vercel-id`
+  lleve ~6 saltos o más (con 4, 401 normal), y Vercel añade un salto a cada `fetch`
+  saliente de cada función: tick → tick → tick acumula. Regla: **las llamadas al propio
+  tick y a la Clínica van por `fetchLimpio` (`src/lib/httpLimpio.ts`, `node:https`, sin
+  traza)**, nunca por `fetch`. Cada tick nace limpio y la Clínica no ve saltos.
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución

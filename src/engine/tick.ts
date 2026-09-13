@@ -4,6 +4,8 @@
  * función y una caída no pierde la sesión (queda el traspaso pendiente).
  */
 
+import { fetchLimpio } from '@/lib/httpLimpio'
+
 export const TICK_HEADER = 'x-engine-secret'
 
 export function engineSecret(): string {
@@ -50,12 +52,12 @@ export async function kickTick(origin: string, domain: string, sessionId: string
   for (let intento = 0; intento < 2; intento++) {
     if (intento > 0) await new Promise((r) => setTimeout(r, KICK_RETRY_MS))
     try {
-      const res = await fetch(`${origin}/api/engine/tick`, {
+      // fetchLimpio y no fetch: cada tick nace sin la traza x-vercel-id acumulada (508 de Vercel).
+      const res = await fetchLimpio(`${origin}/api/engine/tick`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', [TICK_HEADER]: engineSecret(), ...bypassHeaders() },
         body: JSON.stringify({ domain, sessionId }),
-        signal: AbortSignal.timeout(10_000),
-        cache: 'no-store',
+        timeoutMs: 10_000,
       })
       if (res.ok) return
       ultimo = new Error(`tick ${res.status}`)
