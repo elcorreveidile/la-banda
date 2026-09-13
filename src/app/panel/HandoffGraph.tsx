@@ -4,6 +4,7 @@ import { useMemo } from 'react'
 import { scalePoint } from 'd3-scale'
 import { path as d3path } from 'd3-path'
 import { codenameColor } from '@/components/Codename'
+import { avatarInner } from '@/components/AgentAvatar'
 import type { AgentView, HandoffView } from '@/lib/panel/sessionView'
 
 const STATUS_COLOR: Record<string, string> = {
@@ -15,7 +16,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 const H = 190
 const NODE_Y = 110
-const R = 14
+const R = 18
 
 /**
  * Grafo de traspasos (brief §7): los agentes en el orden de la cadena;
@@ -64,9 +65,13 @@ export function HandoffGraph({ agents, handoffs }: { agents: AgentView[]; handof
         {agents.map((a) => (
           <g key={a.codename} transform={`translate(${x(a.codename)},${NODE_Y})`}>
             <circle r={R} fill="#fff" stroke={a.state === 'trabajando' ? '#3987e5' : a.state === 'esperando' ? '#eda100' : '#a8a29e'} strokeWidth={a.state === 'inactivo' ? 1 : 3} />
-            <text y={4} textAnchor="middle" className={`text-[10px] font-bold fill-current ${codenameColor(a.codename)}`}>
-              {a.codename.slice(0, 2)}
-            </text>
+            {avatarInner(a.codename) ? (
+              <g transform={`translate(${-R + 3},${-R + 3}) scale(${((R - 3) * 2) / 120})`} className={codenameColor(a.codename)} dangerouslySetInnerHTML={{ __html: avatarInner(a.codename)! }} />
+            ) : (
+              <text y={4} textAnchor="middle" className={`text-[10px] font-bold fill-current ${codenameColor(a.codename)}`}>
+                {a.codename.slice(0, 2)}
+              </text>
+            )}
             <text y={R + 14} textAnchor="middle" className="text-[10px] fill-stone-600">
               {a.codename}
             </text>

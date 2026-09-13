@@ -1,5 +1,6 @@
 import clsx from 'clsx'
 import { codenameColor } from '@/components/Codename'
+import { AgentAvatar } from '@/components/AgentAvatar'
 import type { AgentView } from '@/lib/panel/sessionView'
 
 const STATE_STYLE: Record<string, string> = {
@@ -15,7 +16,7 @@ export function AgentRow({ agents }: { agents: AgentView[] }) {
     <ul className="flex flex-wrap gap-2">
       {agents.map((a) => (
         <li key={a.codename} className={clsx('flex min-w-[6.5rem] flex-col items-center rounded border-2 bg-white px-2 py-1', STATE_STYLE[a.state])} title={a.role}>
-          <span className={clsx('flex h-8 w-8 items-center justify-center rounded-full border border-current font-bold', codenameColor(a.codename))}>{a.codename.slice(0, 2)}</span>
+          <AgentAvatar codename={a.codename} className="h-10 w-10" />
           <span className={clsx('text-xs font-bold', codenameColor(a.codename))}>{a.codename}</span>
           <span className="text-[10px]">{a.state}</span>
         </li>

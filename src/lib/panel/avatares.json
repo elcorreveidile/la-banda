@@ -1,0 +1,42 @@
+{
+  "Tokio": {
+    "role": "busca el setup",
+    "inner": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M60 10 L102 33 V77 L60 110 L18 77 V33 Z\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M32 56 H50\"/><circle fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" cx=\"82\" cy=\"56\" r=\"11\"/><circle cx=\"82\" cy=\"56\" r=\"3.5\" fill=\"currentColor\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M82 40 v5 M82 67 v5 M66 56 h5 M93 56 h5\"/>"
+  },
+  "Denver": {
+    "role": "contrasta el contexto",
+    "inner": "<rect fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" x=\"18\" y=\"14\" width=\"84\" height=\"92\" rx=\"20\"/><path fill=\"currentColor\" fill-rule=\"evenodd\" d=\"M60 14 H82 A20 20 0 0 1 102 34 V86 A20 20 0 0 1 82 106 H60 Z M70 52 H90 V60 H70 Z\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M30 56 H50\"/>"
+  },
+  "Estocolmo": {
+    "role": "dimensiona la posición",
+    "inner": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M22 16 H98 V70 C98 98 74 108 60 110 C46 108 22 98 22 70 Z\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M34 52 H50 M70 52 H86\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M34 94 v-8 M43 92 v-5 M52 94 v-8 M61 92 v-5 M70 94 v-8 M79 92 v-5 M88 91 v-5\"/>"
+  },
+  "Río": {
+    "role": "fija stop y objetivo",
+    "inner": "<ellipse fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" cx=\"60\" cy=\"60\" rx=\"38\" ry=\"46\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M34 60 H50 M70 60 H86\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M10 30 H110 M10 90 H110\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M104 24 l6 6 -6 6 M16 84 l-6 6 6 6\"/>"
+  },
+  "Berlín": {
+    "role": "redacta las condiciones",
+    "inner": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M20 18 H100 V66 L60 110 L20 66 Z\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M32 50 l16 6 M88 50 l-16 6\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M38 72 H44 V90 H38 M82 72 H76 V90 H82\"/>"
+  },
+  "Lisboa": {
+    "role": "comprueba la frescura",
+    "inner": "<circle fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" cx=\"60\" cy=\"60\" r=\"46\"/><circle fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" cx=\"60\" cy=\"38\" r=\"12\"/><path fill=\"none\" stroke=\"#FFC93B\" stroke-width=\"5\" stroke-linecap=\"round\" d=\"M60 38 V29 M60 38 H67\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M34 70 H50 M70 70 H86\"/>"
+  },
+  "Nairobi": {
+    "role": "resume en una página",
+    "inner": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M28 12 H78 L94 28 V108 H28 Z\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M78 12 V28 H94\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M38 50 H52 M68 50 H82\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M40 74 H80 M40 86 H80 M40 98 H64\"/>"
+  },
+  "Palermo": {
+    "role": "veta o aprueba",
+    "inner": "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M34 14 H86 L106 34 V86 L86 106 H34 L14 86 V34 Z\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M32 50 H50 M70 50 H88\"/><path fill=\"none\" stroke=\"#FF3B3B\" stroke-width=\"7\" stroke-linecap=\"round\" d=\"M42 72 L78 96 M78 72 L42 96\"/>"
+  },
+  "Helsinki": {
+    "role": "registra la orden",
+    "inner": "<rect fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" x=\"20\" y=\"12\" width=\"80\" height=\"96\" rx=\"6\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M20 44 H100 M20 60 H100 M20 76 H100 M20 92 H100 M36 44 V108\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M34 28 H48 M72 28 H86\"/>"
+  },
+  "Profesor": {
+    "role": "cierra e informa",
+    "inner": "<rect fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" x=\"16\" y=\"14\" width=\"88\" height=\"92\" rx=\"30\"/><circle fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" cx=\"42\" cy=\"56\" r=\"13\"/><circle fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" cx=\"78\" cy=\"56\" r=\"13\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M55 56 H65 M29 54 H16 M91 54 H104\"/><path fill=\"none\" stroke=\"currentColor\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" d=\"M50 88 H70\"/>"
+  }
+}
