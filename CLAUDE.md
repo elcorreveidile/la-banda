@@ -78,6 +78,30 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   desde el servidor con `LA_BANDA_API_KEY`. La Banda tiene base de datos propia
   (no la de Olvidos).
 
+- **Corpus ELE** (`domains/corpus-ele/`, `src/lib/clinica.ts`, `src/lib/corpus/`):
+  decidido el 2026-09-13 con Javier (plan maestro en
+  `clinica-cultural/docs/plan-corpus-ele.md`; fase 1 = API de la Clínica, #210).
+  **Los datos viven en la Clínica** (piezas, anotaciones, consentimiento,
+  etiquetario cerrado): La Banda solo produce y anota contra `/api/corpus/*`
+  con `CLINICA_URL` + `CLINICA_CORPUS_KEY` (cliente `clinica.ts`: nunca lanza,
+  devuelve `{ error }`; sin variables, demo-safe). Un solo grafo lineal
+  (Tokio → Denver → Estocolmo → Río → Berlín → Lisboa → Nairobi → Palermo →
+  Helsinki → Profesor; Lisboa devuelve a Río o Berlín; Palermo veta) y dos
+  tareas que los prompts distinguen por `payload.kind`: `muestra` (producir una
+  muestra de habla situada en Granada, nivelada por el PCIC; Río es el único que
+  redacta; Helsinki `escribirPieza` → `validada`, o `borrador` si Palermo objetó)
+  y `produccion` (anotar la redacción seudonimizada de un alumno: **señalar, no
+  corregir**, como Olvidos; Helsinki `escribirAnotaciones`). Reglas en todos los
+  prompts: PCIC antes que nada, etiquetario cerrado, procedencia declarada /
+  nunca inventar Granada. Entradas: `POST /api/v1/corpus/producir`,
+  `POST /api/v1/corpus/anotar`, tarjeta del panel, y el cron diario
+  `/api/cron/corpus` (`20 6 * * *`), que recoge de la Clínica hasta 3
+  producciones pendientes con consentimiento, relanza abiertas, abandona las
+  colgadas (6 h) y **purga la traza** de sesiones terminadas de este dominio
+  pasados `CORPUS_TRACE_DAYS` (30): la traza lleva texto de alumnos (seudonimizado)
+  y no debe vivir aquí para siempre. Nada de nombres ni correos en payloads: la
+  Clínica manda seudónimo (`p-…`) y referencia.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
@@ -98,4 +122,5 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 4. Panel completo — **hecho** (v0.4.0): `sessionView.ts` (estado por agente),
    `SessionLive` (avatares + grafo d3 + log), gráficos Recharts en trading.
    d3 solo para el grafo (`d3-scale`, `d3-path`), como pide el brief.
-4. Panel completo (grafo, métricas, avatares).
+5. Corpus ELE (dominio 3, fase 2 del plan) — **hecho** (v0.5.0): producción y
+   anotación contra la API de la Clínica; fases 3-5 en el repo clinica-cultural.

@@ -37,6 +37,16 @@ export function createMemoryStore() {
     async openSessions(domain) {
       return [...sessions.values()].filter((s) => s.domain === domain && s.status === 'open').sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
     },
+    async closedSessionsBefore(domain, before) {
+      return [...sessions.values()].filter((s) => s.domain === domain && s.status !== 'open' && s.closedAt && s.closedAt.getTime() < before.getTime())
+    },
+    async deleteSession(sid) {
+      const taskIds = [...tasks.values()].filter((t) => t.sessionId === sid).map((t) => t.id)
+      for (let i = events.length - 1; i >= 0; i--) if (events[i].sessionId === sid) events.splice(i, 1)
+      for (let i = handoffs.length - 1; i >= 0; i--) if (taskIds.includes(handoffs[i].taskId)) handoffs.splice(i, 1)
+      for (const tid of taskIds) tasks.delete(tid)
+      sessions.delete(sid)
+    },
     async createTask(input) {
       const t: Task = { id: id(), status: 'pending', createdAt: now(), ...input }
       tasks.set(t.id, t)

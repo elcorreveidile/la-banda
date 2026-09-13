@@ -29,6 +29,10 @@ export interface EngineStore {
   closeSession(id: string, status: Exclude<SessionStatus, 'open'>, finalReport?: unknown): Promise<Session>
   /** Sesiones abiertas de un dominio, de más antigua a más reciente. */
   openSessions(domain: string): Promise<Session[]>
+  /** Sesiones NO abiertas (closed/failed) del dominio cerradas antes de `before`. */
+  closedSessionsBefore(domain: string, before: Date): Promise<Session[]>
+  /** Borra una sesión con sus tareas, traspasos y eventos (fila a fila; sin transacciones). */
+  deleteSession(id: string): Promise<void>
   createTask(input: { sessionId: string; kind: string; payload: unknown; createdBy: string }): Promise<Task>
   updateTaskStatus(id: string, status: TaskStatus): Promise<void>
   createHandoff(input: { taskId: string; fromAgent: string | null; toAgent: string; payload: unknown; reason?: string | null }): Promise<Handoff>

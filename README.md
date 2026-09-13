@@ -1,14 +1,15 @@
 # La Banda
 
 Sistema de diez agentes con roles fijos, veto obligatorio y traspasos
-trazables. Dos dominios intercambiables: mesa de trading simulada y
-redacción de *Olvidos de Granada*. Nombre provisional.
+trazables. Tres dominios intercambiables: mesa de trading simulada, redacción
+de *Olvidos de Granada* y corpus ELE «un semestre en Granada». Nombre provisional.
 
-**Estado: fase 4** (panel completo). Dominios: `domains/toy` (dos agentes, para
+**Estado: fase 5** (corpus ELE). Dominios: `domains/toy` (dos agentes, para
 probar el motor), `domains/trading` (los diez roles, velas reales de BTC/USD y
-ETH/USD, cartera ficticia de 100 USD, ciclo horario por cron) y
-`domains/olvidos` (redacción de *Olvidos de Granada*: informe de objeciones y
-veredicto sobre un manuscrito).
+ETH/USD, cartera ficticia de 100 USD, ciclo horario por cron), `domains/olvidos`
+(redacción de *Olvidos de Granada*: informe de objeciones y veredicto sobre un
+manuscrito) y `domains/corpus-ele` (muestras de habla niveladas por el PCIC y
+anotación de producciones de alumnos contra la API de la Clínica Cultural).
 
 ## Stack
 
@@ -37,6 +38,7 @@ domains/            configuración de dominios (el motor no sabe nada del conten
   trading/          config.ts (diez agentes, grafo) · tools.ts (getCandles, getPortfolio, now, webSearch, writeLedger, readAll)
   olvidos/          config.ts (diez agentes, grafo) · tools.ts (readManuscript, readStyleSheet, getSectionLimits, webSearch, writeLedger, readAll)
                     hojaDeEstilo.ts (PROPUESTA) · secciones.ts (límites por sección, PROPUESTA)
+  corpus-ele/       config.ts (diez agentes, dos tareas: muestra | produccion) · tools.ts (leerEtiquetario, leerPcic, buscarPiezas, medirNivel, webSearch, escribirPieza, escribirAnotaciones, readAll)
   index.ts          registro: getDomain(), listDomains()
 src/db/             schema.ts (motor + auth_*) · trading.ts (prices, portfolio, orders_sim) · olvidos.ts (manuscripts, versions, objections)
 src/engine/
@@ -55,7 +57,12 @@ src/lib/trading/
 src/lib/olvidos/
   manuscripts.ts    manuscritos y versiones (lectura de .md/.txt/.docx con mammoth), objeciones
   metrics.ts        sesiones, veredictos, objeciones por agente, devoluciones de Lisboa
+src/lib/clinica.ts  cliente de la API del corpus de la Clínica (CLINICA_URL + CLINICA_CORPUS_KEY; nunca lanza)
+src/lib/corpus/
+  medir.ts          medidas objetivas de un texto (palabras, frases, marcas por banda) para Estocolmo
+  cycle.ts          abrir sesiones muestra/produccion · ciclo diario: pendientes de la Clínica, recover, purga de traza
 src/lib/webSearch.ts búsqueda web por la API de z.ai
+src/app/api/cron/corpus    GET diario (vercel.json); Bearer CRON_SECRET
 src/app/api/cron/trading   GET horario (vercel.json); Bearer CRON_SECRET
 src/app/api/engine/tick    POST; cabecera x-engine-secret; responde 202 y procesa en after()
 src/app/panel/      panel: cabecera, lanzadores, métricas y gráficos (Recharts), lista de sesiones,
@@ -167,3 +174,6 @@ La Banda **desde su servidor** con `Authorization: Bearer LA_BANDA_API_KEY`
 | `GET /api/v1/olvidos/manuscritos` | secciones y manuscritos recientes con veredicto |
 | `POST /api/v1/olvidos/manuscritos` | `{ title, byline?, section, text, sourceName?, createdBy? }` → guarda, abre sesión, arranca ticks (202) |
 | `GET /api/v1/olvidos/manuscritos/:id` | versiones, objeciones numeradas y veredicto |
+| `GET /api/v1/corpus` | últimas 50 sesiones del corpus con el cierre del Profesor (nunca la traza) |
+| `POST /api/v1/corpus/producir` | `{ situacion, nivel, tipo?, fuente?, licencia?, notas? }` → abre sesión `muestra`, arranca ticks (202) |
+| `POST /api/v1/corpus/anotar` | `{ ref, seudonimo, texto, nivel?, consigna?, lenguaMaterna?, origen? }` → abre sesión `produccion` (202) |

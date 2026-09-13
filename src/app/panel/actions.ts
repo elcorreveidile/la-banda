@@ -10,6 +10,8 @@ import { kickTick, selfOrigin } from '@/engine/tick'
 import { headers } from 'next/headers'
 import { createManuscript, fileToText, setVersionSession } from '@/lib/olvidos/manuscripts'
 import { getSection } from '@domains/olvidos/secciones'
+import { CORPUS_DOMAIN, abrirMuestra, type MuestraInput } from '@/lib/corpus/cycle'
+import { NIVELES, type Nivel } from '@domains/corpus-ele/config'
 
 /** Abre una sesión del dominio de juguete y deja al orquestador corriendo tras responder. */
 export async function startToySession(formData: FormData) {
@@ -92,6 +94,34 @@ export async function submitManuscript(formData: FormData) {
   after(async () => {
     try {
       await kickTick(selfOrigin(origin), 'olvidos', opened.session.id)
+    } catch (err) {
+      console.error('[la-banda] kickTick', opened.session.id, err)
+    }
+  })
+
+  redirect(`/panel?s=${opened.session.id}`)
+}
+
+const TIPOS_MUESTRA: MuestraInput['tipo'][] = ['muestra_habla', 'texto_situado', 'transcripcion_oral']
+
+/** Encarga una muestra del corpus ELE (cadena A): abre la sesión y arranca los ticks. */
+export async function startCorpusMuestra(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+
+  const situacion = String(formData.get('situacion') ?? '').trim().slice(0, 120)
+  const nivel = String(formData.get('nivel') ?? '').trim()
+  const tipo = String(formData.get('tipo') ?? 'muestra_habla').trim()
+  const notas = String(formData.get('notas') ?? '').trim().slice(0, 1000) || null
+  if (situacion.length < 2 || !(NIVELES as readonly string[]).includes(nivel) || !(TIPOS_MUESTRA as string[]).includes(tipo)) redirect('/panel')
+
+  const opened = await abrirMuestra({ situacion, nivel: nivel as Nivel, tipo: tipo as MuestraInput['tipo'], notas }, session.user.email)
+
+  const h = await headers()
+  const origin = process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('x-forwarded-host') ?? h.get('host')}`
+  after(async () => {
+    try {
+      await kickTick(selfOrigin(origin), CORPUS_DOMAIN, opened.session.id)
     } catch (err) {
       console.error('[la-banda] kickTick', opened.session.id, err)
     }

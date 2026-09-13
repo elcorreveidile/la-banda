@@ -1,4 +1,4 @@
-import { and, asc, count, eq } from 'drizzle-orm'
+import { and, asc, count, eq, inArray, lt, ne } from 'drizzle-orm'
 import type { Db } from '@/db'
 import { agents, events, handoffs, sessions, tasks } from '@/db/schema'
 import type { DomainConfig } from '@domains/types'
@@ -52,6 +52,25 @@ export function createDbStore(db: Db): EngineStore {
 
     async openSessions(domain) {
       return db.select().from(sessions).where(and(eq(sessions.domain, domain), eq(sessions.status, 'open'))).orderBy(asc(sessions.startedAt))
+    },
+
+    async closedSessionsBefore(domain, before) {
+      return db
+        .select()
+        .from(sessions)
+        .where(and(eq(sessions.domain, domain), ne(sessions.status, 'open'), lt(sessions.closedAt, before)))
+        .orderBy(asc(sessions.closedAt))
+    },
+
+    async deleteSession(id) {
+      // Orden por dependencias (FK): eventos → traspasos → tareas → sesión. Sin transacción
+      // (neon-http): si algo falla a medias, la siguiente purga lo termina.
+      const ts = await db.select({ id: tasks.id }).from(tasks).where(eq(tasks.sessionId, id))
+      const taskIds = ts.map((t) => t.id)
+      await db.delete(events).where(eq(events.sessionId, id))
+      if (taskIds.length) await db.delete(handoffs).where(inArray(handoffs.taskId, taskIds))
+      await db.delete(tasks).where(eq(tasks.sessionId, id))
+      await db.delete(sessions).where(eq(sessions.id, id))
     },
 
     async createTask(input) {
