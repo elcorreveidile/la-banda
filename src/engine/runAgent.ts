@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { AgentConfig, AgentDecision, ToolContext, ToolDef } from '@domains/types'
 import { DECIDE_TOOL_SCHEMA, parseDecision } from './decision'
-import { getProvider } from './provider'
+import { getProvider, type Provider } from './provider'
 
 /** Lo que el motor entrega a un agente en cada invocación. */
 export interface AgentInput {
@@ -18,6 +18,17 @@ export type RunAgent = (agent: AgentConfig, input: AgentInput) => Promise<AgentD
 const DECIDE = 'decide'
 const MAX_TOOL_ROUNDS = 8
 const MAX_DECIDE_RETRIES = 2
+/**
+ * Presupuesto de tiempo por invocación de agente (AGENT_BUDGET_MS, def. 150 s). Al
+ * agotarse no se abren más rondas de herramientas: se pide `decide` con lo que haya.
+ * Con llamadas de ≤120 s al proveedor, el paso queda por debajo de los 300 s del tick
+ * (una sesión del corpus se quedó colgada porque Río tardó 4 min 25 s y el kick
+ * al siguiente tick no llegó a salir).
+ */
+export function agentBudgetMs(): number {
+  const n = Number(process.env.AGENT_BUDGET_MS)
+  return Number.isFinite(n) && n > 0 ? n : 150_000
+}
 
 function effort(): 'low' | 'medium' | 'high' {
   const e = process.env.ANTHROPIC_EFFORT
@@ -63,25 +74,34 @@ function toAnthropicTool(t: ToolDef): Anthropic.Tool {
  * Bucle manual: ejecuta herramientas hasta que el modelo llama a `decide`.
  * Proveedor: z.ai (GLM) o Anthropic, según `getProvider()`; `agent.model` lo sobreescribe.
  */
-export const runAgentWithAnthropic: RunAgent = async (agent, input) => {
-  const provider = getProvider()
+export const runAgentWithAnthropic: RunAgent = (agent, input) => runAgentWith(getProvider(), agent, input)
+
+/** Igual que `runAgentWithAnthropic` pero con el proveedor inyectado (tests). */
+export async function runAgentWith(provider: Provider, agent: AgentConfig, input: AgentInput, opciones: { budgetMs?: number; now?: () => number } = {}): Promise<AgentDecision> {
   const anthropic = provider.client
   const model = agent.model || provider.model
+  const budgetMs = opciones.budgetMs ?? agentBudgetMs()
+  const now = opciones.now ?? Date.now
+  const inicio = now()
   const domainTools = new Map(input.tools.map((t) => [t.name, t]))
-  const tools: Anthropic.Tool[] = [
-    ...input.tools.map(toAnthropicTool),
-    { name: DECIDE, description: 'Entrega tu decisión final al motor. Llámala exactamente una vez, al terminar.', input_schema: DECIDE_TOOL_SCHEMA as unknown as Anthropic.Tool.InputSchema },
-  ]
+  const decideTool: Anthropic.Tool = { name: DECIDE, description: 'Entrega tu decisión final al motor. Llámala exactamente una vez, al terminar.', input_schema: DECIDE_TOOL_SCHEMA as unknown as Anthropic.Tool.InputSchema }
+  const tools: Anthropic.Tool[] = [...input.tools.map(toAnthropicTool), decideTool]
   const system = `${agent.systemPrompt.trim()}\n\n---\n${engineFraming(agent, input)}`
   const messages: Anthropic.MessageParam[] = [{ role: 'user', content: userMessage(input) }]
 
   let decideRetries = 0
+  let agotado = false
   for (let round = 0; round < MAX_TOOL_ROUNDS + MAX_DECIDE_RETRIES; round++) {
+    if (!agotado && round > 0 && now() - inicio > budgetMs) {
+      // Sin más herramientas: solo queda decidir con lo que se tiene.
+      agotado = true
+      messages.push({ role: 'user', content: `Tiempo agotado (${Math.round(budgetMs / 1000)} s): no puedes usar más herramientas. Llama a "decide" AHORA con lo que tienes; si te falta algo, dilo en el payload.` })
+    }
     const response = await anthropic.messages.create({
       model,
       max_tokens: 8000,
       system,
-      tools,
+      tools: agotado ? [decideTool] : tools,
       messages,
       ...(provider.native ? { output_config: { effort: effort() } } : {}),
     })

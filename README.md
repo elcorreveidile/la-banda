@@ -63,6 +63,7 @@ src/lib/corpus/
   cycle.ts          abrir sesiones muestra/produccion · ciclo diario: pendientes de la Clínica, recover, purga de traza
 src/lib/webSearch.ts búsqueda web por la API de z.ai
 src/app/api/cron/corpus    GET diario (vercel.json); Bearer CRON_SECRET
+src/app/api/cron/corpus-recuperar  GET horario: relanza sesiones colgadas del corpus; Bearer CRON_SECRET
 src/app/api/cron/trading   GET horario (vercel.json); Bearer CRON_SECRET
 src/app/api/engine/tick    POST; cabecera x-engine-secret; responde 202 y procesa en after()
 src/app/panel/      panel: cabecera, lanzadores, métricas y gráficos (Recharts), lista de sesiones,
