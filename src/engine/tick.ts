@@ -38,14 +38,31 @@ function bypassHeaders(): Record<string, string> {
   return s ? { 'x-vercel-protection-bypass': s } : {}
 }
 
-/** Lanza el siguiente tick. El tick responde 202 al instante, así que esto vuelve enseguida. */
+const KICK_RETRY_MS = 2_000
+
+/**
+ * Lanza el siguiente tick. El tick responde 202 al instante, así que esto vuelve enseguida.
+ * Si la petición falla (red, tiempo, no-2xx) reintenta UNA vez tras 2 s: un kick perdido
+ * deja la sesión colgada hasta el cron de recuperación.
+ */
 export async function kickTick(origin: string, domain: string, sessionId: string): Promise<void> {
-  const res = await fetch(`${origin}/api/engine/tick`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', [TICK_HEADER]: engineSecret(), ...bypassHeaders() },
-    body: JSON.stringify({ domain, sessionId }),
-    signal: AbortSignal.timeout(10_000),
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error(`tick ${res.status}`)
+  let ultimo: unknown
+  for (let intento = 0; intento < 2; intento++) {
+    if (intento > 0) await new Promise((r) => setTimeout(r, KICK_RETRY_MS))
+    try {
+      const res = await fetch(`${origin}/api/engine/tick`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', [TICK_HEADER]: engineSecret(), ...bypassHeaders() },
+        body: JSON.stringify({ domain, sessionId }),
+        signal: AbortSignal.timeout(10_000),
+        cache: 'no-store',
+      })
+      if (res.ok) return
+      ultimo = new Error(`tick ${res.status}`)
+    } catch (err) {
+      ultimo = err
+    }
+    console.error('[la-banda] kickTick fallo', intento + 1, sessionId, ultimo)
+  }
+  throw ultimo instanceof Error ? ultimo : new Error(String(ultimo))
 }

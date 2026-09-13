@@ -44,6 +44,15 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   siguiente tick con la cabecera `x-engine-secret` (= `CRON_SECRET`). Origen:
   `APP_URL` (o el de la petición). Así ningún agente depende del `maxDuration`
   y una caída deja el traspaso pendiente para el siguiente tick.
+- **2026-09-14, cadena robusta**: la primera sesión del corpus se quedó con el traspaso
+  a Berlín pendiente: Río tardó 4 min 25 s (el tick tiene `maxDuration = 300`) y el kick
+  al siguiente tick no salió. Tres remedios: (1) **presupuesto de tiempo por agente**
+  (`agentBudgetMs()`, `AGENT_BUDGET_MS`, def. 150 s): agotado, `runAgent` deja de
+  ofrecer herramientas y pide `decide` con lo que haya (150 s + una llamada ≤120 s
+  < 300 s); (2) `kickTick` **reintenta una vez** tras 2 s; (3) **cron horario de
+  recuperación** `/api/cron/corpus-recuperar` (`35 * * * *`): `recoverOpen` + kicks,
+  sin Clínica ni purga (el ciclo diario sigue en `/api/cron/corpus`). Con `CRON_SECRET`
+  se puede lanzar a mano para reanudar una sesión colgada.
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución
