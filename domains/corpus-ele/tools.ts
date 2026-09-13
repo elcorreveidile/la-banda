@@ -6,6 +6,7 @@ import { codenameOf } from '@/engine/store'
 import { webSearch } from '@/lib/webSearch'
 import * as clinica from '@/lib/clinica'
 import { medirTexto } from '@/lib/corpus/medir'
+import { extraerAnotacionesDelDossier, filtrarPorEtiquetario, fusionarAnotaciones, quitarInvalidas, type AnotacionDescartada } from '@/lib/corpus/anotaciones'
 
 const INVENTARIOS = ['funciones', 'generos-discursivos', 'gramatica', 'habilidades-interculturales', 'nociones-especificas', 'nociones-generales', 'ortografia', 'pragmatica', 'procedimientos-aprendizaje', 'pronunciacion', 'referentes-culturales', 'relacion-objetivos', 'saberes-socioculturales']
 const NIVELES = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
@@ -22,6 +23,38 @@ const anotacionSchema = {
   },
   required: ['capa', 'codigo'],
   additionalProperties: false,
+}
+
+/** Payloads de los traspasos de la tarea, del más reciente al más antiguo (para rescatar anotaciones del dossier). */
+async function payloadsDeTarea(taskId: string): Promise<unknown[]> {
+  try {
+    const hs = await db.select({ payload: handoffs.payload }).from(handoffs).where(eq(handoffs.taskId, taskId)).orderBy(asc(handoffs.createdAt))
+    return hs.map((h) => h.payload).reverse()
+  } catch (err) {
+    console.error('[la-banda] payloadsDeTarea', taskId, err)
+    return []
+  }
+}
+
+/**
+ * Prepara las anotaciones para la Clínica: normaliza (sin prefijo de capa), fusiona con
+ * las que viajan en el dossier (si se pide) y descarta las que no están en el etiquetario.
+ * Si el etiquetario no se puede leer, no filtra: la Clínica dirá cuáles sobran (400).
+ */
+async function prepararAnotaciones(input: unknown, opciones: { taskId?: string; max: number }): Promise<{ anotaciones: clinica.AnotacionCorpus[]; descartadas: AnotacionDescartada[] }> {
+  const listas: unknown[][] = [Array.isArray(input) ? (input as unknown[]) : []]
+  if (opciones.taskId) listas.push(...extraerAnotacionesDelDossier(await payloadsDeTarea(opciones.taskId)))
+  const fusionadas = fusionarAnotaciones(listas, opciones.max)
+  const et = await clinica.etiquetario()
+  if (clinica.esError(et)) return { anotaciones: fusionadas, descartadas: [] }
+  const f = filtrarPorEtiquetario(fusionadas, et)
+  return { anotaciones: f.validas, descartadas: f.descartadas }
+}
+
+/** `invalidas` del cuerpo de un 400 de la Clínica, si lo hay. */
+function invalidasDe(r: { error: string; detalle?: unknown }): unknown[] | null {
+  const d = r.detalle as { invalidas?: unknown } | undefined
+  return Array.isArray(d?.invalidas) && d.invalidas.length ? d.invalidas : null
 }
 
 /** Herramientas del dominio corpus-ele. Cada agente solo ve las de su lista. Todas devuelven { error } en vez de lanzar. */
@@ -88,7 +121,7 @@ export const corpusTools: Record<string, ToolDef> = {
 
   escribirPieza: {
     name: 'escribirPieza',
-    description: 'Registra la muestra en la Clínica (estado validada o borrador; nunca pública: publicar es humano). Llámala UNA vez con la ficha de Nairobi.',
+    description: 'Registra la muestra en la Clínica (estado validada o borrador; nunca pública: publicar es humano). Llámala UNA vez con la ficha de Nairobi. Fusiona sola las anotaciones de Berlín y Lisboa del dossier y descarta los códigos que no están en el etiquetario (los devuelve en "descartadas").',
     inputSchema: {
       type: 'object',
       properties: {
@@ -108,7 +141,11 @@ export const corpusTools: Record<string, ToolDef> = {
       additionalProperties: false,
     },
     run: async (input, ctx) => {
-      const r = await clinica.crearPieza({
+      // Fusiona lo que manda Helsinki con lo que dejaron Berlín y Lisboa en el dossier y
+      // quita lo que no está en el etiquetario: una pieza no debe quedarse sin anotaciones
+      // porque un agente escribió un código con prefijo o Nairobi perdió un array.
+      const prep = await prepararAnotaciones(input.anotaciones, { taskId: ctx.taskId, max: 60 })
+      const base: Omit<clinica.NuevaPieza, 'anotaciones'> = {
         tipo: input.tipo as clinica.NuevaPieza['tipo'],
         titulo: String(input.titulo),
         texto: String(input.texto),
@@ -120,16 +157,27 @@ export const corpusTools: Record<string, ToolDef> = {
         fenomenos: Array.isArray(input.fenomenos) ? (input.fenomenos as string[]) : [],
         estado: input.estado === 'borrador' ? 'borrador' : 'validada',
         bandaSessionId: ctx.sessionId,
-        anotaciones: Array.isArray(input.anotaciones) ? (input.anotaciones as clinica.AnotacionCorpus[]) : [],
-      })
-      if (clinica.esError(r)) return r
-      return { registrada: true, piezaId: r.pieza.id, estado: r.pieza.estado }
+      }
+      let anotaciones = prep.anotaciones
+      const descartadas = [...prep.descartadas]
+      let r = await clinica.crearPieza({ ...base, anotaciones })
+      if (clinica.esError(r)) {
+        const invalidas = invalidasDe(r)
+        if (!invalidas) return r
+        // 400 por códigos: reintento UNA vez sin ellos (nunca sin todas).
+        const q = quitarInvalidas(anotaciones, invalidas)
+        anotaciones = q.validas
+        descartadas.push(...q.descartadas)
+        r = await clinica.crearPieza({ ...base, anotaciones })
+        if (clinica.esError(r)) return r
+      }
+      return { registrada: true, piezaId: r.pieza.id, estado: r.pieza.estado, anotaciones: anotaciones.length, descartadas }
     },
   },
 
   escribirAnotaciones: {
     name: 'escribirAnotaciones',
-    description: 'Envía a la Clínica las objeciones aprobadas por Palermo sobre la producción del alumno (sustituye las anteriores de La Banda). Llámala UNA vez.',
+    description: 'Envía a la Clínica las objeciones aprobadas por Palermo sobre la producción del alumno (sustituye las anteriores de La Banda). Llámala UNA vez. Descarta sola los códigos que no están en el etiquetario ("descartadas").',
     inputSchema: {
       type: 'object',
       properties: {
@@ -140,14 +188,21 @@ export const corpusTools: Record<string, ToolDef> = {
       additionalProperties: false,
     },
     run: async (input, ctx) => {
-      const r = await clinica.escribirAnotaciones({
-        produccionTipo: 'redaccion',
-        produccionRef: String(input.produccionRef),
-        bandaSessionId: ctx.sessionId,
-        anotaciones: Array.isArray(input.anotaciones) ? (input.anotaciones as clinica.AnotacionCorpus[]) : [],
-      })
-      if (clinica.esError(r)) return r
-      return { registradas: r.anotaciones }
+      const prep = await prepararAnotaciones(input.anotaciones, { max: 40 })
+      const cuerpo = { produccionTipo: 'redaccion' as const, produccionRef: String(input.produccionRef), bandaSessionId: ctx.sessionId }
+      let anotaciones = prep.anotaciones
+      const descartadas = [...prep.descartadas]
+      let r = await clinica.escribirAnotaciones({ ...cuerpo, anotaciones })
+      if (clinica.esError(r)) {
+        const invalidas = invalidasDe(r)
+        if (!invalidas) return r
+        const q = quitarInvalidas(anotaciones, invalidas)
+        anotaciones = q.validas
+        descartadas.push(...q.descartadas)
+        r = await clinica.escribirAnotaciones({ ...cuerpo, anotaciones })
+        if (clinica.esError(r)) return r
+      }
+      return { registradas: r.anotaciones, descartadas }
     },
   },
 

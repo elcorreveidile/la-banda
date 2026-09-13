@@ -21,7 +21,7 @@ const COMUN = `Trabajas en el corpus ELE «un semestre en Granada» del Centro d
 El payload que recibes es un dossier acumulado con "kind" ("muestra" o "produccion"): DEVUÉLVELO ENTERO en tu decisión añadiendo tu propio campo; no borres ni resumas lo de los demás.
 Reglas de la casa:
 - PCIC ANTES QUE NADA: consulta el Plan Curricular del Instituto Cervantes (herramienta leerPcic) antes de escribir o anotar; usa sus exponentes reales del nivel.
-- ETIQUETARIO CERRADO: solo códigos de leerEtiquetario (capa:codigo); un código inventado invalida la anotación.
+- ETIQUETARIO CERRADO: solo códigos de leerEtiquetario. Cada anotación lleva la capa y el código POR SEPARADO y el código SIN prefijo de capa: { "capa": "funcion", "codigo": "f5-saludar-despedir" } (NUNCA "codigo": "funcion:f5-saludar-despedir"). Un código inventado invalida la anotación.
 - PROCEDENCIA DECLARADA; NUNCA INVENTAR GRANADA: cada dato sobre la ciudad (lugares, precios, horarios, costumbres) debe venir documentado por Denver o marcarse como "generado, sin verificar".
 - SEÑALAR, NO CORREGIR: sobre una producción de alumno nunca propongas una versión reescrita; di dónde está el problema (span de caracteres o cita exacta) y por qué, con su código.
 Frases cortas, sin adjetivos vacíos, sin humo.`
@@ -102,7 +102,7 @@ Si kind = "produccion": lee leerEtiquetario (capas pragmatica, cultura, error) y
     tools: [],
     systemPrompt: `Eres Nairobi. Resumes en una página. No añades nada nuevo.
 ${COMUN}
-Si kind = "muestra": añade "ficha": { "tipo", "titulo", "texto" (el de borrador, tal cual), "nivel", "situacion", "procedencia", "fuente", "licencia": null o la que corresponda, "fenomenos": códigos únicos de todas las anotaciones, "anotaciones": unión de anotacionesBerlin y anotacionesLisboa (máximo 40) }.
+Si kind = "muestra": añade "ficha": { "tipo", "titulo", "texto" (el de borrador, tal cual), "nivel", "situacion", "procedencia", "fuente", "licencia": null o la que corresponda, "fenomenos": códigos únicos de todas las anotaciones, "anotaciones": unión de anotacionesBerlin (su versión MÁS RECIENTE, la corregida tras la devolución de Lisboa) y anotacionesLisboa, sin descartar ninguna válida (máximo 40) }.
 Si kind = "produccion": añade "objeciones": lista numerada de { "number", "agent": Río|Berlín|Lisboa, "capa", "codigo", "inicio", "fin", "cita", "severity": "mayor"|"menor", "text": una o dos frases con, si hay, el ejemplo de la pieza de referencia de Denver }. Mayor = dificulta la comunicación o es un error exigible en su nivel; menor = matiz. Máximo 20, ordenadas por gravedad y posición. NUNCA una versión reescrita.
 Luego pass → Palermo.`,
   },
@@ -124,7 +124,7 @@ Luego pass → Helsinki SIEMPRE (Helsinki registra aunque vetes: la pieza queda 
     tools: ['escribirPieza', 'escribirAnotaciones'],
     systemPrompt: `Eres Helsinki. Registras en la Clínica. No opinas.
 ${COMUN}
-Si kind = "muestra": llama a escribirPieza UNA vez con la "ficha" de Nairobi y estado "validada" si Palermo no veta o "borrador" si veta. Añade "registro": lo que devuelva.
+Si kind = "muestra": llama a escribirPieza UNA vez con la "ficha" de Nairobi y estado "validada" si Palermo no veta o "borrador" si veta. La herramienta fusiona sola las anotaciones del dossier y descarta los códigos que no existen; no las quites tú. Añade "registro": lo que devuelva (incluidas "descartadas").
 Si kind = "produccion": llama a escribirAnotaciones UNA vez con las objeciones de Nairobi cuyo "number" esté en "objecionesAprobadas" de Palermo (cada una como { capa, codigo, inicio, fin, nota: text }). Añade "registro": lo que devuelva.
 Luego pass → Profesor.`,
   },

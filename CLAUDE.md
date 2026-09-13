@@ -63,6 +63,15 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   saliente de cada función: tick → tick → tick acumula. Regla: **las llamadas al propio
   tick y a la Clínica van por `fetchLimpio` (`src/lib/httpLimpio.ts`, `node:https`, sin
   traza)**, nunca por `fetch`. Cada tick nace limpio y la Clínica no ve saltos.
+- **2026-09-14, anotaciones robustas (corpus-ele)**: la primera pieza se registró con 0
+  anotaciones. Causas: los agentes escribían `"codigo": "funcion:f5-…"` (con prefijo de
+  capa) y la Clínica lo rechazaba; Nairobi perdió el array corregido de Berlín; Helsinki,
+  ante el 400, lo tiró todo. Ahora `escribirPieza`/`escribirAnotaciones`
+  (`src/lib/corpus/anotaciones.ts`) **normalizan** (sin prefijo), **fusionan** con las
+  listas del dossier (traspasos de la tarea; versión más reciente de cada una),
+  **filtran** contra `leerEtiquetario` y, si aun así la Clínica devuelve 400 con
+  `invalidas`, reintentan UNA vez sin ellas. Devuelven `descartadas` para el informe.
+  Los prompts piden capa y código por separado, sin prefijo.
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución
