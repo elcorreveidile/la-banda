@@ -56,7 +56,7 @@ describe('cliente de la Clínica', () => {
 
   it('401 / 503 de la Clínica vuelven como { error } con el mensaje', async () => {
     fetchMock.mockResolvedValueOnce(respuesta({ error: 'no autorizado' }, 401))
-    expect(await clinica.pcic('funciones')).toEqual({ error: 'Clínica 401: no autorizado' })
+    expect(await clinica.pcic('funciones')).toEqual({ error: 'Clínica 401: no autorizado', detalle: { error: 'no autorizado' } })
     fetchMock.mockResolvedValueOnce(respuesta('', 503, 'Service Unavailable'))
     const r = await clinica.produccionesPendientes(2)
     expect(clinica.esError(r) && r.error).toMatch(/503/)

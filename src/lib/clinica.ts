@@ -71,7 +71,8 @@ export interface ProduccionPendiente {
   createdAt: string
 }
 
-export type Resultado<T> = T | { error: string }
+/** Un error lleva `detalle` con el cuerpo JSON del 4xx cuando lo hay (p. ej. `invalidas` en un 400). */
+export type Resultado<T> = T | { error: string; detalle?: unknown }
 
 export function hasClinica(): boolean {
   return Boolean(process.env.CLINICA_URL?.trim() && process.env.CLINICA_CORPUS_KEY?.trim())
@@ -97,7 +98,7 @@ async function llamar<T>(path: string, init: { method?: string; body?: string } 
       timeoutMs: TIMEOUT_MS,
     })
     const body = (await res.json<T & { error?: string }>().catch(() => null)) as (T & { error?: string }) | null
-    if (!res.ok) return { error: `Clínica ${res.status}: ${body?.error ?? res.statusText}` }
+    if (!res.ok) return { error: `Clínica ${res.status}: ${body?.error ?? res.statusText}`, detalle: body ?? undefined }
     if (!body) return { error: 'Clínica: respuesta vacía' }
     return body
   } catch (err) {
@@ -105,7 +106,7 @@ async function llamar<T>(path: string, init: { method?: string; body?: string } 
   }
 }
 
-export function esError<T>(r: Resultado<T>): r is { error: string } {
+export function esError<T>(r: Resultado<T>): r is { error: string; detalle?: unknown } {
   return typeof r === 'object' && r !== null && 'error' in r && typeof (r as { error?: unknown }).error === 'string'
 }
 
