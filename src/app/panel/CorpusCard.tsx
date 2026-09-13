@@ -1,6 +1,7 @@
 import { NIVELES } from '@domains/corpus-ele/config'
 import { hasClinica } from '@/lib/clinica'
-import { startCorpusMuestra } from './actions'
+import { resumeStalledSessions, startCorpusMuestra } from './actions'
+import { CORPUS_DOMAIN } from '@/lib/corpus/cycle'
 
 /** Tarjeta del dominio corpus-ele: encargar una muestra de habla situada en Granada. Servidor. */
 export function CorpusCard() {
@@ -25,6 +26,13 @@ export function CorpusCard() {
         <input name="notas" maxLength={1000} placeholder="Notas para la cadena (opcional)" className="rounded border border-stone-300 px-2 py-1 sm:col-span-2" />
         <button type="submit" className="rounded bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-700">
           Producir muestra
+        </button>
+      </form>
+      <form action={resumeStalledSessions} className="flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-2">
+        <input type="hidden" name="domain" value={CORPUS_DOMAIN} />
+        <span className="text-xs text-stone-500">¿Una sesión parada en «esperando»? Relanza los ticks de las abiertas (y abandona las de más de 6 h), como el cron de la y 35.</span>
+        <button type="submit" className="rounded border border-stone-300 px-3 py-1.5 hover:bg-stone-100">
+          Reanudar colgadas
         </button>
       </form>
       <p className="text-xs text-stone-500">

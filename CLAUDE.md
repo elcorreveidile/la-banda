@@ -52,7 +52,9 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   < 300 s); (2) `kickTick` **reintenta una vez** tras 2 s; (3) **cron horario de
   recuperación** `/api/cron/corpus-recuperar` (`35 * * * *`): `recoverOpen` + kicks,
   sin Clínica ni purga (el ciclo diario sigue en `/api/cron/corpus`). Con `CRON_SECRET`
-  se puede lanzar a mano para reanudar una sesión colgada.
+  se puede lanzar a mano para reanudar una sesión colgada; y sin secreto, desde el panel:
+  botón «Reanudar colgadas» de la tarjeta Corpus ELE (`resumeStalledSessions`, con la
+  sesión del usuario; acepta `domain` por si otra tarjeta lo necesita).
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución
