@@ -43,10 +43,12 @@ export async function startTradingCycle() {
   const result = await runTradingCycle(session.user.email)
 
   after(async () => {
-    try {
-      await kickTick(selfOrigin(origin), 'trading', result.sessionId)
-    } catch (err) {
-      console.error('[la-banda] kickTick', result.sessionId, err)
+    for (const id of [result.sessionId, ...result.resume]) {
+      try {
+        await kickTick(selfOrigin(origin), 'trading', id)
+      } catch (err) {
+        console.error('[la-banda] kickTick', id, err)
+      }
     }
   })
 

@@ -12,10 +12,18 @@ export function engineSecret(): string {
   return s
 }
 
-/** Origen absoluto para llamarse a sí mismo: APP_URL o el de la petición. */
+/**
+ * Origen absoluto para llamarse a sí mismo. Orden: APP_URL → dominio de producción
+ * que Vercel expone en VERCEL_PROJECT_PRODUCTION_URL → origen de la petición.
+ * El origen de la petición NO vale en el cron: Vercel lo invoca por la URL generada
+ * del despliegue, que la Deployment Protection estándar deja tras el SSO, y el tick
+ * recibía una redirección en vez de ejecutarse (sesiones del cron que nunca avanzaban).
+ */
 export function selfOrigin(requestUrl?: string): string {
   const env = process.env.APP_URL?.trim()
   if (env) return env.replace(/\/$/, '')
+  const prod = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim()
+  if (prod && process.env.VERCEL_ENV === 'production') return `https://${prod.replace(/^https?:\/\//, '').replace(/\/$/, '')}`
   if (requestUrl) return new URL(requestUrl).origin
   throw new Error('Falta APP_URL')
 }

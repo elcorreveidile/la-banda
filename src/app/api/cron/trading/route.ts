@@ -13,10 +13,24 @@ export async function GET(req: Request) {
   if (req.headers.get('authorization') !== `Bearer ${engineSecret()}`) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   try {
     const result = await runTradingCycle('cron')
-    await kickTick(selfOrigin(req.url), 'trading', result.sessionId)
+    const origin = selfOrigin(req.url)
+    const kicks: Record<string, string> = {}
+    for (const id of [result.sessionId, ...result.resume]) {
+      try {
+        await kickTick(origin, 'trading', id)
+        kicks[id] = 'ok'
+      } catch (err) {
+        kicks[id] = err instanceof Error ? err.message : String(err)
+        console.error('[la-banda] cron kickTick', id, origin, err)
+      }
+    }
     return NextResponse.json({
       ok: true,
+      origin,
       sessionId: result.sessionId,
+      ticks: kicks,
+      resumed: result.resume,
+      abandoned: result.abandoned,
       cycle: result.cycle,
       candles: result.candles,
       closedPositions: result.closedPositions.map((c) => ({ symbol: c.order.symbol, reason: c.reason, pnlUsd: c.pnlUsd })),

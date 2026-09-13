@@ -50,6 +50,10 @@ export function createDbStore(db: Db): EngineStore {
       return s
     },
 
+    async openSessions(domain) {
+      return db.select().from(sessions).where(and(eq(sessions.domain, domain), eq(sessions.status, 'open'))).orderBy(asc(sessions.startedAt))
+    },
+
     async createTask(input) {
       const [t] = await db.insert(tasks).values({ id: uuid(), ...input }).returning()
       return t

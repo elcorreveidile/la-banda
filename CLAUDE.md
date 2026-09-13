@@ -30,6 +30,15 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   Deployment Protection → solo previsualizaciones). Si no, la cadena de ticks y las
   llamadas de Olvidos/por2duros acaban en el SSO. Red de seguridad: `kickTick`
   añade `x-vercel-protection-bypass` si existe `VERCEL_AUTOMATION_BYPASS_SECRET`.
+- **2026-09-13, sesiones del cron colgadas**: las 20 sesiones abiertas por el cron
+  se quedaron «en curso» sin ejecutar ni un tick, mientras las lanzadas desde el
+  panel cerraban bien. Causa: `selfOrigin(req.url)` en el cron daba la URL generada
+  del despliegue (tras el SSO de la Deployment Protection estándar) y el tick recibía
+  una redirección. Arreglo: `selfOrigin` prefiere `APP_URL`, luego
+  `VERCEL_PROJECT_PRODUCTION_URL` (dominio público, lo expone Vercel) y solo al final
+  el origen de la petición. Además, cada ciclo llama a `engine.recoverOpen`: relanza
+  los ticks de las sesiones abiertas recientes y abandona (`failed`, evento
+  `session_failed`) las de más de 90 min (`STALE_SESSION_MS`), cuyas velas ya no valen.
 - **Cadena de ticks** (`src/engine/tick.ts`, `/api/engine/tick`): en Vercel
   cada invocación procesa un paso, responde 202 y en `after()` llama al
   siguiente tick con la cabecera `x-engine-secret` (= `CRON_SECRET`). Origen:

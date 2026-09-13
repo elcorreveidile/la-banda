@@ -34,6 +34,9 @@ export function createMemoryStore() {
       Object.assign(s, { status, closedAt: now(), finalReport: finalReport ?? null })
       return s
     },
+    async openSessions(domain) {
+      return [...sessions.values()].filter((s) => s.domain === domain && s.status === 'open').sort((a, b) => a.startedAt.getTime() - b.startedAt.getTime())
+    },
     async createTask(input) {
       const t: Task = { id: id(), status: 'pending', createdAt: now(), ...input }
       tasks.set(t.id, t)

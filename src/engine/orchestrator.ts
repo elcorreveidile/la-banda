@@ -16,6 +16,13 @@ export interface Engine {
   step(domain: DomainConfig, sessionId: string): Promise<StepResult>
   /** Bucle: consume traspasos pendientes hasta que no queden o la sesión termine. */
   runSession(domain: DomainConfig, sessionId: string): Promise<Session>
+  /** Cierra como fallida una sesión abierta que ya no tiene sentido continuar (datos caducados, ticks perdidos). */
+  abandonSession(domain: DomainConfig, sessionId: string, reason: string): Promise<Session>
+  /**
+   * Revisa las sesiones abiertas del dominio: las más antiguas que `maxAgeMs` se abandonan;
+   * las recientes se devuelven en `resume` para que quien llama relance sus ticks.
+   */
+  recoverOpen(domain: DomainConfig, maxAgeMs: number, now?: number): Promise<{ resume: string[]; abandoned: string[] }>
 }
 
 function short(v: unknown, max = 160): string {
@@ -56,6 +63,33 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
         const r = await this.step(domain, sessionId)
         if (r.done) return r.session
       }
+    },
+
+    async recoverOpen(domain, maxAgeMs, now = Date.now()) {
+      const resume: string[] = []
+      const abandoned: string[] = []
+      for (const s of await store.openSessions(domain.name)) {
+        if (now - s.startedAt.getTime() > maxAgeMs) {
+          await this.abandonSession(domain, s.id, `sin avance en ${Math.round(maxAgeMs / 60_000)} min; datos caducados`)
+          abandoned.push(s.id)
+        } else {
+          resume.push(s.id)
+        }
+      }
+      return { resume, abandoned }
+    },
+
+    async abandonSession(domain, sessionId, reason) {
+      const session = await store.getSession(sessionId)
+      if (!session) throw new Error(`Sesión desconocida: ${sessionId}`)
+      if (session.status !== 'open') return session
+      const next = await store.nextPendingHandoff(sessionId)
+      if (next) {
+        await store.updateHandoff(next.handoff.id, { status: 'vetoed', reason: `abandonada: ${reason}` })
+        await store.updateTaskStatus(next.task.id, 'failed')
+      }
+      await store.addEvent({ sessionId, agentId: null, type: 'session_failed', message: `Sesión abandonada por el motor: ${reason}` })
+      return store.closeSession(sessionId, 'failed', { abandonada: true, reason })
     },
 
     async step(domain, sessionId) {
