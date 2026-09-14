@@ -126,7 +126,7 @@ export const corpusTools: Record<string, ToolDef> = {
 
   escribirPieza: {
     name: 'escribirPieza',
-    description: 'Registra la muestra en la Clínica (estado validada o borrador; nunca pública: publicar es humano). Llámala UNA vez con la ficha de Nairobi. Fusiona sola las anotaciones de Berlín y Lisboa del dossier y descarta los códigos que no están en el etiquetario (los devuelve en "descartadas").',
+    description: 'Registra la muestra en la Clínica (estado validada o borrador; nunca pública: publicar es humano). Llámala UNA vez con la ficha de Nairobi. Fusiona sola las anotaciones de Berlín y Lisboa del dossier y descarta los códigos que no están en el etiquetario (los devuelve en "descartadas"). Si la muestra se queda con 0 anotaciones, la registra como borrador aunque pidas validada ("forzadoBorrador": true).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -171,7 +171,11 @@ export const corpusTools: Record<string, ToolDef> = {
       }
       let anotaciones = prep.anotaciones
       const descartadas = [...prep.descartadas]
-      let r = await clinica.crearPieza({ ...base, anotaciones })
+      // Guarda de credibilidad (espejo de la de la Clínica): una muestra sin ni una anotación
+      // NO puede quedar "validada", diga lo que diga Helsinki. Se fuerza "borrador" de forma
+      // determinista, contando las anotaciones que finalmente entran (tras el reintento).
+      const estadoSeguro = () => (anotaciones.length === 0 ? 'borrador' : base.estado)
+      let r = await clinica.crearPieza({ ...base, estado: estadoSeguro(), anotaciones })
       if (clinica.esError(r)) {
         const invalidas = invalidasDe(r)
         if (!invalidas) return r
@@ -179,10 +183,11 @@ export const corpusTools: Record<string, ToolDef> = {
         const q = quitarInvalidas(anotaciones, invalidas)
         anotaciones = q.validas
         descartadas.push(...q.descartadas)
-        r = await clinica.crearPieza({ ...base, anotaciones })
+        r = await clinica.crearPieza({ ...base, estado: estadoSeguro(), anotaciones })
         if (clinica.esError(r)) return r
       }
-      return { registrada: true, piezaId: r.pieza.id, estado: r.pieza.estado, anotaciones: anotaciones.length, descartadas, textoOrigen: delDossier?.origen ?? 'helsinki' }
+      const forzadoBorrador = anotaciones.length === 0 && input.estado !== 'borrador'
+      return { registrada: true, piezaId: r.pieza.id, estado: r.pieza.estado, anotaciones: anotaciones.length, descartadas, forzadoBorrador, textoOrigen: delDossier?.origen ?? 'helsinki' }
     },
   },
 

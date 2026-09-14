@@ -137,6 +137,18 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   → `runAgent`), así ninguno pasa del `maxDuration` 300 s. Los pasos cortos (Tokio, Denver,
   Estocolmo…) van seguidos: una muestra baja de ~25 min a ~10. La bomba sigue cubriendo lo
   que no dé tiempo. `claimHandoff` evita que la bomba y la cadena procesen el mismo paso.
+- **2026-09-14, rúbrica de credibilidad (v0.7.0)**: tras revisar la muestra de bar A2 («Aquí
+  la tapa va con la consumición»), que salía en **usted** en una taberna, sin color oral, con la
+  lógica de la tapa incoherente y saludos a deshora, se ataca el fallo en el ORIGEN, **sin tocar
+  el motor** (todo en `domains/corpus-ele/`, así trading y olvidos no cambian): (1) **Río** ajusta
+  el TRATO al escenario (tú/vosotros en bares y sitios casuales; usted solo en gestiones formales),
+  da SIEMPRE color oral de Granada en muestra de habla, respeta la lógica local (la tapa gratis no
+  se cobra luego) y cuadra saludos/hora. (2) **Palermo** aplica una **rúbrica de credibilidad**:
+  veta además por trato inadecuado, incoherencia interna/local, falta de color oral, saludos/hora
+  incongruentes o densidad de anotación insuficiente (sigue con el flag `veredictoPalermo`, no la
+  acción `veto` del motor). (3) **Guarda de código en `escribirPieza`**: una muestra que se queda
+  con **0 anotaciones** se registra como `borrador` pase lo que pase el modelo (`forzadoBorrador`),
+  espejo de la guarda de la Clínica (v3.182). Solo prompts + ese guard.
 - **2026-09-14, calidad de las muestras (v0.6.7)**: tras revisar la muestra B2 «piso»,
   ajuste de prompts de corpus-ele: Río cuida la **coherencia interna** del escenario (nº de
   habitaciones = inquilinos, metros, precios) y da **color oral de Granada** en las muestras
