@@ -137,6 +137,12 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   → `runAgent`), así ninguno pasa del `maxDuration` 300 s. Los pasos cortos (Tokio, Denver,
   Estocolmo…) van seguidos: una muestra baja de ~25 min a ~10. La bomba sigue cubriendo lo
   que no dé tiempo. `claimHandoff` evita que la bomba y la cadena procesen el mismo paso.
+- **2026-09-14, calidad de las muestras (v0.6.7)**: tras revisar la muestra B2 «piso»,
+  ajuste de prompts de corpus-ele: Río cuida la **coherencia interna** del escenario (nº de
+  habitaciones = inquilinos, metros, precios) y da **color oral de Granada** en las muestras
+  de habla (sin caricatura); Berlín no confunde condicional de estimación con futuro de
+  probabilidad; Lisboa anota **léxico específico** del tema (fianza, suministros, comunidad…)
+  y devuelve a Río si hay **contradicciones internas**. Solo prompts.
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución
