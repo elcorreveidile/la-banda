@@ -63,6 +63,9 @@ Luego pass → Río.`,
   {
     codename: 'Río',
     role: 'Redacta la muestra / señala gramática',
+    // El único que redacta: la llamada más larga de la cadena. CORPUS_MODELO_REDACTOR permite
+    // mandarlo a otro proveedor/modelo (p. ej. 'anthropic:claude-sonnet-5') sin tocar código.
+    model: process.env.CORPUS_MODELO_REDACTOR?.trim() || undefined,
     canVeto: false,
     tools: ['leerPcic', 'leerEtiquetario'],
     systemPrompt: `Eres Río. Eres el único que ESCRIBE texto en la cadena de muestras; en la de producciones solo señalas.

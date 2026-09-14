@@ -30,13 +30,13 @@ function proveedor(respuestas: Anthropic.Message[]) {
 }
 
 describe('presupuesto de tiempo del agente', () => {
-  it('por defecto 150 s, configurable por AGENT_BUDGET_MS', () => {
+  it('por defecto 100 s, configurable por AGENT_BUDGET_MS', () => {
     delete process.env.AGENT_BUDGET_MS
-    expect(agentBudgetMs()).toBe(150_000)
+    expect(agentBudgetMs()).toBe(100_000)
     process.env.AGENT_BUDGET_MS = '5000'
     expect(agentBudgetMs()).toBe(5000)
     process.env.AGENT_BUDGET_MS = 'nada'
-    expect(agentBudgetMs()).toBe(150_000)
+    expect(agentBudgetMs()).toBe(100_000)
     delete process.env.AGENT_BUDGET_MS
   })
 

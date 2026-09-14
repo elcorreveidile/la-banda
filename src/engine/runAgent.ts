@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { AgentConfig, AgentDecision, ToolContext, ToolDef } from '@domains/types'
 import { DECIDE_TOOL_SCHEMA, parseDecision } from './decision'
-import { getProvider, type Provider } from './provider'
+import { providerFor, type Provider } from './provider'
 
 /** Lo que el motor entrega a un agente en cada invocación. */
 export interface AgentInput {
@@ -22,15 +22,14 @@ const MAX_DECIDE_RETRIES = 2
 const MAX_TOKENS = 16_000
 const AVISO_CORTADA = 'Tu respuesta se ha cortado por longitud. Llama a "decide" otra vez con SOLO tus campos nuevos o corregidos en "payload": el motor conserva el resto del dossier. No repitas el texto ni las listas de los demás.'
 /**
- * Presupuesto de tiempo por invocación de agente (AGENT_BUDGET_MS, def. 150 s). Al
- * agotarse no se abren más rondas de herramientas: se pide `decide` con lo que haya.
- * Con llamadas de ≤120 s al proveedor, el paso queda por debajo de los 300 s del tick
- * (una sesión del corpus se quedó colgada porque Río tardó 4 min 25 s y el kick
- * al siguiente tick no llegó a salir).
+ * Presupuesto de tiempo de HERRAMIENTAS por invocación de agente (AGENT_BUDGET_MS, def.
+ * 100 s). Al agotarse no se abren más rondas: se pide `decide` con lo que haya. La última
+ * llamada puede durar hasta el tope del proveedor (180 s), así que el paso queda por
+ * debajo de los 300 s del tick (100 + 180 < 300).
  */
 export function agentBudgetMs(): number {
   const n = Number(process.env.AGENT_BUDGET_MS)
-  return Number.isFinite(n) && n > 0 ? n : 150_000
+  return Number.isFinite(n) && n > 0 ? n : 100_000
 }
 
 function effort(): 'low' | 'medium' | 'high' {
@@ -82,7 +81,10 @@ function toAnthropicTool(t: ToolDef): Anthropic.Tool {
  * Bucle manual: ejecuta herramientas hasta que el modelo llama a `decide`.
  * Proveedor: z.ai (GLM) o Anthropic, según `getProvider()`; `agent.model` lo sobreescribe.
  */
-export const runAgentWithAnthropic: RunAgent = (agent, input) => runAgentWith(getProvider(), agent, input)
+export const runAgentWithAnthropic: RunAgent = (agent, input) => {
+  const { provider, model } = providerFor(agent.model)
+  return runAgentWith(provider, { ...agent, model }, input)
+}
 
 /** Igual que `runAgentWithAnthropic` pero con el proveedor inyectado (tests). */
 export async function runAgentWith(provider: Provider, agent: AgentConfig, input: AgentInput, opciones: { budgetMs?: number; now?: () => number } = {}): Promise<AgentDecision> {

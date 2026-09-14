@@ -100,6 +100,13 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   Esquema: `drizzle/0003_bomba.sql` (`handoffs.claimed_at`, `handoffs.intentos`); Javier lo
   ejecuta en Neon ANTES de desplegar. Coste asumido: hasta 1 min entre agentes.
   `/api/cron/corpus-recuperar` desaparece (lo cubre la bomba).
+- **2026-09-14, tiempos del proveedor (v0.6.1)**: la muestra B2 «piso» murió porque Río
+  (el único que redacta) agotó dos veces los 120 s del SDK; el SDK además reintentaba por
+  su cuenta (2×120 s por intento). Ahora `PROVIDER_TIMEOUT_MS` = 180 s con `maxRetries: 0`
+  (el reintento es del motor, vía la bomba), `AGENT_BUDGET_MS` por defecto 100 s (100 +
+  180 < 300 s del tick) y `providerFor(agent.model)`: un agente puede pedir otro proveedor
+  con `model: 'anthropic:claude-sonnet-5'` o `'zai:glm-5.3'` (si falta la clave, avisa y usa
+  el predeterminado). Río lo lee de `CORPUS_MODELO_REDACTOR`.
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución
