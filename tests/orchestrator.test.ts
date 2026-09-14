@@ -153,3 +153,33 @@ describe('parseDecision', () => {
     expect(parseDecision({ action: 'execute', payload: {} }).ok).toBe(false)
   })
 })
+
+describe('fusión del dossier (el motor conserva lo anterior)', () => {
+  it('pass con payload parcial: el siguiente agente recibe la unión y lo devuelto manda', async () => {
+    const r = await play({
+      Tokio: [{ action: 'pass', to: 'Palermo', payload: { propuesta: 'x', tema: 'cambiado' } }],
+      Palermo: [{ action: 'close', payload: { veredicto: 'ok' } }],
+    })
+    const palermo = r.calls.find((c) => c.codename === 'Palermo')!
+    expect(palermo.input.handoff.payload).toEqual({ tema: 'cambiado', propuesta: 'x' })
+    // close no funde: el informe final es exactamente lo que devolvió el Profesor/Palermo
+    expect(r.final.finalReport).toEqual({ veredicto: 'ok' })
+  })
+
+  it('return también funde, y un payload no-objeto sustituye', async () => {
+    const r = await play({
+      Tokio: [
+        { action: 'pass', to: 'Palermo', payload: { propuesta: 'v1' } },
+        { action: 'pass', to: 'Palermo', payload: 'texto suelto' },
+      ],
+      Palermo: [
+        { action: 'return', to: 'Tokio', payload: { objecion: 'falta detalle' }, reason: 'corto' },
+        { action: 'close', payload: {} },
+      ],
+    })
+    const tokio2 = r.calls.filter((c) => c.codename === 'Tokio')[1]
+    expect(tokio2.input.handoff.payload).toEqual({ tema: 'probar el motor', propuesta: 'v1', objecion: 'falta detalle' })
+    const palermo2 = r.calls.filter((c) => c.codename === 'Palermo')[1]
+    expect(palermo2.input.handoff.payload).toBe('texto suelto')
+  })
+})
