@@ -113,6 +113,17 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `'anthropic:claude-sonnet-5'` / `'zai:glm-5.3'` (sin clave, avisa y usa el predeterminado);
   Río lo lee de `CORPUS_MODELO_REDACTOR`; `DEFAULT_PROVIDER=anthropic|zai` cambia el
   predeterminado de todos sin quitar la clave de z.ai (la búsqueda web la sigue usando).
+- **2026-09-14, fusión profunda del dossier (v0.6.3)**: con Claude (Sonnet 5,
+  `DEFAULT_PROVIDER=anthropic`) la B2 «piso» recorrió los diez agentes en 9 min 38 s sin un
+  solo error de proveedor, pero llegó al Profesor como «fallida»: Berlín devolvió
+  `{ borrador: { anotacionesBerlin } }` (su campo anidado bajo el de Río) y la fusión
+  superficial sustituyó `borrador` entero → `ficha.texto: null`, Palermo vetó y Helsinki
+  registró la pieza `7e9e1dac…` (borrador) con un texto que no era el de Río. Ahora
+  `fundirPayload` es **profunda** (objetos planos se funden nivel a nivel; arrays y
+  primitivos sustituyen), `extraerAnotacionesDelDossier` mira también dentro de `borrador`,
+  `escribirPieza` toma el **texto del `borrador` más reciente del dossier**
+  (`extraerTextoDelDossier`; la ficha o Helsinki solo si no lo hay; devuelve `textoOrigen`)
+  y COMUN pide el campo nuevo «en la RAÍZ del payload, nunca dentro de borrador ni ficha».
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución

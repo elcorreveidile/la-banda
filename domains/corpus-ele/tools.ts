@@ -6,7 +6,7 @@ import { codenameOf } from '@/engine/store'
 import { webSearch } from '@/lib/webSearch'
 import * as clinica from '@/lib/clinica'
 import { medirTexto } from '@/lib/corpus/medir'
-import { extraerAnotacionesDelDossier, filtrarPorEtiquetario, fusionarAnotaciones, quitarInvalidas, type AnotacionDescartada } from '@/lib/corpus/anotaciones'
+import { extraerAnotacionesDelDossier, extraerTextoDelDossier, filtrarPorEtiquetario, fusionarAnotaciones, quitarInvalidas, type AnotacionDescartada } from '@/lib/corpus/anotaciones'
 
 const INVENTARIOS = ['funciones', 'generos-discursivos', 'gramatica', 'habilidades-interculturales', 'nociones-especificas', 'nociones-generales', 'ortografia', 'pragmatica', 'procedimientos-aprendizaje', 'pronunciacion', 'referentes-culturales', 'relacion-objetivos', 'saberes-socioculturales']
 const NIVELES = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
@@ -41,9 +41,9 @@ async function payloadsDeTarea(taskId: string): Promise<unknown[]> {
  * las que viajan en el dossier (si se pide) y descarta las que no están en el etiquetario.
  * Si el etiquetario no se puede leer, no filtra: la Clínica dirá cuáles sobran (400).
  */
-async function prepararAnotaciones(input: unknown, opciones: { taskId?: string; max: number }): Promise<{ anotaciones: clinica.AnotacionCorpus[]; descartadas: AnotacionDescartada[] }> {
+async function prepararAnotaciones(input: unknown, opciones: { payloads?: unknown[]; max: number }): Promise<{ anotaciones: clinica.AnotacionCorpus[]; descartadas: AnotacionDescartada[] }> {
   const listas: unknown[][] = [Array.isArray(input) ? (input as unknown[]) : []]
-  if (opciones.taskId) listas.push(...extraerAnotacionesDelDossier(await payloadsDeTarea(opciones.taskId)))
+  if (opciones.payloads) listas.push(...extraerAnotacionesDelDossier(opciones.payloads))
   const fusionadas = fusionarAnotaciones(listas, opciones.max)
   const et = await clinica.etiquetario()
   if (clinica.esError(et)) return { anotaciones: fusionadas, descartadas: [] }
@@ -144,11 +144,16 @@ export const corpusTools: Record<string, ToolDef> = {
       // Fusiona lo que manda Helsinki con lo que dejaron Berlín y Lisboa en el dossier y
       // quita lo que no está en el etiquetario: una pieza no debe quedarse sin anotaciones
       // porque un agente escribió un código con prefijo o Nairobi perdió un array.
-      const prep = await prepararAnotaciones(input.anotaciones, { taskId: ctx.taskId, max: 60 })
+      const payloads = await payloadsDeTarea(ctx.taskId)
+      const prep = await prepararAnotaciones(input.anotaciones, { payloads, max: 60 })
+      // El texto es el borrador de Río tal como viaja en el dossier (versión más reciente), no lo
+      // que Helsinki escriba: en la muestra B2 «piso» la ficha llegó con texto null y Helsinki
+      // rellenó algo para pasar el esquema. Si el dossier no lo tiene, vale lo de Helsinki.
+      const delDossier = extraerTextoDelDossier(payloads)
       const base: Omit<clinica.NuevaPieza, 'anotaciones'> = {
         tipo: input.tipo as clinica.NuevaPieza['tipo'],
         titulo: String(input.titulo),
-        texto: String(input.texto),
+        texto: delDossier?.texto ?? String(input.texto),
         nivel: String(input.nivel),
         situacion: (input.situacion as string | null | undefined) ?? null,
         procedencia: input.procedencia as clinica.NuevaPieza['procedencia'],
@@ -171,7 +176,7 @@ export const corpusTools: Record<string, ToolDef> = {
         r = await clinica.crearPieza({ ...base, anotaciones })
         if (clinica.esError(r)) return r
       }
-      return { registrada: true, piezaId: r.pieza.id, estado: r.pieza.estado, anotaciones: anotaciones.length, descartadas }
+      return { registrada: true, piezaId: r.pieza.id, estado: r.pieza.estado, anotaciones: anotaciones.length, descartadas, textoOrigen: delDossier?.origen ?? 'helsinki' }
     },
   },
 

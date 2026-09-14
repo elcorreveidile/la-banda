@@ -166,6 +166,19 @@ describe('fusión del dossier (el motor conserva lo anterior)', () => {
     expect(r.final.finalReport).toEqual({ veredicto: 'ok' })
   })
 
+  it('la fusión es profunda: un campo anidado bajo otro ajeno no borra sus hermanos', async () => {
+    const r = await play({
+      Tokio: [{ action: 'pass', to: 'Palermo', payload: { borrador: { texto: 'el diálogo', titulo: 'Piso' }, lista: [1, 2] } }],
+      Palermo: [
+        { action: 'return', to: 'Tokio', payload: { borrador: { anotacionesBerlin: [{ codigo: 'x' }] }, lista: [3] }, reason: 'anota' },
+        { action: 'close', payload: {} },
+      ],
+    })
+    const tokio2 = r.calls.filter((c) => c.codename === 'Tokio')[1]
+    // Muestra B2 «piso»: Berlín devolvió { borrador: { anotacionesBerlin } } y el texto de Río desaparecía.
+    expect(tokio2.input.handoff.payload).toEqual({ tema: 'probar el motor', borrador: { texto: 'el diálogo', titulo: 'Piso', anotacionesBerlin: [{ codigo: 'x' }] }, lista: [3] })
+  })
+
   it('return también funde, y un payload no-objeto sustituye', async () => {
     const r = await play({
       Tokio: [

@@ -69,8 +69,8 @@ export function SessionLive({ initial }: { initial: SessionView }) {
         {view.events.length === 0 && <p className="p-3 text-stone-500">Sin eventos todavía.</p>}
         <ol>
           {view.events.map((e) => (
-            <li key={e.id} className={clsx('grid grid-cols-[5.5rem_6.5rem_1fr] gap-2 border-b border-stone-100 px-3 py-1', TYPE_STYLE[e.type])}>
-              <time className="text-stone-400" dateTime={e.createdAt}>
+            <li key={e.id} className={clsx('grid grid-cols-[4.25rem_5rem_1fr] gap-2 border-b border-stone-100 px-3 py-1 sm:grid-cols-[5.5rem_6.5rem_1fr]', TYPE_STYLE[e.type])}>
+              <time className="tabular-nums text-stone-400" dateTime={e.createdAt}>
                 {new Date(e.createdAt).toLocaleTimeString('es-ES', { hour12: false })}
               </time>
               <span>{e.codename ? <Codename name={e.codename} /> : <span className="text-stone-400">motor</span>}</span>

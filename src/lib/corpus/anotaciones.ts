@@ -116,8 +116,34 @@ export function extraerAnotacionesDelDossier(payloadsRecientesPrimero: unknown[]
     if (!p || typeof p !== 'object') continue
     const o = p as Record<string, unknown>
     mirar(o, '')
-    const ficha = o.ficha
-    if (ficha && typeof ficha === 'object') mirar(ficha as Record<string, unknown>, 'ficha.')
+    for (const anidado of ['ficha', 'borrador']) {
+      const sub = o[anidado]
+      if (sub && typeof sub === 'object' && !Array.isArray(sub)) mirar(sub as Record<string, unknown>, `${anidado}.`)
+    }
   }
   return out
+}
+
+const TEXTO_MIN = 20
+
+/**
+ * El texto de la muestra según el dossier (payloads del más reciente al más antiguo):
+ * `borrador.texto` de Río (la fuente de verdad; la versión más reciente es la corregida) y,
+ * si no lo hay, `ficha.texto` de Nairobi. null si no aparece ninguno con al menos 20 caracteres.
+ */
+export function extraerTextoDelDossier(payloadsRecientesPrimero: unknown[]): { texto: string; origen: 'borrador' | 'ficha' } | null {
+  const leer = (p: unknown, campo: string): string | null => {
+    if (!p || typeof p !== 'object') return null
+    const sub = (p as Record<string, unknown>)[campo]
+    if (!sub || typeof sub !== 'object') return null
+    const t = (sub as Record<string, unknown>).texto
+    return typeof t === 'string' && t.trim().length >= TEXTO_MIN ? t : null
+  }
+  for (const origen of ['borrador', 'ficha'] as const) {
+    for (const p of payloadsRecientesPrimero) {
+      const texto = leer(p, origen)
+      if (texto) return { texto, origen }
+    }
+  }
+  return null
 }
