@@ -13,7 +13,7 @@ export interface AgentInput {
   ctx: ToolContext
 }
 
-export type RunAgent = (agent: AgentConfig, input: AgentInput) => Promise<AgentDecision>
+export type RunAgent = (agent: AgentConfig, input: AgentInput, opciones?: { deadlineMs?: number }) => Promise<AgentDecision>
 
 const DECIDE = 'decide'
 const MAX_TOOL_ROUNDS = 8
@@ -110,9 +110,9 @@ function toAnthropicTool(t: ToolDef): Anthropic.Tool {
  * Bucle manual: ejecuta herramientas hasta que el modelo llama a `decide`.
  * Proveedor: z.ai (GLM) o Anthropic, según `getProvider()`; `agent.model` lo sobreescribe.
  */
-export const runAgentWithAnthropic: RunAgent = (agent, input) => {
+export const runAgentWithAnthropic: RunAgent = (agent, input, opciones) => {
   const { provider, model } = providerFor(agent.model)
-  return runAgentWith(provider, { ...agent, model }, input)
+  return runAgentWith(provider, { ...agent, model }, input, opciones)
 }
 
 /** Igual que `runAgentWithAnthropic` pero con el proveedor inyectado (tests). */

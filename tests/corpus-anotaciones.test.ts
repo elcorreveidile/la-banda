@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extraerAnotacionesDelDossier, extraerTextoDelDossier, filtrarPorEtiquetario, fusionarAnotaciones, normalizarAnotacion, quitarInvalidas } from '@/lib/corpus/anotaciones'
+import { extraerAnotacionesDelDossier, extraerTextoDelDossier, filtrarPorEtiquetario, fusionarAnotaciones, fusionarConTexto, normalizarAnotacion, quitarInvalidas, resolverAnotacion } from '@/lib/corpus/anotaciones'
 import type { Etiquetario } from '@/lib/clinica'
 
 describe('normalizarAnotacion', () => {
@@ -66,5 +66,36 @@ describe('extraerTextoDelDossier', () => {
   it('sin borrador, vale la ficha; sin nada (o demasiado corto), null', () => {
     expect(extraerTextoDelDossier([{ ficha: { texto } }])).toEqual({ texto, origen: 'ficha' })
     expect(extraerTextoDelDossier([{ borrador: { texto: 'corto' } }, null, 'x'])).toBeNull()
+  })
+})
+
+describe('spans por cita (resolverAnotacion / fusionarConTexto)', () => {
+  const texto = 'MARTA: Hola, buenas. Llamo por el anuncio de la habitación.'
+  it('calcula inicio/fin buscando la cita exacta en el texto', () => {
+    const r = resolverAnotacion({ capa: 'funcion', codigo: 'f5-saludar-despedir', cita: 'Hola, buenas' }, texto)
+    const idx = texto.indexOf('Hola, buenas')
+    expect(r).toEqual({ anotacion: { capa: 'funcion', codigo: 'f5-saludar-despedir', inicio: idx, fin: idx + 'Hola, buenas'.length, nota: null }, citaNoEncontrada: false })
+  })
+  it('la cita que no aparece se marca como no encontrada (y no se cuela)', () => {
+    const r = resolverAnotacion({ capa: 'lexico', codigo: 'x', cita: 'no está en el texto' }, texto)
+    expect(r.anotacion).toBeNull()
+    expect(r.citaNoEncontrada).toBe(true)
+  })
+  it('sin cita, respeta el inicio/fin que traiga', () => {
+    expect(resolverAnotacion({ capa: 'nivel', codigo: 'b2', inicio: 0, fin: 5 }, texto).anotacion).toMatchObject({ inicio: 0, fin: 5 })
+  })
+  it('fusionarConTexto resuelve, deduplica y descarta las citas ausentes', () => {
+    const { anotaciones, descartadas } = fusionarConTexto(
+      [[{ capa: 'funcion', codigo: 'f5-saludar-despedir', cita: 'Hola, buenas' }, { capa: 'lexico', codigo: 'inventado', cita: 'no aparece' }]],
+      texto,
+    )
+    expect(anotaciones).toHaveLength(1)
+    expect(anotaciones[0]).toMatchObject({ codigo: 'f5-saludar-despedir', inicio: texto.indexOf('Hola, buenas') })
+    expect(descartadas.map((d) => d.motivo)).toEqual(['cita no encontrada en el texto'])
+  })
+  it('sin texto se comporta como fusionarAnotaciones', () => {
+    const { anotaciones, descartadas } = fusionarConTexto([[{ capa: 'nivel', codigo: 'a2', inicio: 1, fin: 4 }]], '')
+    expect(anotaciones).toHaveLength(1)
+    expect(descartadas).toHaveLength(0)
   })
 })

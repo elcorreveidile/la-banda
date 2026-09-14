@@ -10,8 +10,8 @@ export function TradingMetricsCard({ m }: { m: TradingMetrics }) {
   const p = m.portfolio
   const delta = p.equityUsd - p.initialUsd
   return (
-    <section className="flex flex-col gap-2 rounded border border-stone-300 bg-white p-3">
-      <p className="font-bold">Trading simulado</p>
+    <section className="flex flex-col gap-2 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+      <p className="flex items-center gap-1.5 font-bold"><span className="h-2 w-2 rounded-full bg-sky-500" />Trading simulado</p>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="patrimonio" value={usd(p.equityUsd)} tone={delta >= 0 ? 'text-emerald-700' : 'text-red-700'} />
         <Stat label="caja" value={usd(p.cashUsd)} />

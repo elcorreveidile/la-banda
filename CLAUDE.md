@@ -124,6 +124,37 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `escribirPieza` toma el **texto del `borrador` más reciente del dossier**
   (`extraerTextoDelDossier`; la ficha o Helsinki solo si no lo hay; devuelve `textoOrigen`)
   y COMUN pide el campo nuevo «en la RAÍZ del payload, nunca dentro de borrador ni ficha».
+- **2026-09-14, spans por cita y ticks encadenados (v0.6.6)**: dos mejoras para que
+  generar corpus sea rápido y fiable. (1) **Spans por cita**: los agentes de muestra
+  (Berlín, Lisboa) dan la CITA EXACTA del texto en "cita" en vez de calcular inicio/fin;
+  `escribirPieza` resuelve el span buscando la cita en el texto (`resolverAnotacion` /
+  `fusionarConTexto` en `anotaciones.ts`), y descarta las citas que no aparecen. Adiós a
+  los vetos de Palermo por «spans que no cuadran»; menos salida del modelo. (2) **Ticks
+  encadenados**: el tick sigue SIN llamar a otro tick por HTTP (eso reabría el 508), pero
+  ahora procesa VARIOS pasos seguidos dentro de la misma función (`procesarEnCadena` en
+  `tick.ts`) mientras quede presupuesto (`TICK_BUDGET_MS` 285 s, `MIN_CHAIN_MS` 90 s); cada
+  paso encadenado recibe el tiempo restante como `deadlineMs` (via `engine.step(…, { deadlineMs })`
+  → `runAgent`), así ninguno pasa del `maxDuration` 300 s. Los pasos cortos (Tokio, Denver,
+  Estocolmo…) van seguidos: una muestra baja de ~25 min a ~10. La bomba sigue cubriendo lo
+  que no dé tiempo. `claimHandoff` evita que la bomba y la cadena procesen el mismo paso.
+- **2026-09-14, rúbrica de credibilidad (v0.7.0)**: tras revisar la muestra de bar A2 («Aquí
+  la tapa va con la consumición»), que salía en **usted** en una taberna, sin color oral, con la
+  lógica de la tapa incoherente y saludos a deshora, se ataca el fallo en el ORIGEN, **sin tocar
+  el motor** (todo en `domains/corpus-ele/`, así trading y olvidos no cambian): (1) **Río** ajusta
+  el TRATO al escenario (tú/vosotros en bares y sitios casuales; usted solo en gestiones formales),
+  da SIEMPRE color oral de Granada en muestra de habla, respeta la lógica local (la tapa gratis no
+  se cobra luego) y cuadra saludos/hora. (2) **Palermo** aplica una **rúbrica de credibilidad**:
+  veta además por trato inadecuado, incoherencia interna/local, falta de color oral, saludos/hora
+  incongruentes o densidad de anotación insuficiente (sigue con el flag `veredictoPalermo`, no la
+  acción `veto` del motor). (3) **Guarda de código en `escribirPieza`**: una muestra que se queda
+  con **0 anotaciones** se registra como `borrador` pase lo que pase el modelo (`forzadoBorrador`),
+  espejo de la guarda de la Clínica (v3.182). Solo prompts + ese guard.
+- **2026-09-14, calidad de las muestras (v0.6.7)**: tras revisar la muestra B2 «piso»,
+  ajuste de prompts de corpus-ele: Río cuida la **coherencia interna** del escenario (nº de
+  habitaciones = inquilinos, metros, precios) y da **color oral de Granada** en las muestras
+  de habla (sin caricatura); Berlín no confunde condicional de estimación con futuro de
+  probabilidad; Lisboa anota **léxico específico** del tema (fianza, suministros, comunidad…)
+  y devuelve a Río si hay **contradicciones internas**. Solo prompts.
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución
@@ -135,10 +166,13 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.
-- **Panel** (`/panel`): lanza sesiones toy (orquestador en `after()`) y ciclos
-  de trading (mismo camino que el cron); tarjeta de métricas de trading
-  (`metrics.ts`); el log sondea `/api/panel/events` cada 2 s mientras la
-  sesión esté abierta.
+- **Panel** (`/panel`): **pestañas por dominio** (`?tab=corpus|trading|olvidos`,
+  def. Corpus o el dominio de la sesión elegida). Cada pestaña muestra su tarjeta
+  (Corpus / ciclo de trading + métricas / Olvidos) y filtra la lista de sesiones por
+  su dominio. El ciclo de trading se lanza desde su pestaña (mismo camino que el
+  cron). El log sondea `/api/panel/events` cada 2 s mientras la sesión esté abierta.
+  El dominio **toy** ya no tiene lanzador en el panel (era de prueba); sigue
+  registrado y lo usan los tests del motor (`tests/orchestrator.test.ts`).
 
 - **Olvidos** (`src/lib/olvidos/`, `domains/olvidos/`): manuscrito → `manuscripts`
   + `versions` (v1; `.docx` con mammoth) → sesión `olvidos` por la cadena de
