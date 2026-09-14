@@ -7,8 +7,8 @@ import { CORPUS_DOMAIN } from '@/lib/corpus/cycle'
 export function CorpusCard() {
   const conectada = hasClinica()
   return (
-    <section className="flex flex-col gap-3 rounded border border-stone-300 bg-white p-3">
-      <p className="font-bold">Corpus ELE · un semestre en Granada</p>
+    <section className="flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
+      <p className="flex items-center gap-1.5 font-bold"><span className="h-2 w-2 rounded-full bg-emerald-500" />Corpus ELE · un semestre en Granada</p>
       <form action={startCorpusMuestra} className="grid gap-2 sm:grid-cols-3">
         <input name="situacion" required minLength={2} maxLength={120} placeholder="Situación (bar, farmacia, piso…)" className="rounded border border-stone-300 px-2 py-1.5 sm:py-1" />
         <select name="nivel" required className="rounded border border-stone-300 px-2 py-1.5 sm:py-1" defaultValue="A2">
@@ -24,7 +24,7 @@ export function CorpusCard() {
           <option value="transcripcion_oral">transcripción oral</option>
         </select>
         <input name="notas" maxLength={1000} placeholder="Notas para la cadena (opcional)" className="rounded border border-stone-300 px-2 py-1.5 sm:py-1 sm:col-span-2" />
-        <button type="submit" className="rounded bg-stone-900 px-3 py-2 sm:py-1.5 text-white hover:bg-stone-700">
+        <button type="submit" className="rounded-lg bg-emerald-600 px-3 py-2 font-semibold text-white shadow-sm hover:bg-emerald-700 sm:py-1.5">
           Producir muestra
         </button>
       </form>
