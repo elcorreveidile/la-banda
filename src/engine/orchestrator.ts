@@ -7,7 +7,12 @@ export interface StepResult {
   session: Session
   /** true si no queda nada por hacer (sesión cerrada o sin traspasos pendientes). */
   done: boolean
+  /** true si otro tick ya había reclamado el traspaso (no se hizo nada). */
+  skipped?: boolean
 }
+
+/** Intentos de agente por traspaso antes de dar la sesión por perdida (error del proveedor, tick perdido). */
+export const MAX_INTENTOS = 2
 
 export interface Engine {
   /** Abre una sesión con una tarea y siembra el primer traspaso hacia `domain.entry`. */
@@ -29,6 +34,16 @@ export interface Engine {
    * (corpus-ele: producciones seudonimizadas de alumnos). Devuelve los ids borrados.
    */
   purgeClosed(domain: DomainConfig, maxAgeMs: number, now?: number): Promise<string[]>
+  /**
+   * Libera los traspasos `in_progress` reclamados hace más de `maxAgeMs` (el tick que los
+   * llevaba murió): vuelven a `pending` con un intento más, o la sesión falla si agotó
+   * los intentos. Devuelve los ids de sesión tocados.
+   */
+  releaseStale(domain: DomainConfig, maxAgeMs: number, now?: number): Promise<{ released: string[]; failed: string[] }>
+  /** ¿Hay un agente trabajando ahora mismo en la sesión (traspaso in_progress)? */
+  hasInProgress(sessionId: string): Promise<boolean>
+  /** ¿Hay un traspaso pendiente en la sesión? */
+  hasPending(sessionId: string): Promise<boolean>
 }
 
 function short(v: unknown, max = 160): string {
@@ -101,6 +116,35 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
       return { resume, abandoned }
     },
 
+    async hasInProgress(sessionId) {
+      return (await store.inProgressHandoff(sessionId)) !== null
+    },
+
+    async hasPending(sessionId) {
+      return (await store.nextPendingHandoff(sessionId)) !== null
+    },
+
+    async releaseStale(domain, maxAgeMs, now = Date.now()) {
+      const released: string[] = []
+      const failed: string[] = []
+      for (const { handoff, task, session } of await store.staleInProgress(domain.name, new Date(now - maxAgeMs))) {
+        const intentos = handoff.intentos + 1
+        const codename = codenameOf(handoff.toAgent)
+        if (intentos < MAX_INTENTOS) {
+          await store.releaseHandoff(handoff.id, intentos)
+          await store.addEvent({ sessionId: session.id, agentId: handoff.toAgent, type: 'agent_error', message: `${codename}: tick perdido (sin respuesta en ${Math.round(maxAgeMs / 60_000)} min); se reintentará (intento ${intentos + 1} de ${MAX_INTENTOS})` })
+          released.push(session.id)
+        } else {
+          await store.updateHandoff(handoff.id, { status: 'vetoed', reason: 'tick perdido; intentos agotados' })
+          await store.updateTaskStatus(task.id, 'failed')
+          await store.addEvent({ sessionId: session.id, agentId: null, type: 'session_failed', message: `Sesión detenida: ${codename} no respondió en ${MAX_INTENTOS} intentos` })
+          await store.closeSession(session.id, 'failed')
+          failed.push(session.id)
+        }
+      }
+      return { released, failed }
+    },
+
     async purgeClosed(domain, maxAgeMs, now = Date.now()) {
       const borradas: string[] = []
       for (const s of await store.closedSessionsBefore(domain.name, new Date(now - maxAgeMs))) {
@@ -137,6 +181,9 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
         const next = await store.nextPendingHandoff(sessionId)
         if (!next) return finished(session)
         const { handoff, task } = next
+
+        // Bloqueo: un solo tick procesa cada traspaso. Si otro lo reclamó, aquí no hay nada que hacer.
+        if (!(await store.claimHandoff(handoff.id, new Date()))) return { session, done: false, skipped: true }
 
         const steps = await store.countHandoffs(sessionId)
         if (steps > domain.maxSteps) {
@@ -178,6 +225,13 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
           decision = await runAgent(agent, input)
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
+          const intentos = handoff.intentos + 1
+          if (intentos < MAX_INTENTOS) {
+            // Error del proveedor (tiempo, red): el traspaso vuelve a pendiente y la bomba lo relanza.
+            await store.addEvent({ sessionId, agentId: thisAgentId, type: 'agent_error', message: `${codename} falló: ${short(msg, 300)} · se reintentará (intento ${intentos + 1} de ${MAX_INTENTOS})` })
+            await store.releaseHandoff(handoff.id, intentos)
+            return { session, done: false }
+          }
           await store.addEvent({ sessionId, agentId: thisAgentId, type: 'agent_error', message: `${codename} falló: ${short(msg, 300)}` })
           await store.updateHandoff(handoff.id, { status: 'vetoed', reason: `error del agente: ${short(msg, 300)}` })
           await store.updateTaskStatus(task.id, 'failed')

@@ -10,7 +10,8 @@ import { kickTick, selfOrigin } from '@/engine/tick'
 import { headers } from 'next/headers'
 import { createManuscript, fileToText, setVersionSession } from '@/lib/olvidos/manuscripts'
 import { getSection } from '@domains/olvidos/secciones'
-import { CORPUS_DOMAIN, STALE_SESSION_MS, abrirMuestra, type MuestraInput } from '@/lib/corpus/cycle'
+import { CORPUS_DOMAIN, abrirMuestra, type MuestraInput } from '@/lib/corpus/cycle'
+import { bombear } from '@/lib/bomba'
 import { NIVELES, type Nivel } from '@domains/corpus-ele/config'
 
 /** Abre una sesión del dominio de juguete y deja al orquestador corriendo tras responder. */
@@ -131,29 +132,21 @@ export async function startCorpusMuestra(formData: FormData) {
 }
 
 /**
- * Reanuda las sesiones colgadas de un dominio (mismo camino que el cron de
- * recuperación, pero con la sesión del usuario: sin CRON_SECRET). Relanza los ticks de
- * las abiertas recientes y abandona las de más de 6 h. Lleva al panel de la primera.
+ * Reanuda las sesiones colgadas: un ciclo de la bomba de ticks (igual que el cron de cada
+ * minuto) con la sesión del usuario, sin CRON_SECRET. Lleva al panel de la primera sesión
+ * a la que se lanzó un tick.
  */
 export async function resumeStalledSessions(formData: FormData) {
   const session = await auth()
   if (!session?.user?.email) redirect('/login')
 
-  const nombre = String(formData.get('domain') ?? CORPUS_DOMAIN).trim()
-  const domain = getDomain(nombre)
-  const { resume } = await engine.recoverOpen(domain, STALE_SESSION_MS)
+  const nombre = String(formData.get('domain') ?? '').trim()
+  const dominios = nombre ? [getDomain(nombre)] : undefined
 
   const h = await headers()
   const origin = process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('x-forwarded-host') ?? h.get('host')}`
-  after(async () => {
-    for (const id of resume) {
-      try {
-        await kickTick(selfOrigin(origin), domain.name, id)
-      } catch (err) {
-        console.error('[la-banda] kickTick (reanudar)', id, err)
-      }
-    }
-  })
+  const r = await bombear(selfOrigin(origin), dominios)
+  const primera = r.kicked[0]?.split(':').slice(1).join(':')
 
-  redirect(resume[0] ? `/panel?s=${resume[0]}` : '/panel')
+  redirect(primera ? `/panel?s=${primera}` : '/panel')
 }

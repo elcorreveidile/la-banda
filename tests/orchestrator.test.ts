@@ -183,3 +183,62 @@ describe('fusión del dossier (el motor conserva lo anterior)', () => {
     expect(palermo2.input.handoff.payload).toBe('texto suelto')
   })
 })
+
+describe('bloqueo de traspasos y reintento de agente', () => {
+  it('dos step concurrentes sobre la misma sesión: solo uno procesa, el otro se salta', async () => {
+    const mem = createMemoryStore()
+    let llamadas = 0
+    const engine = createEngine(mem.store, async (agent) => {
+      llamadas++
+      await new Promise((r) => setTimeout(r, 20))
+      return agent.codename === 'Tokio' ? { action: 'pass', to: 'Palermo', payload: {} } : { action: 'close', payload: {} }
+    })
+    const { session } = await engine.openSession(toyDomain, { kind: 'propuesta', payload: {}, createdBy: 't' })
+    const [a, b] = await Promise.all([engine.step(toyDomain, session.id), engine.step(toyDomain, session.id)])
+    expect([a.skipped, b.skipped].filter(Boolean)).toHaveLength(1)
+    expect(llamadas).toBe(1)
+    // el traspaso procesado quedó aceptado y el siguiente pendiente (nadie lo encadena)
+    expect(mem.handoffs.map((h) => h.status)).toEqual(['accepted', 'pending'])
+    expect(await engine.hasPending(session.id)).toBe(true)
+    expect(await engine.hasInProgress(session.id)).toBe(false)
+  })
+
+  it('un agente que falla deja el traspaso pendiente con un intento; al segundo fallo la sesión cae', async () => {
+    const mem = createMemoryStore()
+    let veces = 0
+    const engine = createEngine(mem.store, async () => {
+      veces++
+      throw new Error('Request timed out.')
+    })
+    const { session } = await engine.openSession(toyDomain, { kind: 'propuesta', payload: {}, createdBy: 't' })
+    const r1 = await engine.step(toyDomain, session.id)
+    expect(r1.done).toBe(false)
+    expect(mem.handoffs[0]).toMatchObject({ status: 'pending', intentos: 1, claimedAt: null })
+    expect(mem.events.filter((e) => e.type === 'agent_error')).toHaveLength(1)
+    expect(mem.events.some((e) => e.type === 'session_failed')).toBe(false)
+    const r2 = await engine.step(toyDomain, session.id)
+    expect(r2.done).toBe(true)
+    expect(r2.session.status).toBe('failed')
+    expect(veces).toBe(2)
+  })
+
+  it('releaseStale devuelve a pendiente los in_progress viejos y falla los que agotan intentos', async () => {
+    const mem = createMemoryStore()
+    const engine = createEngine(mem.store, async () => ({ action: 'close', payload: {} }))
+    const { session, handoff } = await engine.openSession(toyDomain, { kind: 'propuesta', payload: {}, createdBy: 't' })
+    const now = Date.now()
+    expect(await mem.store.claimHandoff(handoff.id, new Date(now - 10 * 60_000))).toBe(true)
+    const r = await engine.releaseStale(toyDomain, 7 * 60_000, now)
+    expect(r).toEqual({ released: [session.id], failed: [] })
+    expect(mem.handoffs[0]).toMatchObject({ status: 'pending', intentos: 1 })
+    // otra vez colgado → intentos agotados → sesión fallida
+    await mem.store.claimHandoff(handoff.id, new Date(now - 10 * 60_000))
+    const r2 = await engine.releaseStale(toyDomain, 7 * 60_000, now)
+    expect(r2).toEqual({ released: [], failed: [session.id] })
+    expect(mem.sessions.get(session.id)!.status).toBe('failed')
+    // uno reciente no se toca
+    const { handoff: h2 } = await engine.openSession(toyDomain, { kind: 'propuesta', payload: {}, createdBy: 't' })
+    await mem.store.claimHandoff(h2.id, new Date(now - 60_000))
+    expect(await engine.releaseStale(toyDomain, 7 * 60_000, now)).toEqual({ released: [], failed: [] })
+  })
+})

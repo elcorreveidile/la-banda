@@ -56,12 +56,34 @@ export function createMemoryStore() {
       tasks.get(tid)!.status = status
     },
     async createHandoff(input) {
-      const h: Handoff = { id: id(), status: 'pending', createdAt: now(), reason: input.reason ?? null, taskId: input.taskId, fromAgent: input.fromAgent, toAgent: input.toAgent, payload: input.payload }
+      const h: Handoff = { id: id(), status: 'pending', createdAt: now(), reason: input.reason ?? null, taskId: input.taskId, fromAgent: input.fromAgent, toAgent: input.toAgent, payload: input.payload, claimedAt: null, intentos: 0 }
       handoffs.push(h)
       return h
     },
     async updateHandoff(hid, patch) {
       Object.assign(handoffs.find((h) => h.id === hid)!, patch)
+    },
+    async claimHandoff(hid, at) {
+      const h = handoffs.find((h) => h.id === hid)
+      if (!h || h.status !== 'pending') return false
+      h.status = 'in_progress'
+      h.claimedAt = at
+      return true
+    },
+    async releaseHandoff(hid, intentos) {
+      const h = handoffs.find((h) => h.id === hid)!
+      h.status = 'pending'
+      h.claimedAt = null
+      h.intentos = intentos
+    },
+    async inProgressHandoff(sid) {
+      return handoffs.find((h) => h.status === 'in_progress' && tasks.get(h.taskId)?.sessionId === sid) ?? null
+    },
+    async staleInProgress(domain, before) {
+      return handoffs
+        .filter((h) => h.status === 'in_progress' && h.claimedAt && h.claimedAt.getTime() < before.getTime())
+        .map((h) => ({ handoff: h, task: tasks.get(h.taskId)!, session: sessions.get(tasks.get(h.taskId)!.sessionId)! }))
+        .filter((r) => r.session.domain === domain && r.session.status === 'open')
     },
     async nextPendingHandoff(sid) {
       const h = handoffs.find((h) => h.status === 'pending' && tasks.get(h.taskId)?.sessionId === sid)
