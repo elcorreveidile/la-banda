@@ -84,8 +84,8 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
         <aside className="flex flex-col gap-4">
           <form action={startToySession} className="flex flex-col gap-2 rounded border border-stone-300 bg-white p-3">
             <span className="font-bold">Nueva sesión · toy</span>
-            <input name="tema" required maxLength={300} placeholder="Tema a proponer" className="rounded border border-stone-300 px-2 py-1" />
-            <button type="submit" className="rounded bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-700">
+            <input name="tema" required maxLength={300} placeholder="Tema a proponer" className="rounded border border-stone-300 px-2 py-1.5 sm:py-1" />
+            <button type="submit" className="rounded bg-stone-900 px-3 py-2 sm:py-1.5 text-white hover:bg-stone-700">
               Lanzar
             </button>
             <span className="text-xs text-stone-500">Dominios cargados: {domains.map((d) => d.name).join(', ')}</span>
@@ -94,7 +94,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
           <form action={startTradingCycle} className="flex flex-col gap-2 rounded border border-stone-300 bg-white p-3">
             <span className="font-bold">Ciclo de trading</span>
             <span className="text-xs text-stone-500">Descarga velas, gestiona posiciones y lanza a los diez agentes (igual que el cron horario).</span>
-            <button type="submit" className="rounded bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-700">
+            <button type="submit" className="rounded bg-stone-900 px-3 py-2 sm:py-1.5 text-white hover:bg-stone-700">
               Lanzar ciclo ahora
             </button>
           </form>

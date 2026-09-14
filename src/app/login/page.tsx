@@ -20,9 +20,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         <form action={requestMagicLink} className="flex flex-col gap-3 rounded border border-stone-300 bg-white p-4">
           <label className="flex flex-col gap-1">
             <span>Correo</span>
-            <input name="email" type="email" required autoComplete="email" className="rounded border border-stone-300 px-2 py-1" />
+            <input name="email" type="email" required autoComplete="email" className="rounded border border-stone-300 px-2 py-1.5 sm:py-1" />
           </label>
-          <button type="submit" className="rounded bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-700">
+          <button type="submit" className="rounded bg-stone-900 px-3 py-2 sm:py-1.5 text-white hover:bg-stone-700">
             Enviar enlace
           </button>
           {error && <p className="text-red-700">No se pudo entrar. Solo los correos autorizados reciben enlace.</p>}

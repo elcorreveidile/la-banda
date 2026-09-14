@@ -15,9 +15,9 @@ export function OlvidosCard({ m }: { m: OlvidosMetrics }) {
       <p className="font-bold">Redacción de Olvidos</p>
 
       <form action={submitManuscript} className="grid gap-2 sm:grid-cols-2">
-        <input name="title" required maxLength={200} placeholder="Título" className="rounded border border-stone-300 px-2 py-1" />
-        <input name="byline" maxLength={120} placeholder="Firma (opcional)" className="rounded border border-stone-300 px-2 py-1" />
-        <select name="section" required className="rounded border border-stone-300 px-2 py-1" defaultValue="">
+        <input name="title" required maxLength={200} placeholder="Título" className="rounded border border-stone-300 px-2 py-1.5 sm:py-1" />
+        <input name="byline" maxLength={120} placeholder="Firma (opcional)" className="rounded border border-stone-300 px-2 py-1.5 sm:py-1" />
+        <select name="section" required className="rounded border border-stone-300 px-2 py-1.5 sm:py-1" defaultValue="">
           <option value="" disabled>
             Sección de destino
           </option>
@@ -28,10 +28,10 @@ export function OlvidosCard({ m }: { m: OlvidosMetrics }) {
           ))}
         </select>
         <input name="file" type="file" accept=".md,.txt,.docx,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="text-xs" />
-        <textarea name="text" rows={4} placeholder="…o pega aquí el texto (Markdown o texto plano)" className="rounded border border-stone-300 px-2 py-1 sm:col-span-2" />
+        <textarea name="text" rows={4} placeholder="…o pega aquí el texto (Markdown o texto plano)" className="rounded border border-stone-300 px-2 py-1.5 sm:py-1 sm:col-span-2" />
         <div className="flex items-center justify-between gap-2 sm:col-span-2">
           <span className="text-xs text-stone-500">Los agentes señalan, no corrigen: el resultado es un informe con objeciones numeradas y veredicto.</span>
-          <button type="submit" className="rounded bg-stone-900 px-3 py-1.5 text-white hover:bg-stone-700">
+          <button type="submit" className="rounded bg-stone-900 px-3 py-2 sm:py-1.5 text-white hover:bg-stone-700">
             Enviar a redacción
           </button>
         </div>
