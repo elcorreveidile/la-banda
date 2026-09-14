@@ -10,9 +10,13 @@ import Anthropic from '@anthropic-ai/sdk'
  * `'zai:glm-5.3'` (`providerFor`). Si falta la clave de ese proveedor, se usa el
  * predeterminado con su modelo por defecto y se avisa por consola.
  *
- * Tiempos: una sola llamada puede tardar (Río redactando un B2 pasaba de 120 s), así que
- * el tope por llamada es 180 s y el SDK NO reintenta (maxRetries 0): el reintento lo hace
- * el motor (la bomba relanza el traspaso) sin doblar el tiempo dentro de un mismo tick.
+ * Predeterminado: z.ai si hay clave, si no Anthropic; `DEFAULT_PROVIDER=anthropic|zai`
+ * lo fuerza (si esa clave existe) sin quitar la otra (la búsqueda web sigue usando z.ai).
+ *
+ * Tiempos: las llamadas van en STREAMING (`runAgent.ts`, `pedir`), con tope propio de
+ * `PROVIDER_TIMEOUT_MS` (180 s) por llamada; el `timeout` del SDK solo cubre la espera de
+ * cabeceras y el SDK NO reintenta (maxRetries 0): el reintento lo hace el motor (la bomba
+ * relanza el traspaso) sin doblar el tiempo dentro de un mismo tick.
  * Presupuesto del tick: AGENT_BUDGET_MS (100 s de herramientas) + 180 s < 300 s.
  */
 export interface Provider {
@@ -51,9 +55,12 @@ function construir(name: Provider['name']): Provider | null {
   return cache.anthropic
 }
 
-/** Proveedor predeterminado: z.ai si hay clave; si no, Anthropic. */
+/** Proveedor predeterminado: `DEFAULT_PROVIDER` si tiene clave; si no, z.ai y luego Anthropic. */
 export function getProvider(): Provider {
-  const p = construir('zai') ?? construir('anthropic')
+  const pedido = process.env.DEFAULT_PROVIDER?.trim()
+  const preferido = pedido === 'anthropic' || pedido === 'zai' ? construir(pedido) : null
+  if (pedido && !preferido) console.warn(`[la-banda] DEFAULT_PROVIDER=${pedido} sin clave o desconocido; se usa el que haya`)
+  const p = preferido ?? construir('zai') ?? construir('anthropic')
   if (!p) throw new Error('Falta ZAI_API_KEY o ANTHROPIC_API_KEY')
   return p
 }

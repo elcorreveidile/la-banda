@@ -8,6 +8,7 @@ describe('proveedor por agente', () => {
     process.env.ANTHROPIC_API_KEY = 'a'
     delete process.env.ZAI_MODEL
     delete process.env.ANTHROPIC_MODEL
+    delete process.env.DEFAULT_PROVIDER
     vi.spyOn(console, 'warn').mockImplementation(() => {})
   })
   afterEach(() => {
@@ -36,6 +37,16 @@ describe('proveedor por agente', () => {
     const r = providerFor('anthropic:claude-sonnet-5')
     expect(r.provider.name).toBe('zai')
     expect(r.model).toBe('glm-5.3')
+    expect(console.warn).toHaveBeenCalled()
+  })
+
+  it('DEFAULT_PROVIDER fuerza el predeterminado si tiene clave; si no, avisa y sigue', () => {
+    process.env.DEFAULT_PROVIDER = 'anthropic'
+    expect(getProvider().name).toBe('anthropic')
+    expect(providerFor(undefined)).toMatchObject({ provider: { name: 'anthropic' }, model: 'claude-opus-5' })
+    _resetProviders()
+    delete process.env.ANTHROPIC_API_KEY
+    expect(getProvider().name).toBe('zai')
     expect(console.warn).toHaveBeenCalled()
   })
 
