@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 32" width="160" height="32" role="img" aria-label="La Banda">
+  <g transform="translate(2 2) scale(1.1667)">
+    <rect width="24" height="24" rx="6" fill="#1c1917"/>
+    <path d="M6 15 Q9 8.5 12 15" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
+    <path d="M12 15 Q15 8.5 18 15" fill="none" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" opacity="0.85"/>
+    <circle cx="6" cy="15" r="2.1" fill="#ffffff"/>
+    <circle cx="12" cy="15" r="2.1" fill="#ffffff"/>
+    <circle cx="18" cy="15" r="2.1" fill="#fbbf24"/>
+  </g>
+  <text x="40" y="21" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="15" font-weight="700" fill="#1c1917">La Banda</text>
+</svg>

@@ -5,6 +5,7 @@ import { auth, signOut } from '@/lib/auth'
 import { db } from '@/db'
 import { sessions } from '@/db/schema'
 import { Clock } from '@/components/Clock'
+import { Logo } from '@/components/Logo'
 import { SessionLive } from './SessionLive'
 import { sessionView } from '@/lib/panel/sessionView'
 import { startTradingCycle } from './actions'
@@ -86,7 +87,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
       <header className={clsx('flex flex-wrap items-center justify-between gap-3 px-4 py-2.5', CARD)}>
         <div className="flex flex-wrap items-center gap-3">
           <span className="flex items-center gap-2">
-            <span className="grid h-6 w-6 place-items-center rounded-md bg-stone-900 text-[10px] font-bold tracking-tight text-white">LB</span>
+            <Logo className="h-6 w-6" />
             <span className="text-base font-bold tracking-tight">La Banda</span>
           </span>
           {elegida && (
