@@ -135,10 +135,13 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.
-- **Panel** (`/panel`): lanza sesiones toy (orquestador en `after()`) y ciclos
-  de trading (mismo camino que el cron); tarjeta de métricas de trading
-  (`metrics.ts`); el log sondea `/api/panel/events` cada 2 s mientras la
-  sesión esté abierta.
+- **Panel** (`/panel`): **pestañas por dominio** (`?tab=corpus|trading|olvidos`,
+  def. Corpus o el dominio de la sesión elegida). Cada pestaña muestra su tarjeta
+  (Corpus / ciclo de trading + métricas / Olvidos) y filtra la lista de sesiones por
+  su dominio. El ciclo de trading se lanza desde su pestaña (mismo camino que el
+  cron). El log sondea `/api/panel/events` cada 2 s mientras la sesión esté abierta.
+  El dominio **toy** ya no tiene lanzador en el panel (era de prueba); sigue
+  registrado y lo usan los tests del motor (`tests/orchestrator.test.ts`).
 
 - **Olvidos** (`src/lib/olvidos/`, `domains/olvidos/`): manuscrito → `manuscripts`
   + `versions` (v1; `.docx` con mammoth) → sesión `olvidos` por la cadena de
