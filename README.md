@@ -44,7 +44,7 @@ src/db/             schema.ts (motor + auth_*) · trading.ts (prices, portfolio,
 src/engine/
   orchestrator.ts   step(): un traspaso → una invocación; runSession() los encadena
   runAgent.ts       llamada al modelo con el prompt del agente y SOLO sus herramientas
-  provider.ts       z.ai (GLM) si hay ZAI_API_KEY; si no, Anthropic
+  provider.ts       z.ai (GLM) si hay ZAI_API_KEY; si no, Anthropic (DEFAULT_PROVIDER lo fuerza)
   tick.ts           kickTick: lanza un tick (lo usa la bomba src/lib/bomba.ts y quien abre una sesión)
   decision.ts       esquema de la decisión { action, to, payload, reason }
   store.ts          interfaz de persistencia (EngineStore) · dbStore.ts la implementa

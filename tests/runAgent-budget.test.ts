@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type Anthropic from '@anthropic-ai/sdk'
-import { runAgentWith, agentBudgetMs, type AgentInput } from '@/engine/runAgent'
+import { runAgentWith, agentBudgetMs, agentDeadlineMs, type AgentInput } from '@/engine/runAgent'
 import type { AgentConfig } from '@domains/types'
 import type { Provider } from '@/engine/provider'
 
@@ -23,20 +23,24 @@ const decideSinAction = (id: string) => mensaje(id, 'decide', { payload: { a: 1 
 const decide = (id: string) => mensaje(id, 'decide', { action: 'pass', to: 'Berlín', payload: { borrador: 'x' } })
 const nombres = (params: Anthropic.MessageCreateParams) => (params.tools ?? []).map((x) => (x as { name: string }).name)
 
-function proveedor(respuestas: Anthropic.Message[]) {
-  const create = vi.fn(async (_params: Anthropic.MessageCreateParams) => respuestas.shift()!)
-  const provider = { name: 'anthropic', native: false, model: 'm', client: { messages: { create } } as unknown as Anthropic } as Provider
+type Opts = { signal?: AbortSignal }
+/** Proveedor falso: `messages.stream(params, { signal }).finalMessage()` devuelve la siguiente respuesta. */
+function proveedor(respuestas: Anthropic.Message[], espera?: (signal: AbortSignal) => Promise<Anthropic.Message>) {
+  const create = vi.fn((_params: Anthropic.MessageCreateParams, opts: Opts) => ({
+    finalMessage: () => (espera ? espera(opts.signal!) : Promise.resolve(respuestas.shift()!)),
+  }))
+  const provider = { name: 'anthropic', native: false, model: 'm', client: { messages: { stream: create } } as unknown as Anthropic } as Provider
   return { provider, create }
 }
 
 describe('presupuesto de tiempo del agente', () => {
-  it('por defecto 150 s, configurable por AGENT_BUDGET_MS', () => {
+  it('por defecto 100 s, configurable por AGENT_BUDGET_MS', () => {
     delete process.env.AGENT_BUDGET_MS
-    expect(agentBudgetMs()).toBe(150_000)
+    expect(agentBudgetMs()).toBe(100_000)
     process.env.AGENT_BUDGET_MS = '5000'
     expect(agentBudgetMs()).toBe(5000)
     process.env.AGENT_BUDGET_MS = 'nada'
-    expect(agentBudgetMs()).toBe(150_000)
+    expect(agentBudgetMs()).toBe(100_000)
     delete process.env.AGENT_BUDGET_MS
   })
 
@@ -65,6 +69,31 @@ describe('presupuesto de tiempo del agente', () => {
     expect(d.action).toBe('pass')
     expect(create).toHaveBeenCalledTimes(3)
     for (const c of create.mock.calls) expect(nombres(c[0])).toEqual(['leer', 'decide'])
+  })
+})
+
+describe('tope duro por invocación (streaming con señal propia)', () => {
+  it('por defecto 270 s, configurable por AGENT_DEADLINE_MS', () => {
+    delete process.env.AGENT_DEADLINE_MS
+    expect(agentDeadlineMs()).toBe(270_000)
+    process.env.AGENT_DEADLINE_MS = '9000'
+    expect(agentDeadlineMs()).toBe(9000)
+    delete process.env.AGENT_DEADLINE_MS
+  })
+
+  it('cada llamada va en streaming con una señal de aborto', async () => {
+    const { provider, create } = proveedor([decide('d')])
+    await runAgentWith(provider, agent, input, { budgetMs: 10_000, now: () => 0 })
+    expect(create).toHaveBeenCalledTimes(1)
+    expect(create.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal)
+  })
+
+  it('si el proveedor no responde antes del tope, se aborta con un error claro', async () => {
+    // El modelo "nunca" termina: la promesa solo se rechaza cuando se aborta la señal.
+    const espera = (signal: AbortSignal) => new Promise<Anthropic.Message>((_, reject) => signal.addEventListener('abort', () => reject(new Error('aborted'))))
+    const { provider } = proveedor([], espera)
+    // plazo = max(1000, min(180 s, deadline - transcurrido)) → 1 s
+    await expect(runAgentWith(provider, agent, input, { budgetMs: 10_000, deadlineMs: 1, now: () => 0 })).rejects.toThrow(/sin respuesta del proveedor en 1 s/)
   })
 })
 

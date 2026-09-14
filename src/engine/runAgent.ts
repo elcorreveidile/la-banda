@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import type { AgentConfig, AgentDecision, ToolContext, ToolDef } from '@domains/types'
 import { DECIDE_TOOL_SCHEMA, parseDecision } from './decision'
-import { getProvider, type Provider } from './provider'
+import { PROVIDER_TIMEOUT_MS, providerFor, type Provider } from './provider'
 
 /** Lo que el motor entrega a un agente en cada invocación. */
 export interface AgentInput {
@@ -22,15 +22,43 @@ const MAX_DECIDE_RETRIES = 2
 const MAX_TOKENS = 16_000
 const AVISO_CORTADA = 'Tu respuesta se ha cortado por longitud. Llama a "decide" otra vez con SOLO tus campos nuevos o corregidos en "payload": el motor conserva el resto del dossier. No repitas el texto ni las listas de los demás.'
 /**
- * Presupuesto de tiempo por invocación de agente (AGENT_BUDGET_MS, def. 150 s). Al
- * agotarse no se abren más rondas de herramientas: se pide `decide` con lo que haya.
- * Con llamadas de ≤120 s al proveedor, el paso queda por debajo de los 300 s del tick
- * (una sesión del corpus se quedó colgada porque Río tardó 4 min 25 s y el kick
- * al siguiente tick no llegó a salir).
+ * Presupuesto de tiempo de HERRAMIENTAS por invocación de agente (AGENT_BUDGET_MS, def.
+ * 100 s). Al agotarse no se abren más rondas: se pide `decide` con lo que haya. La última
+ * llamada puede durar hasta el tope por llamada (180 s), así que el paso queda por
+ * debajo de los 300 s del tick (100 + 180 < 300).
  */
 export function agentBudgetMs(): number {
   const n = Number(process.env.AGENT_BUDGET_MS)
-  return Number.isFinite(n) && n > 0 ? n : 150_000
+  return Number.isFinite(n) && n > 0 ? n : 100_000
+}
+
+/**
+ * Tope DURO por invocación de agente, todas las rondas incluidas (AGENT_DEADLINE_MS, def.
+ * 270 s < 300 s del tick). Cada llamada al proveedor se corta en
+ * min(PROVIDER_TIMEOUT_MS, lo que quede hasta este tope).
+ */
+export function agentDeadlineMs(): number {
+  const n = Number(process.env.AGENT_DEADLINE_MS)
+  return Number.isFinite(n) && n > 0 ? n : 270_000
+}
+
+/**
+ * Una llamada al modelo en STREAMING con tope propio. El `timeout` del SDK solo cuenta hasta
+ * que llegan las cabeceras; sin streaming el servidor no manda nada hasta acabar de generar y
+ * un B2 largo en GLM pasaba de 120 s → «Request timed out» (Río y Berlín, 2026-09-14). En
+ * streaming las cabeceras llegan enseguida y el texto va goteando; el único tope es este.
+ */
+async function pedir(client: Anthropic, params: Anthropic.MessageCreateParamsNonStreaming, plazoMs: number): Promise<Anthropic.Message> {
+  const ac = new AbortController()
+  const timer = setTimeout(() => ac.abort(), plazoMs)
+  try {
+    return await client.messages.stream(params, { signal: ac.signal }).finalMessage()
+  } catch (err) {
+    if (ac.signal.aborted) throw new Error(`sin respuesta del proveedor en ${Math.round(plazoMs / 1000)} s`)
+    throw err
+  } finally {
+    clearTimeout(timer)
+  }
 }
 
 function effort(): 'low' | 'medium' | 'high' {
@@ -82,13 +110,17 @@ function toAnthropicTool(t: ToolDef): Anthropic.Tool {
  * Bucle manual: ejecuta herramientas hasta que el modelo llama a `decide`.
  * Proveedor: z.ai (GLM) o Anthropic, según `getProvider()`; `agent.model` lo sobreescribe.
  */
-export const runAgentWithAnthropic: RunAgent = (agent, input) => runAgentWith(getProvider(), agent, input)
+export const runAgentWithAnthropic: RunAgent = (agent, input) => {
+  const { provider, model } = providerFor(agent.model)
+  return runAgentWith(provider, { ...agent, model }, input)
+}
 
 /** Igual que `runAgentWithAnthropic` pero con el proveedor inyectado (tests). */
-export async function runAgentWith(provider: Provider, agent: AgentConfig, input: AgentInput, opciones: { budgetMs?: number; now?: () => number } = {}): Promise<AgentDecision> {
+export async function runAgentWith(provider: Provider, agent: AgentConfig, input: AgentInput, opciones: { budgetMs?: number; deadlineMs?: number; now?: () => number } = {}): Promise<AgentDecision> {
   const anthropic = provider.client
   const model = agent.model || provider.model
   const budgetMs = opciones.budgetMs ?? agentBudgetMs()
+  const deadlineMs = opciones.deadlineMs ?? agentDeadlineMs()
   const now = opciones.now ?? Date.now
   const inicio = now()
   const domainTools = new Map(input.tools.map((t) => [t.name, t]))
@@ -105,14 +137,15 @@ export async function runAgentWith(provider: Provider, agent: AgentConfig, input
       agotado = true
       messages.push({ role: 'user', content: `Tiempo agotado (${Math.round(budgetMs / 1000)} s): no puedes usar más herramientas. Llama a "decide" AHORA con lo que tienes; si te falta algo, dilo en el payload.` })
     }
-    const response = await anthropic.messages.create({
+    const plazoMs = Math.max(1000, Math.min(PROVIDER_TIMEOUT_MS, deadlineMs - (now() - inicio)))
+    const response = await pedir(anthropic, {
       model,
       max_tokens: MAX_TOKENS,
       system,
       tools: agotado ? [decideTool] : tools,
       messages,
       ...(provider.native ? { output_config: { effort: effort() } } : {}),
-    })
+    }, plazoMs)
 
     if (response.stop_reason === 'refusal') {
       throw new Error(`${agent.codename}: el modelo rechazó la petición (${response.stop_details?.category ?? 'sin categoría'})`)

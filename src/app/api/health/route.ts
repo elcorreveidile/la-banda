@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { sql } from 'drizzle-orm'
 import { db } from '@/db'
-import { hasProvider } from '@/engine/provider'
+import { getProvider, hasProvider } from '@/engine/provider'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,7 +18,7 @@ export async function GET(req: Request) {
     ok: true,
     vercel: { env: process.env.VERCEL_ENV ?? null, branch: process.env.VERCEL_GIT_COMMIT_REF ?? null, sha: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null },
     variables: present,
-    proveedor: hasProvider() ? (process.env.ZAI_API_KEY?.trim() ? 'zai' : 'anthropic') : null,
+    proveedor: hasProvider() ? getProvider().name : null,
   }
 
   const secret = process.env.CRON_SECRET?.trim()

@@ -100,6 +100,19 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   Esquema: `drizzle/0003_bomba.sql` (`handoffs.claimed_at`, `handoffs.intentos`); Javier lo
   ejecuta en Neon ANTES de desplegar. Coste asumido: hasta 1 min entre agentes.
   `/api/cron/corpus-recuperar` desaparece (lo cubre la bomba).
+- **2026-09-14, tiempos del proveedor (v0.6.1–0.6.2)**: la muestra B2 «piso» murió dos
+  veces por «Request timed out» (Río la primera, Berlín la segunda): cada intento duraba
+  4 min = 120 s de tope del SDK × su reintento interno. Causa de fondo: el `timeout` del SDK
+  solo cuenta hasta que llegan las cabeceras, y SIN streaming el servidor no manda nada
+  hasta acabar de generar; un B2 largo en GLM pasa de 120 s con normalidad. Ahora
+  **todas las llamadas van en streaming** (`runAgent.ts`, `pedir`: `messages.stream(…,
+  { signal }).finalMessage()`) con tope propio por llamada `min(PROVIDER_TIMEOUT_MS = 180 s,
+  lo que quede de AGENT_DEADLINE_MS = 270 s)` → error «sin respuesta del proveedor en N s»
+  que el motor reintenta vía la bomba; `maxRetries: 0` en el SDK; `AGENT_BUDGET_MS` 100 s de
+  herramientas (100 + 180 < 300 s del tick). Modelos: `providerFor(agent.model)` admite
+  `'anthropic:claude-sonnet-5'` / `'zai:glm-5.3'` (sin clave, avisa y usa el predeterminado);
+  Río lo lee de `CORPUS_MODELO_REDACTOR`; `DEFAULT_PROVIDER=anthropic|zai` cambia el
+  predeterminado de todos sin quitar la clave de z.ai (la búsqueda web la sigue usando).
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución
