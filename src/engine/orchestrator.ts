@@ -79,7 +79,12 @@ function esObjetoPlano(v: unknown): v is Record<string, unknown> {
  */
 export function fundirPayload(anterior: unknown, nuevo: unknown): unknown {
   if (!esObjetoPlano(anterior) || !esObjetoPlano(nuevo)) return nuevo
-  return { ...anterior, ...nuevo }
+  // Fusión PROFUNDA de objetos planos: si un agente devuelve `{ borrador: { anotacionesBerlin } }`
+  // (su campo anidado bajo uno ajeno), no se pierde `borrador.texto` (muestra B2 «piso», 2026-09-14).
+  // Arrays y primitivos sustituyen; una clave devuelta manda.
+  const out: Record<string, unknown> = { ...anterior }
+  for (const [k, v] of Object.entries(nuevo)) out[k] = fundirPayload(anterior[k], v)
+  return out
 }
 
 export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {

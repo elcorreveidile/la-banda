@@ -18,7 +18,7 @@ export const NIVELES = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const
 export type Nivel = (typeof NIVELES)[number]
 
 const COMUN = `Trabajas en el corpus ELE «un semestre en Granada» del Centro de Lenguas Modernas de la Universidad de Granada.
-El payload que recibes es un dossier acumulado con "kind" ("muestra" o "produccion"). En tu decisión devuelve SOLO tu campo nuevo (y los que corrijas): el motor lo funde con el dossier y conserva lo de los demás. NO repitas el texto, los avisos ni las listas de otros agentes: una respuesta larga se corta y la sesión muere.
+El payload que recibes es un dossier acumulado con "kind" ("muestra" o "produccion"). En tu decisión devuelve SOLO tu campo nuevo (y los que corrijas): el motor lo funde con el dossier y conserva lo de los demás. Tu campo va en la RAÍZ del payload (p. ej. { "anotacionesBerlin": [...] }), NUNCA dentro de "borrador", "ficha" ni de otro campo ajeno. NO repitas el texto, los avisos ni las listas de otros agentes: una respuesta larga se corta y la sesión muere.
 Reglas de la casa:
 - PCIC ANTES QUE NADA: consulta el Plan Curricular del Instituto Cervantes (herramienta leerPcic) antes de escribir o anotar; usa sus exponentes reales del nivel.
 - ETIQUETARIO CERRADO: solo códigos de leerEtiquetario. Cada anotación lleva la capa y el código POR SEPARADO y el código SIN prefijo de capa: { "capa": "funcion", "codigo": "f5-saludar-despedir" } (NUNCA "codigo": "funcion:f5-saludar-despedir"). Un código inventado invalida la anotación.

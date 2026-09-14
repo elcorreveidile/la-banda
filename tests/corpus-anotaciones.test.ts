@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { extraerAnotacionesDelDossier, filtrarPorEtiquetario, fusionarAnotaciones, normalizarAnotacion, quitarInvalidas } from '@/lib/corpus/anotaciones'
+import { extraerAnotacionesDelDossier, extraerTextoDelDossier, filtrarPorEtiquetario, fusionarAnotaciones, normalizarAnotacion, quitarInvalidas } from '@/lib/corpus/anotaciones'
 import type { Etiquetario } from '@/lib/clinica'
 
 describe('normalizarAnotacion', () => {
@@ -48,5 +48,23 @@ describe('extraerAnotacionesDelDossier', () => {
     const antiguo = { anotacionesBerlin: [{ capa: 'funcion', codigo: 'inventado' }], anotacionesLisboa: [{ capa: 'cultura', codigo: 'tapa' }] }
     const listas = extraerAnotacionesDelDossier([reciente, antiguo, null, 'x'])
     expect(listas).toEqual([reciente.anotacionesBerlin, reciente.ficha.anotaciones, antiguo.anotacionesLisboa])
+  })
+  it('también rescata listas anidadas bajo borrador (Berlín las metió ahí en la B2 «piso»)', () => {
+    const p = { borrador: { texto: 'x', anotacionesBerlin: [{ capa: 'funcion', codigo: 'f4-pedir' }] } }
+    expect(extraerAnotacionesDelDossier([p])).toEqual([p.borrador.anotacionesBerlin])
+  })
+})
+
+describe('extraerTextoDelDossier', () => {
+  const texto = 'MARTA: Hola, buenas. Llamo por el anuncio de la habitación.'
+  it('prefiere el borrador más reciente de Río sobre la ficha de Nairobi', () => {
+    const reciente = { ficha: { texto: null }, borrador: { anotacionesBerlin: [] } }
+    const rio = { borrador: { texto, titulo: 'Piso' } }
+    const viejo = { borrador: { texto: 'versión antigua del diálogo, ya corregida' } }
+    expect(extraerTextoDelDossier([reciente, rio, viejo])).toEqual({ texto, origen: 'borrador' })
+  })
+  it('sin borrador, vale la ficha; sin nada (o demasiado corto), null', () => {
+    expect(extraerTextoDelDossier([{ ficha: { texto } }])).toEqual({ texto, origen: 'ficha' })
+    expect(extraerTextoDelDossier([{ borrador: { texto: 'corto' } }, null, 'x'])).toBeNull()
   })
 })
