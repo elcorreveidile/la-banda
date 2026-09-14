@@ -45,7 +45,7 @@ src/engine/
   orchestrator.ts   step(): un traspaso → una invocación; runSession() los encadena
   runAgent.ts       llamada al modelo con el prompt del agente y SOLO sus herramientas
   provider.ts       z.ai (GLM) si hay ZAI_API_KEY; si no, Anthropic
-  tick.ts           cadena de ticks: /api/engine/tick procesa un paso y se llama a sí mismo
+  tick.ts           kickTick: lanza un tick (lo usa la bomba src/lib/bomba.ts y quien abre una sesión)
   decision.ts       esquema de la decisión { action, to, payload, reason }
   store.ts          interfaz de persistencia (EngineStore) · dbStore.ts la implementa
 src/lib/trading/
@@ -63,9 +63,9 @@ src/lib/corpus/
   cycle.ts          abrir sesiones muestra/produccion · ciclo diario: pendientes de la Clínica, recover, purga de traza
 src/lib/webSearch.ts búsqueda web por la API de z.ai
 src/app/api/cron/corpus    GET diario (vercel.json); Bearer CRON_SECRET
-src/app/api/cron/corpus-recuperar  GET horario: relanza sesiones colgadas del corpus; Bearer CRON_SECRET
+src/app/api/cron/tick      GET cada minuto: bomba de ticks (un tick por sesión con traspaso pendiente); Bearer CRON_SECRET
 src/app/api/cron/trading   GET horario (vercel.json); Bearer CRON_SECRET
-src/app/api/engine/tick    POST; cabecera x-engine-secret; responde 202 y procesa en after()
+src/app/api/engine/tick    POST; cabecera x-engine-secret; responde 202 y procesa UN paso en after() (no se encadena)
 src/app/panel/      panel: cabecera, lanzadores, métricas y gráficos (Recharts), lista de sesiones,
                     SessionLive (avatares con estado + grafo de traspasos con d3 + log en vivo)
 src/lib/panel/sessionView.ts  eventos, traspasos y estado de cada agente de una sesión

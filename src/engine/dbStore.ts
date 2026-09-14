@@ -91,6 +91,39 @@ export function createDbStore(db: Db): EngineStore {
       await db.update(handoffs).set(patch).where(eq(handoffs.id, id))
     },
 
+    async claimHandoff(id, now) {
+      const rows = await db
+        .update(handoffs)
+        .set({ status: 'in_progress', claimedAt: now })
+        .where(and(eq(handoffs.id, id), eq(handoffs.status, 'pending')))
+        .returning({ id: handoffs.id })
+      return rows.length > 0
+    },
+
+    async releaseHandoff(id, intentos) {
+      await db.update(handoffs).set({ status: 'pending', claimedAt: null, intentos }).where(eq(handoffs.id, id))
+    },
+
+    async inProgressHandoff(sessionId) {
+      const [row] = await db
+        .select({ handoff: handoffs })
+        .from(handoffs)
+        .innerJoin(tasks, eq(handoffs.taskId, tasks.id))
+        .where(and(eq(tasks.sessionId, sessionId), eq(handoffs.status, 'in_progress')))
+        .limit(1)
+      return row?.handoff ?? null
+    },
+
+    async staleInProgress(domain, before) {
+      return db
+        .select({ handoff: handoffs, task: tasks, session: sessions })
+        .from(handoffs)
+        .innerJoin(tasks, eq(handoffs.taskId, tasks.id))
+        .innerJoin(sessions, eq(tasks.sessionId, sessions.id))
+        .where(and(eq(sessions.domain, domain), eq(sessions.status, 'open'), eq(handoffs.status, 'in_progress'), lt(handoffs.claimedAt, before)))
+        .orderBy(asc(handoffs.claimedAt))
+    },
+
     async nextPendingHandoff(sessionId) {
       const [row] = await db
         .select({ handoff: handoffs, task: tasks })

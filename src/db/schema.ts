@@ -47,7 +47,7 @@ export const tasks = pgTable(
   (t) => [index('tasks_session').on(t.sessionId)],
 )
 
-export type HandoffStatus = 'pending' | 'accepted' | 'returned' | 'vetoed'
+export type HandoffStatus = 'pending' | 'in_progress' | 'accepted' | 'returned' | 'vetoed'
 
 export const handoffs = pgTable(
   'handoffs',
@@ -60,6 +60,10 @@ export const handoffs = pgTable(
     payload: jsonb('payload').notNull(),
     status: text('status').$type<HandoffStatus>().notNull().default('pending'),
     reason: text('reason'),
+    /** Cuándo un tick reclamó el traspaso (status in_progress). Bloqueo: nadie procesa dos veces el mismo paso. */
+    claimedAt: timestamp('claimed_at', { withTimezone: true }),
+    /** Intentos de agente consumidos (error del proveedor, tick perdido). Tope en el orquestador. */
+    intentos: integer('intentos').notNull().default(0),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('handoffs_task_status').on(t.taskId, t.status)],

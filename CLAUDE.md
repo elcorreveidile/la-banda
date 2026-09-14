@@ -40,10 +40,11 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   los ticks de las sesiones abiertas recientes y abandona (`failed`, evento
   `session_failed`) las de más de 90 min (`STALE_SESSION_MS`), cuyas velas ya no valen.
 - **Cadena de ticks** (`src/engine/tick.ts`, `/api/engine/tick`): en Vercel
-  cada invocación procesa un paso, responde 202 y en `after()` llama al
-  siguiente tick con la cabecera `x-engine-secret` (= `CRON_SECRET`). Origen:
-  `APP_URL` (o el de la petición). Así ningún agente depende del `maxDuration`
-  y una caída deja el traspaso pendiente para el siguiente tick.
+  cada invocación procesa UN paso, responde 202 y lo ejecuta en `after()`. Desde
+  v0.6.0 **no llama al siguiente**: la bomba (`/api/cron/tick`, cada minuto) lanza el
+  tick de cada sesión con traspaso pendiente (cabecera `x-engine-secret` =
+  `CRON_SECRET`; origen `APP_URL`). Así ningún agente depende del `maxDuration`,
+  una caída deja el traspaso pendiente y no se acumula la traza de Vercel (508).
 - **2026-09-14, cadena robusta**: la primera sesión del corpus se quedó con el traspaso
   a Berlín pendiente: Río tardó 4 min 25 s (el tick tiene `maxDuration = 300`) y el kick
   al siguiente tick no salió. Tres remedios: (1) **presupuesto de tiempo por agente**
@@ -81,6 +82,24 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   campos nuevos», `max_tokens` sube a 16000 y una salida cortada (`stop_reason:
   max_tokens` o `decide` sin `action`) recibe un aviso y un reintento en vez de tumbar
   la sesión. Compatible con toy/trading/olvidos (devolver todo sigue valiendo).
+- **2026-09-14, el motor NO se auto-encadena (v0.6.0)**: la 2.ª muestra «farmacia» volvió
+  a recibir 508 de la Clínica en el 4.º agente pese a `fetchLimpio` (Vercel inyecta la
+  traza fuera del proceso: lo que cuenta es que cada tick nacía de otro tick), Lisboa
+  murió por «Request timed out» del proveedor y el motor cerraba la sesión al primer
+  error; además dos ticks podían procesar el mismo traspaso. Ahora:
+  (1) **el tick procesa UN paso y no llama al siguiente**; la **bomba** (`src/lib/bomba.ts`,
+  `/api/cron/tick`, `* * * * *`, Vercel Pro admite cada minuto) lanza un tick por cada
+  sesión abierta con traspaso pendiente y sin agente en curso, siempre desde cero (1-2
+  saltos: sin 508). El botón «Reanudar colgadas» del panel ejecuta un ciclo de la bomba.
+  Los que abren sesión (API v1, panel, crons de trading y corpus) siguen dando el primer
+  kick. (2) **Bloqueo de traspasos**: `claimHandoff` (pending → in_progress, `claimed_at`,
+  una sola sentencia UPDATE … WHERE status='pending'); si otro tick lo reclamó, `step`
+  devuelve `skipped`. (3) **Reintento**: error de agente → el traspaso vuelve a pending con
+  `intentos+1` y la bomba lo relanza; al 2.º fallo (`MAX_INTENTOS`) la sesión cae.
+  `releaseStale` devuelve a pending los in_progress de más de 7 min (tick muerto).
+  Esquema: `drizzle/0003_bomba.sql` (`handoffs.claimed_at`, `handoffs.intentos`); Javier lo
+  ejecuta en Neon ANTES de desplegar. Coste asumido: hasta 1 min entre agentes.
+  `/api/cron/corpus-recuperar` desaparece (lo cubre la bomba).
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución

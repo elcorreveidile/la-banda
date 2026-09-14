@@ -39,6 +39,17 @@ export interface EngineStore {
   updateHandoff(id: string, patch: { status: HandoffStatus; reason?: string | null }): Promise<void>
   /** El traspaso pendiente más antiguo de la sesión, con su tarea. */
   nextPendingHandoff(sessionId: string): Promise<{ handoff: Handoff; task: Task } | null>
+  /**
+   * Reclama un traspaso pendiente para procesarlo (pending → in_progress, claimedAt = now).
+   * Atómico en una sola sentencia: si otro tick lo reclamó antes, devuelve false.
+   */
+  claimHandoff(id: string, now: Date): Promise<boolean>
+  /** Devuelve un traspaso a pendiente (tick perdido o error de agente) anotando los intentos consumidos. */
+  releaseHandoff(id: string, intentos: number): Promise<void>
+  /** El traspaso in_progress de la sesión, si lo hay. */
+  inProgressHandoff(sessionId: string): Promise<Handoff | null>
+  /** Traspasos in_progress reclamados antes de `before` (el tick que los llevaba murió), con su sesión. */
+  staleInProgress(domain: string, before: Date): Promise<{ handoff: Handoff; task: Task; session: Session }[]>
   /** Cuántos traspasos lleva la sesión (cortacircuitos de bucles). */
   countHandoffs(sessionId: string): Promise<number>
   addEvent(event: NewEvent): Promise<Event>

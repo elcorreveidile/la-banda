@@ -30,7 +30,7 @@ export function CorpusCard() {
       </form>
       <form action={resumeStalledSessions} className="flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-2">
         <input type="hidden" name="domain" value={CORPUS_DOMAIN} />
-        <span className="text-xs text-stone-500">¿Una sesión parada en «esperando»? Relanza los ticks de las abiertas (y abandona las de más de 6 h), como el cron de la y 35.</span>
+        <span className="text-xs text-stone-500">¿Una sesión parada en «esperando»? Lanza un ciclo de la bomba de ticks ahora mismo (el cron lo hace cada minuto): relanza las pendientes y abandona las de más de 6 h.</span>
         <button type="submit" className="rounded border border-stone-300 px-3 py-1.5 hover:bg-stone-100">
           Reanudar colgadas
         </button>
