@@ -18,6 +18,9 @@ export type RunAgent = (agent: AgentConfig, input: AgentInput) => Promise<AgentD
 const DECIDE = 'decide'
 const MAX_TOOL_ROUNDS = 8
 const MAX_DECIDE_RETRIES = 2
+/** Tope de salida por llamada. Con 8000 el dossier del corpus se cortaba y `decide` llegaba sin "action". */
+const MAX_TOKENS = 16_000
+const AVISO_CORTADA = 'Tu respuesta se ha cortado por longitud. Llama a "decide" otra vez con SOLO tus campos nuevos o corregidos en "payload": el motor conserva el resto del dossier. No repitas el texto ni las listas de los demás.'
 /**
  * Presupuesto de tiempo por invocación de agente (AGENT_BUDGET_MS, def. 150 s). Al
  * agotarse no se abren más rondas de herramientas: se pide `decide` con lo que haya.
@@ -41,6 +44,7 @@ export function engineFraming(agent: AgentConfig, input: AgentInput): string {
     `Formas parte de La Banda, una cadena de agentes con un trabajo cada uno. Tu codename es ${agent.codename} (${agent.role}).`,
     'No compartes memoria con los demás: solo ves la tarea, el traspaso que recibes y lo que te den tus herramientas.',
     'Cuando termines, llama a la herramienta "decide" UNA sola vez con tu decisión. No respondas con texto suelto.',
+    'En "payload" devuelve SOLO tus campos nuevos o corregidos: el motor los funde con el traspaso que has recibido (lo demás se conserva). No repitas el dossier entero.',
     '',
     'Acciones que tienes permitidas:',
   ]
@@ -63,6 +67,10 @@ function userMessage(input: AgentInput): string {
   ]
   if (input.handoff.reason) parts.push('', `Motivo del traspaso: ${input.handoff.reason}`)
   return parts.join('\n')
+}
+
+function esObjetoConAction(v: unknown): boolean {
+  return typeof v === 'object' && v !== null && typeof (v as { action?: unknown }).action === 'string'
 }
 
 function toAnthropicTool(t: ToolDef): Anthropic.Tool {
@@ -99,7 +107,7 @@ export async function runAgentWith(provider: Provider, agent: AgentConfig, input
     }
     const response = await anthropic.messages.create({
       model,
-      max_tokens: 8000,
+      max_tokens: MAX_TOKENS,
       system,
       tools: agotado ? [decideTool] : tools,
       messages,
@@ -114,6 +122,18 @@ export async function runAgentWith(provider: Provider, agent: AgentConfig, input
     messages.push({ role: 'assistant', content: response.content })
 
     const decide = toolUses.find((b) => b.name === DECIDE)
+    // Salida cortada por longitud: el proveedor devuelve el tool_use vacío o a medias
+    // (llega sin "action"). Se pide la decisión otra vez, corta.
+    const cortada = response.stop_reason === 'max_tokens' || (decide !== undefined && !esObjetoConAction(decide.input))
+    if (cortada) {
+      if (++decideRetries > MAX_DECIDE_RETRIES) throw new Error(`${agent.codename}: respuesta cortada por longitud ${MAX_DECIDE_RETRIES + 1} veces`)
+      messages.push(
+        decide
+          ? { role: 'user', content: [{ type: 'tool_result', tool_use_id: decide.id, content: AVISO_CORTADA, is_error: true }] }
+          : { role: 'user', content: AVISO_CORTADA },
+      )
+      continue
+    }
     if (decide) {
       const parsed = parseDecision(decide.input)
       if (parsed.ok) return parsed.decision

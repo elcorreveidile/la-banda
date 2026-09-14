@@ -72,6 +72,15 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   **filtran** contra `leerEtiquetario` y, si aun así la Clínica devuelve 400 con
   `invalidas`, reintentan UNA vez sin ellas. Devuelven `descartadas` para el informe.
   Los prompts piden capa y código por separado, sin prefijo.
+- **2026-09-14, el dossier lo funde el motor**: la muestra «farmacia» murió en Lisboa con
+  «decisión inválida: action: Required» ×3: el dossier viajaba ENTERO en cada traspaso
+  (texto, avisos, 20 anotaciones con notas…) y al devolverlo más lo suyo, la salida del
+  modelo se cortaba por `max_tokens` y `decide` llegaba vacío. Ahora en `pass`/`return`
+  el motor hace `{ ...traspasoRecibido, ...payloadDevuelto }` (`fundirPayload`,
+  `orchestrator.ts`; `close`/`veto` no funden), el marco común pide «devuelve SOLO tus
+  campos nuevos», `max_tokens` sube a 16000 y una salida cortada (`stop_reason:
+  max_tokens` o `decide` sin `action`) recibe un aviso y un reintento en vez de tumbar
+  la sesión. Compatible con toy/trading/olvidos (devolver todo sigue valiendo).
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución

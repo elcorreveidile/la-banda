@@ -51,6 +51,22 @@ function rejectionReason(domain: DomainConfig, agent: AgentConfig, d: AgentDecis
   }
 }
 
+/** Objeto JSON plano (no array, no null). */
+function esObjetoPlano(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
+}
+
+/**
+ * El dossier lo funde el motor: en pass/return, lo que devuelve el agente se superpone
+ * al traspaso recibido (fusión superficial; una clave devuelta sustituye a la anterior).
+ * Así cada agente puede devolver SOLO sus campos nuevos y el dossier no se corta por
+ * longitud en la salida del modelo. Si un lado no es objeto, vale lo del agente.
+ */
+export function fundirPayload(anterior: unknown, nuevo: unknown): unknown {
+  if (!esObjetoPlano(anterior) || !esObjetoPlano(nuevo)) return nuevo
+  return { ...anterior, ...nuevo }
+}
+
 export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
   return {
     async openSession(domain, input) {
@@ -180,14 +196,16 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
 
         switch (decision.action) {
           case 'pass': {
+            const payload = fundirPayload(handoff.payload, decision.payload)
             await store.updateHandoff(handoff.id, { status: 'accepted' })
-            await store.createHandoff({ taskId: task.id, fromAgent: thisAgentId, toAgent: agentId(domain.name, decision.to!), payload: decision.payload })
+            await store.createHandoff({ taskId: task.id, fromAgent: thisAgentId, toAgent: agentId(domain.name, decision.to!), payload })
             await store.addEvent({ sessionId, agentId: thisAgentId, type: 'pass', message: `${codename} pasa a ${decision.to}: ${short(decision.payload)}` })
             break
           }
           case 'return': {
+            const payload = fundirPayload(handoff.payload, decision.payload)
             await store.updateHandoff(handoff.id, { status: 'returned', reason: decision.reason })
-            await store.createHandoff({ taskId: task.id, fromAgent: thisAgentId, toAgent: agentId(domain.name, decision.to!), payload: decision.payload, reason: decision.reason })
+            await store.createHandoff({ taskId: task.id, fromAgent: thisAgentId, toAgent: agentId(domain.name, decision.to!), payload, reason: decision.reason })
             await store.addEvent({ sessionId, agentId: thisAgentId, type: 'return', message: `${codename} devuelve a ${decision.to}: ${decision.reason}` })
             break
           }

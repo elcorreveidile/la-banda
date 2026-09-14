@@ -18,6 +18,8 @@ const input: AgentInput = {
 const mensaje = (id: string, name: string, input: unknown): Anthropic.Message =>
   ({ id, type: 'message', role: 'assistant', model: 'x', stop_reason: 'tool_use', stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 }, content: [{ type: 'tool_use', id, name, input }] }) as unknown as Anthropic.Message
 const usaHerramienta = (id: string) => mensaje(id, 'leer', {})
+const cortado = (id: string): Anthropic.Message => ({ ...mensaje(id, 'decide', {}), stop_reason: 'max_tokens' }) as unknown as Anthropic.Message
+const decideSinAction = (id: string) => mensaje(id, 'decide', { payload: { a: 1 } })
 const decide = (id: string) => mensaje(id, 'decide', { action: 'pass', to: 'Berlín', payload: { borrador: 'x' } })
 const nombres = (params: Anthropic.MessageCreateParams) => (params.tools ?? []).map((x) => (x as { name: string }).name)
 
@@ -63,5 +65,25 @@ describe('presupuesto de tiempo del agente', () => {
     expect(d.action).toBe('pass')
     expect(create).toHaveBeenCalledTimes(3)
     for (const c of create.mock.calls) expect(nombres(c[0])).toEqual(['leer', 'decide'])
+  })
+})
+
+describe('respuesta cortada por longitud', () => {
+  it('stop_reason max_tokens → aviso y nueva petición; luego decide', async () => {
+    const { provider, create } = proveedor([cortado('c1'), decide('d')])
+    const d = await runAgentWith(provider, agent, input, { budgetMs: 10_000, now: () => 0 })
+    expect(d.action).toBe('pass')
+    expect(create).toHaveBeenCalledTimes(2)
+    const segunda = create.mock.calls[1][0]
+    expect(segunda.messages.some((m) => JSON.stringify(m.content).includes('cortado por longitud'))).toBe(true)
+  })
+  it('decide sin action (tool_use a medias) cuenta como cortada', async () => {
+    const { provider, create } = proveedor([decideSinAction('c1'), decide('d')])
+    await runAgentWith(provider, agent, input, { budgetMs: 10_000, now: () => 0 })
+    expect(create).toHaveBeenCalledTimes(2)
+  })
+  it('tres cortes seguidos → error claro', async () => {
+    const { provider } = proveedor([cortado('1'), cortado('2'), cortado('3'), cortado('4')])
+    await expect(runAgentWith(provider, agent, input, { budgetMs: 10_000, now: () => 0 })).rejects.toThrow(/cortada por longitud/)
   })
 })
