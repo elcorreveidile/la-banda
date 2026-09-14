@@ -18,7 +18,7 @@ export interface Engine {
   /** Abre una sesión con una tarea y siembra el primer traspaso hacia `domain.entry`. */
   openSession(domain: DomainConfig, task: { kind: string; payload: unknown; createdBy: string }): Promise<{ session: Session; task: Task; handoff: Handoff }>
   /** Procesa UN traspaso pendiente (una invocación de agente). Base de la cadena de ticks. */
-  step(domain: DomainConfig, sessionId: string): Promise<StepResult>
+  step(domain: DomainConfig, sessionId: string, opciones?: { deadlineMs?: number }): Promise<StepResult>
   /** Bucle: consume traspasos pendientes hasta que no queden o la sesión termine. */
   runSession(domain: DomainConfig, sessionId: string): Promise<Session>
   /** Cierra como fallida una sesión abierta que ya no tiene sentido continuar (datos caducados, ticks perdidos). */
@@ -172,7 +172,7 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
       return store.closeSession(sessionId, 'failed', { abandonada: true, reason })
     },
 
-    async step(domain, sessionId) {
+    async step(domain, sessionId, opciones) {
       const agentsByCodename = new Map(domain.agents.map((a) => [a.codename, a]))
       function finished(session: Session): StepResult {
         return { session, done: true }
@@ -227,7 +227,7 @@ export function createEngine(store: EngineStore, runAgent: RunAgent): Engine {
 
         let decision: AgentDecision
         try {
-          decision = await runAgent(agent, input)
+          decision = await runAgent(agent, input, opciones)
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
           const intentos = handoff.intentos + 1

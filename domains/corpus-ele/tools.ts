@@ -6,7 +6,7 @@ import { codenameOf } from '@/engine/store'
 import { webSearch } from '@/lib/webSearch'
 import * as clinica from '@/lib/clinica'
 import { medirTexto } from '@/lib/corpus/medir'
-import { extraerAnotacionesDelDossier, extraerTextoDelDossier, filtrarPorEtiquetario, fusionarAnotaciones, quitarInvalidas, type AnotacionDescartada } from '@/lib/corpus/anotaciones'
+import { extraerAnotacionesDelDossier, extraerTextoDelDossier, filtrarPorEtiquetario, fusionarAnotaciones, fusionarConTexto, quitarInvalidas, type AnotacionDescartada } from '@/lib/corpus/anotaciones'
 
 const INVENTARIOS = ['funciones', 'generos-discursivos', 'gramatica', 'habilidades-interculturales', 'nociones-especificas', 'nociones-generales', 'ortografia', 'pragmatica', 'procedimientos-aprendizaje', 'pronunciacion', 'referentes-culturales', 'relacion-objetivos', 'saberes-socioculturales']
 const NIVELES = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
@@ -17,6 +17,7 @@ const anotacionSchema = {
   properties: {
     capa: { type: 'string', maxLength: 20 },
     codigo: { type: 'string', maxLength: 80 },
+    cita: { type: ['string', 'null'], maxLength: 400 },
     inicio: { type: ['integer', 'null'], minimum: 0 },
     fin: { type: ['integer', 'null'], minimum: 0 },
     nota: { type: ['string', 'null'], maxLength: 1000 },
@@ -41,14 +42,18 @@ async function payloadsDeTarea(taskId: string): Promise<unknown[]> {
  * las que viajan en el dossier (si se pide) y descarta las que no están en el etiquetario.
  * Si el etiquetario no se puede leer, no filtra: la Clínica dirá cuáles sobran (400).
  */
-async function prepararAnotaciones(input: unknown, opciones: { payloads?: unknown[]; max: number }): Promise<{ anotaciones: clinica.AnotacionCorpus[]; descartadas: AnotacionDescartada[] }> {
+async function prepararAnotaciones(input: unknown, opciones: { payloads?: unknown[]; texto?: string; max: number }): Promise<{ anotaciones: clinica.AnotacionCorpus[]; descartadas: AnotacionDescartada[] }> {
   const listas: unknown[][] = [Array.isArray(input) ? (input as unknown[]) : []]
   if (opciones.payloads) listas.push(...extraerAnotacionesDelDossier(opciones.payloads))
-  const fusionadas = fusionarAnotaciones(listas, opciones.max)
+  // Con texto, el span se calcula buscando la "cita" (fragmento exacto) en el texto: robusto
+  // frente a offsets mal calculados por el agente. Sin texto, se respeta inicio/fin.
+  const fus = opciones.texto
+    ? fusionarConTexto(listas, opciones.texto, opciones.max)
+    : { anotaciones: fusionarAnotaciones(listas, opciones.max), descartadas: [] as AnotacionDescartada[] }
   const et = await clinica.etiquetario()
-  if (clinica.esError(et)) return { anotaciones: fusionadas, descartadas: [] }
-  const f = filtrarPorEtiquetario(fusionadas, et)
-  return { anotaciones: f.validas, descartadas: f.descartadas }
+  if (clinica.esError(et)) return { anotaciones: fus.anotaciones, descartadas: fus.descartadas }
+  const f = filtrarPorEtiquetario(fus.anotaciones, et)
+  return { anotaciones: f.validas, descartadas: [...fus.descartadas, ...f.descartadas] }
 }
 
 /** `invalidas` del cuerpo de un 400 de la Clínica, si lo hay. */
@@ -145,15 +150,16 @@ export const corpusTools: Record<string, ToolDef> = {
       // quita lo que no está en el etiquetario: una pieza no debe quedarse sin anotaciones
       // porque un agente escribió un código con prefijo o Nairobi perdió un array.
       const payloads = await payloadsDeTarea(ctx.taskId)
-      const prep = await prepararAnotaciones(input.anotaciones, { payloads, max: 60 })
       // El texto es el borrador de Río tal como viaja en el dossier (versión más reciente), no lo
       // que Helsinki escriba: en la muestra B2 «piso» la ficha llegó con texto null y Helsinki
       // rellenó algo para pasar el esquema. Si el dossier no lo tiene, vale lo de Helsinki.
       const delDossier = extraerTextoDelDossier(payloads)
+      const texto = delDossier?.texto ?? String(input.texto)
+      const prep = await prepararAnotaciones(input.anotaciones, { payloads, texto, max: 60 })
       const base: Omit<clinica.NuevaPieza, 'anotaciones'> = {
         tipo: input.tipo as clinica.NuevaPieza['tipo'],
         titulo: String(input.titulo),
-        texto: delDossier?.texto ?? String(input.texto),
+        texto,
         nivel: String(input.nivel),
         situacion: (input.situacion as string | null | undefined) ?? null,
         procedencia: input.procedencia as clinica.NuevaPieza['procedencia'],

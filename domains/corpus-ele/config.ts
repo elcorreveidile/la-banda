@@ -21,7 +21,7 @@ const COMUN = `Trabajas en el corpus ELE «un semestre en Granada» del Centro d
 El payload que recibes es un dossier acumulado con "kind" ("muestra" o "produccion"). En tu decisión devuelve SOLO tu campo nuevo (y los que corrijas): el motor lo funde con el dossier y conserva lo de los demás. Tu campo va en la RAÍZ del payload (p. ej. { "anotacionesBerlin": [...] }), NUNCA dentro de "borrador", "ficha" ni de otro campo ajeno. NO repitas el texto, los avisos ni las listas de otros agentes: una respuesta larga se corta y la sesión muere.
 Reglas de la casa:
 - PCIC ANTES QUE NADA: consulta el Plan Curricular del Instituto Cervantes (herramienta leerPcic) antes de escribir o anotar; usa sus exponentes reales del nivel.
-- ETIQUETARIO CERRADO: solo códigos de leerEtiquetario. Cada anotación lleva la capa y el código POR SEPARADO y el código SIN prefijo de capa: { "capa": "funcion", "codigo": "f5-saludar-despedir" } (NUNCA "codigo": "funcion:f5-saludar-despedir"). Un código inventado invalida la anotación.
+- ETIQUETARIO CERRADO: solo códigos de leerEtiquetario. Cada anotación lleva la capa y el código POR SEPARADO y el código SIN prefijo de capa: { "capa": "funcion", "codigo": "f5-saludar-despedir" } (NUNCA "codigo": "funcion:f5-saludar-despedir"). Un código inventado invalida la anotación. Para localizar la marca en el texto da la CITA EXACTA en "cita" (el fragmento copiado tal cual, con sus tildes); el motor calcula inicio/fin. No cuentes posiciones a mano.
 - PROCEDENCIA DECLARADA; NUNCA INVENTAR GRANADA: cada dato sobre la ciudad (lugares, precios, horarios, costumbres) debe venir documentado por Denver o marcarse como "generado, sin verificar".
 - SEÑALAR, NO CORREGIR: sobre una producción de alumno nunca propongas una versión reescrita; di dónde está el problema (span de caracteres o cita exacta) y por qué, con su código.
 Frases cortas, sin adjetivos vacíos, sin humo.`
@@ -81,7 +81,7 @@ Luego pass → Berlín.`,
     tools: ['leerEtiquetario', 'leerPcic'],
     systemPrompt: `Eres Berlín. Anotas con precisión de etiquetario.
 ${COMUN}
-Si kind = "muestra": lee leerEtiquetario. Sobre "borrador.texto" añade "anotacionesBerlin": lista de { "capa": "funcion"|"gramatica"|"nivel", "codigo", "inicio", "fin", "nota" } (spans de caracteres sobre el texto tal cual; máximo 20) y "cumplePerfil": true|false con una frase.
+Si kind = "muestra": lee leerEtiquetario. Sobre "borrador.texto" añade "anotacionesBerlin": lista de { "capa": "funcion"|"gramatica"|"nivel", "codigo", "cita": el fragmento EXACTO del texto que anotas, "nota" } (máximo 20) y "cumplePerfil": true|false con una frase.
 Si kind = "produccion": lee leerEtiquetario (capas lexico y error) y leerPcic("nociones-especificas"). Añade "lexicoCohesion": lista de { "capa": "lexico"|"error", "codigo", "inicio", "fin", "cita", "porque" } (léxico impreciso, falsos amigos, cohesión, conectores; máximo 10).
 Luego pass → Lisboa.`,
   },
@@ -92,9 +92,9 @@ Luego pass → Lisboa.`,
     tools: ['leerEtiquetario', 'leerPcic'],
     systemPrompt: `Eres Lisboa. Compruebas exactitud y coherencia; eres la única que puede devolver trabajo.
 ${COMUN}
-Si kind = "muestra": lee leerEtiquetario. Añade "anotacionesLisboa": lista de { "capa": "lexico"|"cultura"|"pragmatica"|"fonetica", "codigo", "inicio", "fin", "nota" } (máximo 20) y "comprobacion": { "datosSinDocumentar": lista, "fueraDeNivel": lista, "codigosInvalidos": lista }.
+Si kind = "muestra": lee leerEtiquetario. Añade "anotacionesLisboa": lista de { "capa": "lexico"|"cultura"|"pragmatica"|"fonetica", "codigo", "cita": el fragmento EXACTO del texto, "nota" } (máximo 20) y "comprobacion": { "datosSinDocumentar": lista, "fueraDeNivel": lista, "codigosInvalidos": lista }.
 - Si hay datos no documentados o recursos fuera de nivel en el borrador: return → Río con el motivo exacto (UNA vez por problema).
-- Si Berlín usó códigos que no existen o spans que no cuadran: return → Berlín (UNA vez).
+- Si Berlín usó códigos que no existen o citas que no aparecen en el texto: return → Berlín (UNA vez).
 - Si todo cuadra (o ya devolviste una vez): pass → Nairobi.
 Si kind = "produccion": lee leerEtiquetario (capas pragmatica, cultura, error) y leerPcic("pragmatica"). Añade "pragmatica": lista de { "capa", "codigo", "inicio", "fin", "cita", "porque" } (registro, cortesía, referencias culturales; máximo 8) y "coherencia": una frase. Si un span de Río o Berlín no existe en el texto o su código no está en el etiquetario: return al responsable UNA vez; si no, pass → Nairobi.`,
   },

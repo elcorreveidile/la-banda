@@ -67,6 +67,48 @@ export function fusionarAnotaciones(listas: unknown[][], max = 60): AnotacionCor
     .slice(0, max)
 }
 
+const CITA_MIN = 2
+
+/**
+ * Resuelve el span de una anotación a partir de su `cita` (el fragmento EXACTO del texto):
+ * busca la cita en el texto y fija inicio/fin. Es más robusto que fiarse de que el agente
+ * calcule bien las posiciones (Palermo vetaba «spans que no cuadran»). Sin `cita`, respeta
+ * el inicio/fin que traiga. Devuelve `citaNoEncontrada` si la cita no aparece en el texto.
+ */
+export function resolverAnotacion(a: unknown, texto: string): { anotacion: AnotacionCorpus | null; citaNoEncontrada: boolean } {
+  const base = normalizarAnotacion(a)
+  if (!base) return { anotacion: null, citaNoEncontrada: false }
+  const cita = a && typeof a === 'object' && typeof (a as Record<string, unknown>).cita === 'string' ? String((a as Record<string, unknown>).cita).trim() : ''
+  if (cita.length >= CITA_MIN && texto) {
+    const idx = texto.indexOf(cita)
+    if (idx < 0) return { anotacion: null, citaNoEncontrada: true }
+    return { anotacion: { ...base, inicio: idx, fin: idx + cita.length }, citaNoEncontrada: false }
+  }
+  return { anotacion: base, citaNoEncontrada: false }
+}
+
+/**
+ * Como `fusionarAnotaciones` pero resolviendo los spans por `cita` contra el texto. Las citas
+ * que no aparecen en el texto se descartan (motivo en `descartadas`). Sin texto, se comporta
+ * como `fusionarAnotaciones` (respeta inicio/fin).
+ */
+export function fusionarConTexto(listas: unknown[][], texto: string, max = 60): { anotaciones: AnotacionCorpus[]; descartadas: AnotacionDescartada[] } {
+  if (!texto) return { anotaciones: fusionarAnotaciones(listas, max), descartadas: [] }
+  const resueltas: AnotacionCorpus[] = []
+  const descartadas: AnotacionDescartada[] = []
+  for (const lista of listas) {
+    for (const item of lista) {
+      const { anotacion, citaNoEncontrada } = resolverAnotacion(item, texto)
+      if (anotacion) resueltas.push(anotacion)
+      else if (citaNoEncontrada) {
+        const o = item as Record<string, unknown>
+        descartadas.push({ capa: String(o?.capa ?? '?').toLowerCase(), codigo: String(o?.codigo ?? '?').toLowerCase(), motivo: 'cita no encontrada en el texto' })
+      }
+    }
+  }
+  return { anotaciones: fusionarAnotaciones([resueltas], max), descartadas }
+}
+
 /** Separa las anotaciones cuyo capa+código existe en el etiquetario de las que no. */
 export function filtrarPorEtiquetario(items: AnotacionCorpus[], etiquetario: Etiquetario): { validas: AnotacionCorpus[]; descartadas: AnotacionDescartada[] } {
   const validos = new Set(etiquetario.etiquetas.map((e) => `${e.capa}:${e.codigo}`))

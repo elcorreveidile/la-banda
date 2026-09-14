@@ -124,6 +124,19 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `escribirPieza` toma el **texto del `borrador` más reciente del dossier**
   (`extraerTextoDelDossier`; la ficha o Helsinki solo si no lo hay; devuelve `textoOrigen`)
   y COMUN pide el campo nuevo «en la RAÍZ del payload, nunca dentro de borrador ni ficha».
+- **2026-09-14, spans por cita y ticks encadenados (v0.6.6)**: dos mejoras para que
+  generar corpus sea rápido y fiable. (1) **Spans por cita**: los agentes de muestra
+  (Berlín, Lisboa) dan la CITA EXACTA del texto en "cita" en vez de calcular inicio/fin;
+  `escribirPieza` resuelve el span buscando la cita en el texto (`resolverAnotacion` /
+  `fusionarConTexto` en `anotaciones.ts`), y descarta las citas que no aparecen. Adiós a
+  los vetos de Palermo por «spans que no cuadran»; menos salida del modelo. (2) **Ticks
+  encadenados**: el tick sigue SIN llamar a otro tick por HTTP (eso reabría el 508), pero
+  ahora procesa VARIOS pasos seguidos dentro de la misma función (`procesarEnCadena` en
+  `tick.ts`) mientras quede presupuesto (`TICK_BUDGET_MS` 285 s, `MIN_CHAIN_MS` 90 s); cada
+  paso encadenado recibe el tiempo restante como `deadlineMs` (via `engine.step(…, { deadlineMs })`
+  → `runAgent`), así ninguno pasa del `maxDuration` 300 s. Los pasos cortos (Tokio, Denver,
+  Estocolmo…) van seguidos: una muestra baja de ~25 min a ~10. La bomba sigue cubriendo lo
+  que no dé tiempo. `claimHandoff` evita que la bomba y la cadena procesen el mismo paso.
 - **Trading** (`src/lib/trading/`, `domains/trading/`): decidido el
   2026-09-12 con Javier: cadena de ticks, proveedor z.ai (también la búsqueda
   web de Denver, `src/lib/webSearch.ts`, 0,01 $/uso) y **ejecución

@@ -5,8 +5,46 @@
  */
 
 import { fetchLimpio } from '@/lib/httpLimpio'
+import type { Engine } from '@/engine/orchestrator'
+import type { DomainConfig } from '@domains/types'
 
 export const TICK_HEADER = 'x-engine-secret'
+
+/**
+ * Presupuesto de un tick (< maxDuration 300 s de la ruta) y mínimo para encadenar otro paso.
+ * El tick procesa varios pasos SEGUIDOS dentro de la misma función mientras quede presupuesto:
+ * como no hay llamada HTTP entre pasos, no se acumula la traza x-vercel-id (508 de Vercel).
+ * Cada paso encadenado recibe el tiempo restante como deadline, así ninguno pasa del maxDuration.
+ */
+export const TICK_BUDGET_MS = 285_000
+export const MIN_CHAIN_MS = 90_000
+
+/**
+ * Procesa pasos de una sesión en cadena dentro de un mismo tick. Para cuando la sesión
+ * termina, otro tick ya reclamó el traspaso (`skipped`) o queda menos presupuesto que
+ * `MIN_CHAIN_MS` (lo sigue la bomba dentro de un minuto). Devuelve cuántos pasos hizo.
+ */
+export async function procesarEnCadena(
+  engine: Pick<Engine, 'step'>,
+  domain: DomainConfig,
+  sessionId: string,
+  opts: { budgetMs?: number; minChainMs?: number; now?: () => number } = {},
+): Promise<number> {
+  const budget = opts.budgetMs ?? TICK_BUDGET_MS
+  const minChain = opts.minChainMs ?? MIN_CHAIN_MS
+  const now = opts.now ?? Date.now
+  const inicio = now()
+  let pasos = 0
+  let r = await engine.step(domain, sessionId, { deadlineMs: budget })
+  pasos++
+  while (!r.done && !r.skipped) {
+    const restante = budget - (now() - inicio)
+    if (restante < minChain) break
+    r = await engine.step(domain, sessionId, { deadlineMs: restante })
+    pasos++
+  }
+  return pasos
+}
 
 export function engineSecret(): string {
   const s = process.env.CRON_SECRET?.trim()
