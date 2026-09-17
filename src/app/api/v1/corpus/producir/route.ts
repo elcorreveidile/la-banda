@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 const Body = z.object({
   situacion: z.string().trim().min(2).max(120),
   nivel: z.enum(NIVELES),
-  tipo: z.enum(['muestra_habla', 'texto_situado', 'transcripcion_oral']).default('muestra_habla'),
+  tipo: z.enum(['muestra_habla', 'texto_situado', 'transcripcion_oral', 'texto_escrito']).default('muestra_habla'),
   fuente: z.string().trim().max(300).optional().nullable(),
   licencia: z.string().trim().max(120).optional().nullable(),
   notas: z.string().trim().max(1000).optional().nullable(),

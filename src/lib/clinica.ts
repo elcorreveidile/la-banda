@@ -45,7 +45,7 @@ export interface PiezaCorpus {
   anotaciones?: AnotacionCorpus[]
 }
 export interface NuevaPieza {
-  tipo: 'muestra_habla' | 'texto_situado' | 'transcripcion_oral'
+  tipo: 'muestra_habla' | 'texto_situado' | 'transcripcion_oral' | 'texto_escrito'
   titulo: string
   texto: string
   nivel: string

@@ -81,7 +81,7 @@ export async function submitManuscript(formData: FormData) {
   redirect(`/panel?s=${opened.session.id}`)
 }
 
-const TIPOS_MUESTRA: MuestraInput['tipo'][] = ['muestra_habla', 'texto_situado', 'transcripcion_oral']
+const TIPOS_MUESTRA: MuestraInput['tipo'][] = ['muestra_habla', 'texto_situado', 'transcripcion_oral', 'texto_escrito']
 
 /** Encarga una muestra del corpus ELE (cadena A): abre la sesión y arranca los ticks. */
 export async function startCorpusMuestra(formData: FormData) {

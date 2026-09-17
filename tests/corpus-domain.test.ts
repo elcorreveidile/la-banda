@@ -49,6 +49,16 @@ describe('dominio corpus-ele', () => {
     }
   })
 
+  it('texto escrito: Río redacta en registro escrito y Palermo lo distingue del habla', () => {
+    const rio = corpusEleDomain.agents.find((a) => a.codename === 'Río')!.systemPrompt
+    const palermo = corpusEleDomain.agents.find((a) => a.codename === 'Palermo')!.systemPrompt
+    expect(rio).toMatch(/texto_escrito/)
+    expect(rio).toMatch(/REGISTRO ESCRITO/)
+    // los criterios de oralidad se condicionan a la muestra de habla y hay un criterio de texto escrito
+    expect(palermo).toMatch(/en muestra de habla, el TRATO/)
+    expect(palermo).toMatch(/en texto escrito/)
+  })
+
   it('muestra: Lisboa devuelve a Río una vez, Palermo no veta, Helsinki registra y el Profesor cierra', async () => {
     const mem = createMemoryStore()
     let lisboaCalls = 0

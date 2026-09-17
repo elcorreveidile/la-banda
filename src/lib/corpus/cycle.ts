@@ -16,7 +16,7 @@ export const PENDIENTES_POR_CICLO = 3
 export interface MuestraInput {
   situacion: string
   nivel: string
-  tipo: 'muestra_habla' | 'texto_situado' | 'transcripcion_oral'
+  tipo: 'muestra_habla' | 'texto_situado' | 'transcripcion_oral' | 'texto_escrito'
   fuente?: string | null
   licencia?: string | null
   notas?: string | null
