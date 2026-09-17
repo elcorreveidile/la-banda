@@ -137,6 +137,17 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   → `runAgent`), así ninguno pasa del `maxDuration` 300 s. Los pasos cortos (Tokio, Denver,
   Estocolmo…) van seguidos: una muestra baja de ~25 min a ~10. La bomba sigue cubriendo lo
   que no dé tiempo. `claimHandoff` evita que la bomba y la cadena procesen el mismo paso.
+- **2026-09-17, tipo `texto_escrito` (v0.8.0)**: cuarto tipo de muestra, para **textos escritos
+  de composición** (entrada de blog, reseña, carta formal, artículo de opinión, narración, informe,
+  artículo académico…), como MODELO para las Redacciones de la Clínica. Se amplió el enum en los 6
+  puntos (`domains/corpus-ele/tools.ts`, `src/lib/corpus/cycle.ts`, `src/app/panel/actions.ts`,
+  `src/app/api/v1/corpus/producir/route.ts`, `src/app/panel/CorpusCard.tsx`, `src/lib/clinica.ts`) y
+  los prompts: **Río** redacta según el GÉNERO (llega en `situacion`/`notas`) en registro escrito,
+  con cohesión y convenciones del género, sin color oral, y sin inventar citas/cifras/fuentes en
+  textos formales; **Tokio** fija el género (inv. 7 PCIC) y **Estocolmo** el registro/cohesión;
+  **Palermo** condiciona a `muestra_habla` los criterios de oralidad (trato, color oral, saludos) y
+  añade el criterio (k) de texto escrito (género/registro/cohesión, fuentes inventadas). El `tipo`
+  viaja como string a la Clínica sin transformar; la Clínica debe aceptar `texto_escrito` (v3.183).
 - **2026-09-14, rúbrica de credibilidad (v0.7.0)**: tras revisar la muestra de bar A2 («Aquí
   la tapa va con la consumición»), que salía en **usted** en una taberna, sin color oral, con la
   lógica de la tapa incoherente y saludos a deshora, se ataca el fallo en el ORIGEN, **sin tocar

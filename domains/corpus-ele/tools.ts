@@ -130,7 +130,7 @@ export const corpusTools: Record<string, ToolDef> = {
     inputSchema: {
       type: 'object',
       properties: {
-        tipo: { type: 'string', enum: ['muestra_habla', 'texto_situado', 'transcripcion_oral'] },
+        tipo: { type: 'string', enum: ['muestra_habla', 'texto_situado', 'transcripcion_oral', 'texto_escrito'] },
         titulo: { type: 'string', minLength: 3, maxLength: 200 },
         texto: { type: 'string', minLength: 20, maxLength: 20000 },
         nivel: { type: 'string', enum: NIVELES },

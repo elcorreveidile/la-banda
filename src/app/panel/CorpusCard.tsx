@@ -22,6 +22,7 @@ export function CorpusCard() {
           <option value="muestra_habla">muestra de habla</option>
           <option value="texto_situado">texto situado</option>
           <option value="transcripcion_oral">transcripción oral</option>
+          <option value="texto_escrito">texto escrito</option>
         </select>
         <input name="notas" maxLength={1000} placeholder="Notas para la cadena (opcional)" className="rounded border border-stone-300 px-2 py-1.5 sm:py-1 sm:col-span-2" />
         <button type="submit" className="rounded-lg bg-emerald-600 px-3 py-2 font-semibold text-white shadow-sm hover:bg-emerald-700 sm:py-1.5">
