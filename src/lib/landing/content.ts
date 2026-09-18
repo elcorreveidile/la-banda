@@ -44,7 +44,7 @@ export interface LandingContent {
   modelo: { eyebrow: string; title: string; body: string; chips: string[] }
   agentes: { eyebrow: string; title: string; sub: string; note: string; items: AgentItem[] }
   ejemplos: { eyebrow: string; title: string; sub: string; items: Example[] }
-  aplica: { eyebrow: string; title: string; body: string; areas: { area: string; uses: string[] }[]; foot: string }
+  aplica: { eyebrow: string; title: string; body: string; liveLabel: string; areas: { area: string; uses: string[]; live?: string }[]; foot: string }
   precios: { eyebrow: string; title: string; sub: string; tiers: Tier[]; foot: string }
   contacto: {
     eyebrow: string
@@ -159,13 +159,18 @@ export const CONTENT: Record<Lang, LandingContent> = {
     aplica: {
       eyebrow: 'A qué más se aplica',
       title: 'Un método para toda la empresa',
-      body: 'La Banda no es una herramienta suelta: es una capa de método que entra en cualquier proceso con pasos, criterios y un «esto sí / esto no». Aplicada departamento a departamento, es una vía hacia la digitalización integral —con control de calidad y trazabilidad en cada paso—.',
+      body: 'La Banda no es una herramienta suelta: es una capa de método. Tres bandas ya están en marcha —educación, editorial y mercados— y el mismo motor encaja, departamento a departamento, en la digitalización integral de la empresa, con control de calidad y trazabilidad en cada paso.',
+      liveLabel: 'Ya en marcha',
       areas: [
+        { area: 'Educación y formación', live: 'Corpus Granada', uses: ['Producción de materiales nivelados', 'Corpus anotado según el PCIC', 'Apoyo a la corrección de redacciones'] },
+        { area: 'Editorial y publicaciones', live: 'Olvidos de Granada', uses: ['Informe de objeciones numeradas', 'Aplicación de la hoja de estilo', 'Veredicto: publicable / con cambios / rechazado'] },
+        { area: 'Mercados y análisis', live: 'Mesa de trading', uses: ['Detección de señales', 'Tamaño de posición y riesgo', 'Veto por falta de liquidez o invalidación'] },
         { area: 'Legal y cumplimiento', uses: ['Revisión de contratos y cláusulas', 'Cumplimiento normativo y RGPD', 'Análisis de pliegos y licitaciones'] },
         { area: 'Finanzas y administración', uses: ['Control y conciliación de facturas', 'Informes financieros y de gestión', 'Due diligence de operaciones'] },
         { area: 'Comercial y clientes', uses: ['Cualificación de leads y oportunidades', 'Propuestas y presupuestos', 'Calidad de la atención al cliente'] },
         { area: 'Personas y RRHH', uses: ['Cribado de candidaturas', 'Onboarding y documentación interna', 'Políticas internas y su cumplimiento'] },
         { area: 'Operaciones y calidad', uses: ['Auditorías y listas de control', 'Control de calidad de procesos', 'Triaje y gestión de incidencias'] },
+        { area: 'Marketing y contenidos', uses: ['Revisión y edición de contenidos', 'Verificación de datos y afirmaciones', 'Coherencia de marca y estilo'] },
         { area: 'Datos y conocimiento', uses: ['Validación y limpieza de datos', 'Síntesis documental y research', 'Documentación técnica y base de conocimiento'] },
       ],
       foot: '¿No ves tu proceso? Cuéntanoslo: casi todo flujo de revisión y decisión encaja.',
@@ -286,13 +291,18 @@ export const CONTENT: Record<Lang, LandingContent> = {
     aplica: {
       eyebrow: 'Where else it fits',
       title: 'A method for the whole company',
-      body: 'La Banda is not a standalone tool: it is a layer of method that fits any process with steps, criteria and a clear yes/no. Applied department by department, it is a path to end-to-end digitalization — with quality control and traceability at every step.',
+      body: 'La Banda is not a standalone tool: it is a layer of method. Three bands already run — education, publishing and markets — and the same engine fits, department by department, into a company’s end-to-end digitalization, with quality control and traceability at every step.',
+      liveLabel: 'Live',
       areas: [
+        { area: 'Education & training', live: 'Corpus Granada', uses: ['Level-graded material production', 'Corpus annotated to the PCIC', 'Support for grading student writing'] },
+        { area: 'Publishing & editorial', live: 'Olvidos de Granada', uses: ['Numbered objections report', 'Style-guide enforcement', 'Verdict: publishable / with changes / rejected'] },
+        { area: 'Markets & analysis', live: 'Trading desk', uses: ['Signal detection', 'Position sizing and risk', 'Veto on missing liquidity or invalidation'] },
         { area: 'Legal & compliance', uses: ['Contract and clause review', 'Regulatory compliance and GDPR', 'Tender and bid analysis'] },
         { area: 'Finance & admin', uses: ['Invoice control and reconciliation', 'Financial and management reports', 'Deal due diligence'] },
         { area: 'Sales & customers', uses: ['Lead and opportunity qualification', 'Proposals and quotes', 'Customer support quality'] },
         { area: 'People & HR', uses: ['CV and application screening', 'Onboarding and internal docs', 'Internal policies and compliance'] },
         { area: 'Operations & quality', uses: ['Audits and checklists', 'Process quality control', 'Incident triage and handling'] },
+        { area: 'Marketing & content', uses: ['Content review and editing', 'Fact and claim verification', 'Brand and style consistency'] },
         { area: 'Data & knowledge', uses: ['Data validation and cleaning', 'Document synthesis and research', 'Technical docs and knowledge base'] },
       ],
       foot: 'Not seeing your process? Tell us: almost any review-and-decision flow fits.',

@@ -192,11 +192,17 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
           <p className="mt-4 max-w-3xl text-lg text-stone-600">{t.aplica.body}</p>
           <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {t.aplica.areas.map((a, i) => (
-              <div key={a.area} className="min-w-0 rounded-xl border border-stone-200 bg-white p-5">
+              <div key={a.area} className={`min-w-0 rounded-xl border p-5 ${a.live ? 'border-emerald-300 bg-emerald-50/50' : 'border-stone-200 bg-white'}`}>
                 <div className="flex items-center gap-2.5">
                   <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: CHAIN_COLORS[i % 4] }} />
                   <h3 className="font-mono text-sm font-bold uppercase tracking-wide text-stone-900">{a.area}</h3>
                 </div>
+                {a.live && (
+                  <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                    {t.aplica.liveLabel} · {a.live}
+                  </span>
+                )}
                 <ul className="mt-3 flex flex-col gap-2">
                   {a.uses.map((u) => (
                     <li key={u} className="flex items-start gap-2.5 text-sm text-stone-600">
