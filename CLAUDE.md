@@ -227,6 +227,21 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   y no debe vivir aquí para siempre. Nada de nombres ni correos en payloads: la
   Clínica manda seudónimo (`p-…`) y referencia.
 
+- **2026-09-18, portada pública (v0.9.0)**: `kupeku.com` mostraba solo el login (la
+  home `/` redirigía a `/panel` → `/login`). Ahora `/` es una **landing bilingüe** (ES/EN
+  por `?lang=en`; el panel y el login siguen en español) que explica qué es La Banda, sus
+  seis principios (§2 del brief), presenta a los diez agentes, muestra los **tres dominios en
+  producción** (corpus-ele, trading, olvidos) y a qué otros campos se aplica, con un bloque
+  «el modelo de IA lo eliges tú» (agnóstico de proveedor: Claude/GLM, modelo por agente,
+  failover) y **precios en tres niveles** («desde» + contacto: Piloto / Operación / A medida;
+  cifras orientativas, ajustables). Contenido en `src/lib/landing/content.ts` (dict `es`/`en`,
+  el español fija el tipo). **Contacto**: `src/components/landing/ContactForm.tsx` (cliente) →
+  `POST /api/contacto`, aviso por Brevo a `CONTACT_EMAIL`; antispam **honeypot + Cloudflare
+  Turnstile** (`src/lib/turnstile.ts`; sin `TURNSTILE_SECRET_KEY` se omite). La home fija
+  `robots: index` (el resto del sitio sigue `noindex` por el layout). Reutiliza `Logo` y la
+  estética del panel (mono para etiquetas, sans para prosa, tarjetas, fondo claro). Envs
+  nuevas: `CONTACT_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
