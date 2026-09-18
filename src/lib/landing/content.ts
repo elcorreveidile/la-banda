@@ -182,14 +182,14 @@ export const CONTENT: Record<Lang, LandingContent> = {
       tiers: [
         {
           name: 'Piloto',
-          price: 'desde 900 €',
+          price: 'desde 600 €',
           note: 'pago único',
           features: ['Análisis de tu proceso', 'Una banda configurada a medida', 'Un primer lote real', 'Informe de trazabilidad'],
           cta: 'Empezar un piloto',
         },
         {
           name: 'Operación',
-          price: 'desde 200 €',
+          price: 'desde 150 €',
           note: 'al mes, por banda',
           features: ['Ejecución programada', 'Panel y traspasos trazables', 'Ajustes de prompts y soporte', 'Coste de IA incluido hasta un volumen'],
           cta: 'Hablar de operación',
@@ -314,14 +314,14 @@ export const CONTENT: Record<Lang, LandingContent> = {
       tiers: [
         {
           name: 'Pilot',
-          price: 'from €900',
+          price: 'from €600',
           note: 'one-off',
           features: ['Analysis of your process', 'A band configured to measure', 'A first real batch', 'Traceability report'],
           cta: 'Start a pilot',
         },
         {
           name: 'Operation',
-          price: 'from €200',
+          price: 'from €150',
           note: 'per month, per band',
           features: ['Scheduled runs', 'Panel and traceable hand-offs', 'Prompt tuning and support', 'AI cost included up to a volume'],
           cta: 'Talk about operation',
