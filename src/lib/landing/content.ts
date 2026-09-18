@@ -44,7 +44,7 @@ export interface LandingContent {
   modelo: { eyebrow: string; title: string; body: string; chips: string[] }
   agentes: { eyebrow: string; title: string; sub: string; note: string; items: AgentItem[] }
   ejemplos: { eyebrow: string; title: string; sub: string; items: Example[] }
-  aplica: { eyebrow: string; title: string; body: string; fields: string[]; foot: string }
+  aplica: { eyebrow: string; title: string; body: string; areas: { area: string; uses: string[] }[]; foot: string }
   precios: { eyebrow: string; title: string; sub: string; tiers: Tier[]; foot: string }
   contacto: {
     eyebrow: string
@@ -158,17 +158,17 @@ export const CONTENT: Record<Lang, LandingContent> = {
     },
     aplica: {
       eyebrow: 'A qué más se aplica',
-      title: 'El mismo método, tu proceso',
-      body: 'Si tu proceso tiene pasos, criterios y un «esto sí / esto no», cabe una banda. En cualquier flujo que necesite varias miradas, control de calidad y un rastro auditable:',
-      fields: [
-        'Revisión de contratos y cláusulas',
-        'Due diligence e informes',
-        'Moderación y edición de contenidos',
-        'Cumplimiento normativo',
-        'Control de calidad de datos',
-        'Research y síntesis documental',
+      title: 'Un método para toda la empresa',
+      body: 'La Banda no es una herramienta suelta: es una capa de método que entra en cualquier proceso con pasos, criterios y un «esto sí / esto no». Aplicada departamento a departamento, es una vía hacia la digitalización integral —con control de calidad y trazabilidad en cada paso—.',
+      areas: [
+        { area: 'Legal y cumplimiento', uses: ['Revisión de contratos y cláusulas', 'Cumplimiento normativo y RGPD', 'Análisis de pliegos y licitaciones'] },
+        { area: 'Finanzas y administración', uses: ['Control y conciliación de facturas', 'Informes financieros y de gestión', 'Due diligence de operaciones'] },
+        { area: 'Comercial y clientes', uses: ['Cualificación de leads y oportunidades', 'Propuestas y presupuestos', 'Calidad de la atención al cliente'] },
+        { area: 'Personas y RRHH', uses: ['Cribado de candidaturas', 'Onboarding y documentación interna', 'Políticas internas y su cumplimiento'] },
+        { area: 'Operaciones y calidad', uses: ['Auditorías y listas de control', 'Control de calidad de procesos', 'Triaje y gestión de incidencias'] },
+        { area: 'Datos y conocimiento', uses: ['Validación y limpieza de datos', 'Síntesis documental y research', 'Documentación técnica y base de conocimiento'] },
       ],
-      foot: '¿No ves el tuyo? Cuéntanoslo: casi todo proceso de revisión encaja.',
+      foot: '¿No ves tu proceso? Cuéntanoslo: casi todo flujo de revisión y decisión encaja.',
     },
     precios: {
       eyebrow: 'Precios',
@@ -285,17 +285,17 @@ export const CONTENT: Record<Lang, LandingContent> = {
     },
     aplica: {
       eyebrow: 'Where else it fits',
-      title: 'The same method, your process',
-      body: 'If your process has steps, criteria and a clear yes/no, a band fits. In any flow that needs several sets of eyes, quality control and an auditable trail:',
-      fields: [
-        'Contract and clause review',
-        'Due diligence and reports',
-        'Content moderation and editing',
-        'Regulatory compliance',
-        'Data quality control',
-        'Research and document synthesis',
+      title: 'A method for the whole company',
+      body: 'La Banda is not a standalone tool: it is a layer of method that fits any process with steps, criteria and a clear yes/no. Applied department by department, it is a path to end-to-end digitalization — with quality control and traceability at every step.',
+      areas: [
+        { area: 'Legal & compliance', uses: ['Contract and clause review', 'Regulatory compliance and GDPR', 'Tender and bid analysis'] },
+        { area: 'Finance & admin', uses: ['Invoice control and reconciliation', 'Financial and management reports', 'Deal due diligence'] },
+        { area: 'Sales & customers', uses: ['Lead and opportunity qualification', 'Proposals and quotes', 'Customer support quality'] },
+        { area: 'People & HR', uses: ['CV and application screening', 'Onboarding and internal docs', 'Internal policies and compliance'] },
+        { area: 'Operations & quality', uses: ['Audits and checklists', 'Process quality control', 'Incident triage and handling'] },
+        { area: 'Data & knowledge', uses: ['Data validation and cleaning', 'Document synthesis and research', 'Technical docs and knowledge base'] },
       ],
-      foot: 'Not seeing yours? Tell us: almost any review process fits.',
+      foot: 'Not seeing your process? Tell us: almost any review-and-decision flow fits.',
     },
     precios: {
       eyebrow: 'Pricing',

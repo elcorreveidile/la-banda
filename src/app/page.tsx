@@ -189,12 +189,22 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
         <section className="border-t border-stone-200 py-16">
           <p className="font-mono text-xs uppercase tracking-[0.25em] text-amber-700">{t.aplica.eyebrow}</p>
           <h2 className="mt-3 font-sans text-3xl font-bold tracking-tight text-stone-900">{t.aplica.title}</h2>
-          <p className="mt-4 max-w-2xl text-lg text-stone-600">{t.aplica.body}</p>
-          <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {t.aplica.fields.map((f) => (
-              <div key={f} className="flex items-center gap-3 rounded-lg border border-stone-200 bg-white px-4 py-3">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                <span className="text-stone-700">{f}</span>
+          <p className="mt-4 max-w-3xl text-lg text-stone-600">{t.aplica.body}</p>
+          <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {t.aplica.areas.map((a, i) => (
+              <div key={a.area} className="min-w-0 rounded-xl border border-stone-200 bg-white p-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: CHAIN_COLORS[i % 4] }} />
+                  <h3 className="font-mono text-sm font-bold uppercase tracking-wide text-stone-900">{a.area}</h3>
+                </div>
+                <ul className="mt-3 flex flex-col gap-2">
+                  {a.uses.map((u) => (
+                    <li key={u} className="flex items-start gap-2.5 text-sm text-stone-600">
+                      <span className="mt-[7px] h-1 w-1 flex-none rounded-full bg-amber-500" />
+                      {u}
+                    </li>
+                  ))}
+                </ul>
               </div>
             ))}
           </div>
