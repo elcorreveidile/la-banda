@@ -61,6 +61,7 @@ export interface LandingContent {
     privacy: string
   }
   footer: { tagline: string; rights: string; acceso: string }
+  backTop: string
 }
 
 const AGENTS_ES: AgentItem[] = [
@@ -225,6 +226,7 @@ export const CONTENT: Record<Lang, LandingContent> = {
       privacy: 'Usamos tu correo solo para responderte.',
     },
     footer: { tagline: 'La Banda · un motor de agentes con método.', rights: 'Todos los derechos reservados.', acceso: 'Acceso al panel' },
+    backTop: 'Volver arriba',
   },
 
   en: {
@@ -362,5 +364,6 @@ export const CONTENT: Record<Lang, LandingContent> = {
       privacy: 'We use your email only to reply to you.',
     },
     footer: { tagline: 'La Banda · an agent engine with method.', rights: 'All rights reserved.', acceso: 'Panel login' },
+    backTop: 'Back to top',
   },
 }

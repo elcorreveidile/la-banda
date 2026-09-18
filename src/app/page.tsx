@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Logo from '@/components/Logo'
 import { AgentAvatar } from '@/components/AgentAvatar'
 import ContactForm from '@/components/landing/ContactForm'
+import ScrollTop from '@/components/landing/ScrollTop'
 import { CONTENT, getLang, type Lang } from '@/lib/landing/content'
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<{ lang?: string }> }): Promise<Metadata> {
@@ -273,6 +274,8 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ l
           </div>
         </div>
       </footer>
+
+      <ScrollTop label={t.backTop} />
     </div>
   )
 }
