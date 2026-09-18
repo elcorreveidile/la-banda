@@ -159,7 +159,7 @@ export const CONTENT: Record<Lang, LandingContent> = {
     aplica: {
       eyebrow: 'A qué más se aplica',
       title: 'Un método para toda la empresa',
-      body: 'La Banda no es una herramienta suelta: es una capa de método. Tres bandas ya están en marcha —educación, editorial y mercados— y el mismo motor encaja, departamento a departamento, en la digitalización integral de la empresa, con control de calidad y trazabilidad en cada paso.',
+      body: 'La Banda no es una herramienta suelta: es una capa de método. Tres bandas ya están en marcha —educación, editorial y mercados— y el mismo motor encaja en cualquier departamento o sector, con control de calidad y trazabilidad en cada paso. Una vía hacia la digitalización integral, proceso a proceso.',
       liveLabel: 'Ya en marcha',
       areas: [
         { area: 'Educación y formación', live: 'Corpus Granada', uses: ['Producción de materiales nivelados', 'Corpus anotado según el PCIC', 'Apoyo a la corrección de redacciones'] },
@@ -172,6 +172,11 @@ export const CONTENT: Record<Lang, LandingContent> = {
         { area: 'Operaciones y calidad', uses: ['Auditorías y listas de control', 'Control de calidad de procesos', 'Triaje y gestión de incidencias'] },
         { area: 'Marketing y contenidos', uses: ['Revisión y edición de contenidos', 'Verificación de datos y afirmaciones', 'Coherencia de marca y estilo'] },
         { area: 'Datos y conocimiento', uses: ['Validación y limpieza de datos', 'Síntesis documental y research', 'Documentación técnica y base de conocimiento'] },
+        { area: 'Sanidad y clínicas', uses: ['Revisión de protocolos e informes', 'Cumplimiento y consentimientos', 'Control de calidad de la documentación'] },
+        { area: 'Sector público y administración', uses: ['Tramitación de expedientes', 'Pliegos y contratación pública', 'Respuestas a la ciudadanía y transparencia'] },
+        { area: 'Turismo y hostelería', uses: ['Reputación y reseñas', 'Fichas y contenidos multilingües', 'Calidad de reservas y atención'] },
+        { area: 'Industria y logística', uses: ['Control de calidad y no conformidades', 'Documentación técnica y albaranes', 'Trazabilidad de incidencias'] },
+        { area: 'Inmobiliario y construcción', uses: ['Revisión de escrituras y contratos', 'Due diligence de inmuebles', 'Pliegos y certificaciones de obra'] },
       ],
       foot: '¿No ves tu proceso? Cuéntanoslo: casi todo flujo de revisión y decisión encaja.',
     },
@@ -291,7 +296,7 @@ export const CONTENT: Record<Lang, LandingContent> = {
     aplica: {
       eyebrow: 'Where else it fits',
       title: 'A method for the whole company',
-      body: 'La Banda is not a standalone tool: it is a layer of method. Three bands already run — education, publishing and markets — and the same engine fits, department by department, into a company’s end-to-end digitalization, with quality control and traceability at every step.',
+      body: 'La Banda is not a standalone tool: it is a layer of method. Three bands already run — education, publishing and markets — and the same engine fits any department or sector, with quality control and traceability at every step. A path to end-to-end digitalization, process by process.',
       liveLabel: 'Live',
       areas: [
         { area: 'Education & training', live: 'Corpus Granada', uses: ['Level-graded material production', 'Corpus annotated to the PCIC', 'Support for grading student writing'] },
@@ -304,6 +309,11 @@ export const CONTENT: Record<Lang, LandingContent> = {
         { area: 'Operations & quality', uses: ['Audits and checklists', 'Process quality control', 'Incident triage and handling'] },
         { area: 'Marketing & content', uses: ['Content review and editing', 'Fact and claim verification', 'Brand and style consistency'] },
         { area: 'Data & knowledge', uses: ['Data validation and cleaning', 'Document synthesis and research', 'Technical docs and knowledge base'] },
+        { area: 'Healthcare & clinics', uses: ['Protocol and report review', 'Compliance and consents', 'Documentation quality control'] },
+        { area: 'Public sector & admin', uses: ['Case and file processing', 'Tenders and public procurement', 'Citizen responses and transparency'] },
+        { area: 'Tourism & hospitality', uses: ['Reputation and reviews', 'Multilingual listings and content', 'Booking and service quality'] },
+        { area: 'Industry & logistics', uses: ['Quality control and non-conformities', 'Technical docs and delivery notes', 'Incident traceability'] },
+        { area: 'Real estate & construction', uses: ['Deed and contract review', 'Property due diligence', 'Tenders and works certifications'] },
       ],
       foot: 'Not seeing your process? Tell us: almost any review-and-decision flow fits.',
     },
