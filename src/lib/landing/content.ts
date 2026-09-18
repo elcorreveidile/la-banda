@@ -44,7 +44,7 @@ export interface LandingContent {
   modelo: { eyebrow: string; title: string; body: string; chips: string[] }
   agentes: { eyebrow: string; title: string; sub: string; note: string; items: AgentItem[] }
   ejemplos: { eyebrow: string; title: string; sub: string; items: Example[] }
-  aplica: { eyebrow: string; title: string; body: string; areas: { area: string; uses: string[] }[]; foot: string }
+  aplica: { eyebrow: string; title: string; body: string; liveLabel: string; areas: { area: string; uses: string[]; live?: string }[]; foot: string }
   precios: { eyebrow: string; title: string; sub: string; tiers: Tier[]; foot: string }
   contacto: {
     eyebrow: string
@@ -159,14 +159,24 @@ export const CONTENT: Record<Lang, LandingContent> = {
     aplica: {
       eyebrow: 'A qué más se aplica',
       title: 'Un método para toda la empresa',
-      body: 'La Banda no es una herramienta suelta: es una capa de método que entra en cualquier proceso con pasos, criterios y un «esto sí / esto no». Aplicada departamento a departamento, es una vía hacia la digitalización integral —con control de calidad y trazabilidad en cada paso—.',
+      body: 'La Banda no es una herramienta suelta: es una capa de método. Tres bandas ya están en marcha —educación, editorial y mercados— y el mismo motor encaja en cualquier departamento o sector, con control de calidad y trazabilidad en cada paso. Una vía hacia la digitalización integral, proceso a proceso.',
+      liveLabel: 'Ya en marcha',
       areas: [
+        { area: 'Educación y formación', live: 'Corpus Granada', uses: ['Producción de materiales nivelados', 'Corpus anotado según el PCIC', 'Apoyo a la corrección de redacciones'] },
+        { area: 'Editorial y publicaciones', live: 'Olvidos de Granada', uses: ['Informe de objeciones numeradas', 'Aplicación de la hoja de estilo', 'Veredicto: publicable / con cambios / rechazado'] },
+        { area: 'Mercados y análisis', live: 'Mesa de trading', uses: ['Detección de señales', 'Tamaño de posición y riesgo', 'Veto por falta de liquidez o invalidación'] },
         { area: 'Legal y cumplimiento', uses: ['Revisión de contratos y cláusulas', 'Cumplimiento normativo y RGPD', 'Análisis de pliegos y licitaciones'] },
         { area: 'Finanzas y administración', uses: ['Control y conciliación de facturas', 'Informes financieros y de gestión', 'Due diligence de operaciones'] },
         { area: 'Comercial y clientes', uses: ['Cualificación de leads y oportunidades', 'Propuestas y presupuestos', 'Calidad de la atención al cliente'] },
         { area: 'Personas y RRHH', uses: ['Cribado de candidaturas', 'Onboarding y documentación interna', 'Políticas internas y su cumplimiento'] },
         { area: 'Operaciones y calidad', uses: ['Auditorías y listas de control', 'Control de calidad de procesos', 'Triaje y gestión de incidencias'] },
+        { area: 'Marketing y contenidos', uses: ['Revisión y edición de contenidos', 'Verificación de datos y afirmaciones', 'Coherencia de marca y estilo'] },
         { area: 'Datos y conocimiento', uses: ['Validación y limpieza de datos', 'Síntesis documental y research', 'Documentación técnica y base de conocimiento'] },
+        { area: 'Sanidad y clínicas', uses: ['Revisión de protocolos e informes', 'Cumplimiento y consentimientos', 'Control de calidad de la documentación'] },
+        { area: 'Sector público y administración', uses: ['Tramitación de expedientes', 'Pliegos y contratación pública', 'Respuestas a la ciudadanía y transparencia'] },
+        { area: 'Turismo y hostelería', uses: ['Reputación y reseñas', 'Fichas y contenidos multilingües', 'Calidad de reservas y atención'] },
+        { area: 'Industria y logística', uses: ['Control de calidad y no conformidades', 'Documentación técnica y albaranes', 'Trazabilidad de incidencias'] },
+        { area: 'Inmobiliario y construcción', uses: ['Revisión de escrituras y contratos', 'Due diligence de inmuebles', 'Pliegos y certificaciones de obra'] },
       ],
       foot: '¿No ves tu proceso? Cuéntanoslo: casi todo flujo de revisión y decisión encaja.',
     },
@@ -177,14 +187,14 @@ export const CONTENT: Record<Lang, LandingContent> = {
       tiers: [
         {
           name: 'Piloto',
-          price: 'desde 900 €',
+          price: 'desde 600 €',
           note: 'pago único',
           features: ['Análisis de tu proceso', 'Una banda configurada a medida', 'Un primer lote real', 'Informe de trazabilidad'],
           cta: 'Empezar un piloto',
         },
         {
           name: 'Operación',
-          price: 'desde 200 €',
+          price: 'desde 150 €',
           note: 'al mes, por banda',
           features: ['Ejecución programada', 'Panel y traspasos trazables', 'Ajustes de prompts y soporte', 'Coste de IA incluido hasta un volumen'],
           cta: 'Hablar de operación',
@@ -286,14 +296,24 @@ export const CONTENT: Record<Lang, LandingContent> = {
     aplica: {
       eyebrow: 'Where else it fits',
       title: 'A method for the whole company',
-      body: 'La Banda is not a standalone tool: it is a layer of method that fits any process with steps, criteria and a clear yes/no. Applied department by department, it is a path to end-to-end digitalization — with quality control and traceability at every step.',
+      body: 'La Banda is not a standalone tool: it is a layer of method. Three bands already run — education, publishing and markets — and the same engine fits any department or sector, with quality control and traceability at every step. A path to end-to-end digitalization, process by process.',
+      liveLabel: 'Live',
       areas: [
+        { area: 'Education & training', live: 'Corpus Granada', uses: ['Level-graded material production', 'Corpus annotated to the PCIC', 'Support for grading student writing'] },
+        { area: 'Publishing & editorial', live: 'Olvidos de Granada', uses: ['Numbered objections report', 'Style-guide enforcement', 'Verdict: publishable / with changes / rejected'] },
+        { area: 'Markets & analysis', live: 'Trading desk', uses: ['Signal detection', 'Position sizing and risk', 'Veto on missing liquidity or invalidation'] },
         { area: 'Legal & compliance', uses: ['Contract and clause review', 'Regulatory compliance and GDPR', 'Tender and bid analysis'] },
         { area: 'Finance & admin', uses: ['Invoice control and reconciliation', 'Financial and management reports', 'Deal due diligence'] },
         { area: 'Sales & customers', uses: ['Lead and opportunity qualification', 'Proposals and quotes', 'Customer support quality'] },
         { area: 'People & HR', uses: ['CV and application screening', 'Onboarding and internal docs', 'Internal policies and compliance'] },
         { area: 'Operations & quality', uses: ['Audits and checklists', 'Process quality control', 'Incident triage and handling'] },
+        { area: 'Marketing & content', uses: ['Content review and editing', 'Fact and claim verification', 'Brand and style consistency'] },
         { area: 'Data & knowledge', uses: ['Data validation and cleaning', 'Document synthesis and research', 'Technical docs and knowledge base'] },
+        { area: 'Healthcare & clinics', uses: ['Protocol and report review', 'Compliance and consents', 'Documentation quality control'] },
+        { area: 'Public sector & admin', uses: ['Case and file processing', 'Tenders and public procurement', 'Citizen responses and transparency'] },
+        { area: 'Tourism & hospitality', uses: ['Reputation and reviews', 'Multilingual listings and content', 'Booking and service quality'] },
+        { area: 'Industry & logistics', uses: ['Quality control and non-conformities', 'Technical docs and delivery notes', 'Incident traceability'] },
+        { area: 'Real estate & construction', uses: ['Deed and contract review', 'Property due diligence', 'Tenders and works certifications'] },
       ],
       foot: 'Not seeing your process? Tell us: almost any review-and-decision flow fits.',
     },
@@ -304,14 +324,14 @@ export const CONTENT: Record<Lang, LandingContent> = {
       tiers: [
         {
           name: 'Pilot',
-          price: 'from €900',
+          price: 'from €600',
           note: 'one-off',
           features: ['Analysis of your process', 'A band configured to measure', 'A first real batch', 'Traceability report'],
           cta: 'Start a pilot',
         },
         {
           name: 'Operation',
-          price: 'from €200',
+          price: 'from €150',
           note: 'per month, per band',
           features: ['Scheduled runs', 'Panel and traceable hand-offs', 'Prompt tuning and support', 'AI cost included up to a volume'],
           cta: 'Talk about operation',
