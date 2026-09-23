@@ -28,6 +28,7 @@ export const SECCIONES: SectionLimits[] = [
   { key: 'ensayo', name: 'Ensayo (secciones de la impresa: Mitológicas, La fábrica de sueños…)', description: 'Ensayo largo con secciones numeradas, epígrafes y citas.', minWords: 1200, maxWords: 6500, notes: 'Por encima de 4.000 palabras, avisar: solo cabe como pieza central del número.' },
   { key: 'entrevista', name: 'Entrevista', description: 'Conversación con interlocutores en negrita (formato B. P. / C. R.).', minWords: 1000, maxWords: 3000, notes: 'Preguntas cortas; cortar lo que no aporte.' },
   { key: 'apostillas', name: 'Apostillas', description: 'Notas y comentarios de la redacción sobre la historia de la revista, presentaciones y efemérides (categoría de la web actual).', minWords: 600, maxWords: 4000, notes: 'Contexto y fuentes explícitas; los textos largos, con secciones.' },
+  { key: 'con-textos', name: 'Con-textos', description: 'Dossier de fondo: pieza documentada con datos, fuentes y cronología, a menudo con elementos interactivos, anclada a un artículo (categoría de la web actual).', minWords: 1200, maxWords: 6500, notes: 'Por encima de 4.000 palabras, avisar: solo cabe como pieza central del número. Procedencia y fuentes explícitas; los elementos interactivos (mapas, líneas de tiempo, gráficos) se describen aparte y no cuentan como palabras.' },
   { key: 'resena', name: 'Reseña / crónica breve', description: 'Reseña de libro, exposición, encuentro.', minWords: 400, maxWords: 1200, notes: 'Datos completos de la obra reseñada (título, autor, editorial, año).' },
 ]
 

@@ -196,6 +196,16 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   (no había en el repo `olvidos`): Javier corrige en `hojaDeEstilo.ts` y
   `secciones.ts`. Pendiente del brief: probar con tres textos ya publicados y
   comparar con lo decidido en su momento.
+- **2026-09-23, secciones de Olvidos: falta «Con-textos»**: al enviar un manuscrito
+  desde el panel, el desplegable «Sección de destino» no ofrecía **Con-textos**, que en
+  el repo `olvidos` sí es sección de primer nivel (categoría `?categoria=con-textos`, con
+  dossiers interactivos de fondo). Causa: `SECCIONES` (`domains/olvidos/secciones.ts`)
+  es una propuesta transcrita a mano el 2026-09-12 que nunca la incluyó, y de ese único
+  array cuelgan el desplegable (`OlvidosCard.tsx`), la validación (`actions.ts` →
+  `getSection`) y la API v1 (`/api/v1/olvidos/manuscritos`). Se añade la entrada
+  `con-textos` (rango tipo ensayo, 1200–6500, aviso >4.000; los elementos interactivos se
+  describen aparte, no cuentan como palabras) y se cita la sección en `hojaDeEstilo.ts`.
+  Sin cambios de esquema (`manuscripts.section` guarda la key como texto).
 
 - **API v1** (`src/app/api/v1/`, `src/lib/apiAuth.ts`): decidido el 2026-09-12:
   un solo motor y dos escaparates. Olvidos muestra la redacción en su panel y
