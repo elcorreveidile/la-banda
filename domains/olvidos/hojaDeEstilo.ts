@@ -10,7 +10,7 @@ export const HOJA_DE_ESTILO = `# Hoja de estilo · Olvidos de Granada
 ## Qué es la revista
 - *Olvidos de Granada* es una revista de acciones culturales nacida en 1982 en La Tertulia (Granada), fundada por Mariano Maresca. Hoy la edita la Asociación Cultural Olvidos de Granada (ISSN 2605-4515) y coordina Javier Benítez Láinez.
 - Vocación: recuperar, preservar y difundir el patrimonio literario y cultural de Granada, y ser espacio abierto a la creación y al pensamiento crítico sobre la cultura granadina y contemporánea.
-- Secciones web: Editoriales, Palabras (narrativa y poesía), Piezas y Procesos, Soneto500. En la impresa hubo secciones propias (Mitológicas, La fábrica de sueños…).
+- Secciones web: Editoriales, Palabras (narrativa y poesía), Piezas y Procesos, Apostillas, Soneto500 y Con-textos (dossiers de fondo, documentados y a menudo interactivos, anclados a un artículo). En la impresa hubo secciones propias (Mitológicas, La fábrica de sueños…).
 
 ## Condiciones de aceptación (las fija Berlín, las comprueba Palermo)
 1. **Tesis reconocible.** El texto tiene una idea o una experiencia que lo sostiene y se puede decir en una frase. Un texto que solo acumula referencias no la tiene.
