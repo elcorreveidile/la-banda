@@ -15,6 +15,8 @@ import { olvidosMetrics, type OlvidosMetrics } from '@/lib/olvidos/metrics'
 import { objectionsForSession } from '@/lib/olvidos/manuscripts'
 import { ObjectionsList, OlvidosCard } from './OlvidosCard'
 import { CorpusCard } from './CorpusCard'
+import { peticionesMetrics, type PeticionesMetrics } from '@/lib/peticiones/metrics'
+import { PeticionesCard } from './PeticionesCard'
 
 export const dynamic = 'force-dynamic'
 /** El orquestador corre en `after()` de la acción; le damos margen (plan Pro de Vercel). */
@@ -39,6 +41,7 @@ const TABS = [
   { key: 'corpus', label: 'Corpus ELE', domain: 'corpus-ele', activa: 'bg-emerald-600 text-white shadow-sm', punto: 'bg-emerald-500', chip: 'bg-emerald-50 text-emerald-800', borde: 'border-l-2 border-emerald-500 bg-emerald-50' },
   { key: 'trading', label: 'Trading', domain: 'trading', activa: 'bg-sky-600 text-white shadow-sm', punto: 'bg-sky-500', chip: 'bg-sky-50 text-sky-800', borde: 'border-l-2 border-sky-500 bg-sky-50' },
   { key: 'olvidos', label: 'Olvidos', domain: 'olvidos', activa: 'bg-amber-600 text-white shadow-sm', punto: 'bg-amber-500', chip: 'bg-amber-50 text-amber-900', borde: 'border-l-2 border-amber-500 bg-amber-50' },
+  { key: 'peticiones', label: 'Peticiones', domain: 'peticiones', activa: 'bg-violet-600 text-white shadow-sm', punto: 'bg-violet-500', chip: 'bg-violet-50 text-violet-800', borde: 'border-l-2 border-violet-500 bg-violet-50' },
 ] as const
 type TabKey = (typeof TABS)[number]['key']
 
@@ -78,6 +81,14 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
       olvidos = await olvidosMetrics()
     } catch (err) {
       console.error('[la-banda] olvidosMetrics', err)
+    }
+  }
+  let peticiones: PeticionesMetrics | null = null
+  if (activa === 'peticiones') {
+    try {
+      peticiones = await peticionesMetrics()
+    } catch (err) {
+      console.error('[la-banda] peticionesMetrics', err)
     }
   }
   const objections = activa === 'olvidos' && elegida?.domain === 'olvidos' ? await objectionsForSession(elegida.id).catch(() => []) : []
@@ -177,6 +188,8 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
               <ObjectionsList items={objections} />
             </>
           )}
+
+          {activa === 'peticiones' && peticiones && <PeticionesCard m={peticiones} />}
 
           {view ? (
             <SessionLive key={view.session.id} initial={view} />

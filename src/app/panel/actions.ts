@@ -13,6 +13,7 @@ import { getSection } from '@domains/olvidos/secciones'
 import { CORPUS_DOMAIN, abrirMuestra, type MuestraInput } from '@/lib/corpus/cycle'
 import { bombear } from '@/lib/bomba'
 import { NIVELES, type Nivel } from '@domains/corpus-ele/config'
+import { createPeticion, setPeticionSesion } from '@/lib/peticiones/peticiones'
 
 /** Lanza un ciclo de trading a mano (mismo camino que el cron) y arranca la cadena de ticks. */
 export async function startTradingCycle() {
@@ -101,6 +102,39 @@ export async function startCorpusMuestra(formData: FormData) {
   after(async () => {
     try {
       await kickTick(selfOrigin(origin), CORPUS_DOMAIN, opened.session.id)
+    } catch (err) {
+      console.error('[la-banda] kickTick', opened.session.id, err)
+    }
+  })
+
+  redirect(`/panel?s=${opened.session.id}`)
+}
+
+/** Encarga un análisis libre: la banda analiza la petición y entrega un informe. */
+export async function startPeticion(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+
+  const titulo = String(formData.get('titulo') ?? '').trim().slice(0, 200)
+  const texto = String(formData.get('texto') ?? '').trim().slice(0, 20_000)
+  const webhookUrl = String(formData.get('webhookUrl') ?? '').trim().slice(0, 500) || null
+  if (titulo.length < 1 || texto.length < 10) redirect('/panel')
+  if (webhookUrl && !webhookUrl.startsWith('https://') && process.env.NODE_ENV === 'production') redirect('/panel')
+
+  const peticion = await createPeticion({ titulo, texto, webhookUrl, referencia: null, createdBy: session.user.email })
+  const domain = getDomain('peticiones')
+  const opened = await engine.openSession(domain, {
+    kind: 'peticion',
+    createdBy: session.user.email,
+    payload: { kind: 'peticion', peticionId: peticion.id, titulo: peticion.titulo },
+  })
+  await setPeticionSesion(peticion.id, opened.session.id)
+
+  const h = await headers()
+  const origin = process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('x-forwarded-host') ?? h.get('host')}`
+  after(async () => {
+    try {
+      await kickTick(selfOrigin(origin), 'peticiones', opened.session.id)
     } catch (err) {
       console.error('[la-banda] kickTick', opened.session.id, err)
     }
