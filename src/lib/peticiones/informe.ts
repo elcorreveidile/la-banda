@@ -5,6 +5,8 @@
  * (sesión cerrada con finalReport pero fila sin informe).
  */
 
+import { quitarCitas } from '@/lib/limpiar'
+
 export interface InformePeticion {
   titulo: string
   resumenEjecutivo: string | null
@@ -41,10 +43,11 @@ export function componerInformeDesdeDossier(payloads: unknown[], titulo: string)
     return { titulo: textoNoVacio(campo(v, 'titulo')), cuerpo, recomendaciones: campo(v, 'recomendaciones') ?? null }
   })
   if (!borrador) return null
+  const resumen = ultimo(payloads, 'resumenEjecutivo', textoNoVacio)
   return {
-    titulo: borrador.titulo || titulo,
-    resumenEjecutivo: ultimo(payloads, 'resumenEjecutivo', textoNoVacio),
-    cuerpo: borrador.cuerpo,
+    titulo: quitarCitas(borrador.titulo || titulo),
+    resumenEjecutivo: resumen ? quitarCitas(resumen) : null,
+    cuerpo: quitarCitas(borrador.cuerpo),
     criterios: ultimo(payloads, 'criterios', (v) => (Array.isArray(v) && v.length ? v : null)),
     verificacion: ultimo(payloads, 'verificacion', (v) => (v && typeof v === 'object' ? v : null)),
     veredictoPalermo: ultimo(payloads, 'veredictoPalermo', (v) => (v && typeof v === 'object' ? v : null)),
@@ -61,10 +64,11 @@ export function componerInformeDesdeFinalReport(finalReport: unknown, titulo: st
   if (!finalReport || typeof finalReport !== 'object') return null
   const cuerpo = textoNoVacio(campo(finalReport, 'informe'))
   if (!cuerpo) return null
+  const resumen = textoNoVacio(campo(finalReport, 'resumenEjecutivo'))
   return {
-    titulo: textoNoVacio(campo(finalReport, 'titulo')) || titulo,
-    resumenEjecutivo: textoNoVacio(campo(finalReport, 'resumenEjecutivo')),
-    cuerpo,
+    titulo: quitarCitas(textoNoVacio(campo(finalReport, 'titulo')) || titulo),
+    resumenEjecutivo: resumen ? quitarCitas(resumen) : null,
+    cuerpo: quitarCitas(cuerpo),
     criterios: null,
     verificacion: null,
     veredictoPalermo: campo(finalReport, 'veredictoPalermo') ?? null,
