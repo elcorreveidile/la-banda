@@ -62,7 +62,7 @@ Con alcance "paginas" respeta las páginas que el cliente ya tiene: solo las nue
 ${COMUN}
 Lee el brief, la "arquitectura" y los "criterios" del dossier. Añade "sitioBorrador", que depende del MODO:
 - MODO "wordnext": { "nombre": nombre del sitio, "tema": { "accent": color de acento en hex (opcional) }, "paginas": una por página de la arquitectura, cada una { "titulo", "slug", "kind", "blocks": lista de bloques } }. Vocabulario CERRADO de bloques (cualquier otro tipo se descarta):
-  · "hero": { "title" (obligatorio), "subtitle"?, "titleAccent"? (solo si es el prefijo exacto de title), "ctaText"? + "ctaHref"? (empieza por / o es https absoluta) }
+  · "hero": { "title" (obligatorio), "subtitle"?, "titleAccent"? (solo si es el prefijo exacto de title), "ctaText"? + "ctaHref"? (empieza por / o es https absoluta), "image"?: URL https absoluta del brief con "layout": "cover" para que la imagen ocupe TODO el ancho como fondo con el texto encima ("split", el valor por defecto, la deja a un lado) }
   · "heading": { "text" (obligatorio), "level": 1-6, por defecto 2 }
   · "paragraph": { "text" (obligatorio), "align"?: "center"|"right", "size"?: "sm"|"lg"|"xl" }
   · "list": { "items": lista de textos no vacía (obligatoria), "ordered"?: true }

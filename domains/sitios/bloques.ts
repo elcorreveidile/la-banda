@@ -76,6 +76,8 @@ export function validarBloque(b: unknown): Resultado<BloqueValido> {
         const href = opcional('ctaHref', (v): v is string => typeof v === 'string' && (v.startsWith('/') || URL_ABSOLUTA.test(v)))
         if (href) bloque.ctaHref = href
       }
+      if (esTexto(raw.image) && URL_ABSOLUTA.test(raw.image.trim())) bloque.image = raw.image.trim()
+      if (raw.layout === 'cover' || raw.layout === 'split') bloque.layout = raw.layout
       return { ok: true, valor: bloque }
     }
     case 'heading': {
