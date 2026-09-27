@@ -114,7 +114,7 @@ describe('veredicto de las mesas (modelo falso)', () => {
     expect(mem.events.filter((e) => e.type === 'return')).toHaveLength(1)
   })
 
-  it('sesión fallida → revisión failed, sin veredicto; abierta → nada', () => {
+  it('sesión fallida o abierta → sin veredicto de la mesa (el fallo lo cierra falloCerrado)', () => {
     expect(veredictoDeSesion('failed', null)).toBeNull()
     expect(veredictoDeSesion('open', null)).toBeNull()
     expect(veredictoDeSesion('closed', { confidence: 7 })).toMatchObject({ verdict: 'benign', confidence: 1 })

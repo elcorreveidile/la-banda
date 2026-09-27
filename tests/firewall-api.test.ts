@@ -111,6 +111,21 @@ describe('POST /api/v1/firewall/revisar', () => {
     expect(m.filas.get(j.id)).toMatchObject({ status: 'done', verdict: 'benign', cached: true })
   })
 
+  it('fail-closed: si la mesa falla, bloqueo con confianza 0, marcado y fuera de la caché; la espera también', async () => {
+    const m = montar()
+    const a = await (await manejarPost(post(cuerpo()), m.deps)).json()
+    const w = await (await manejarPost(post(cuerpo({ logId: 'log-2' })), m.deps)).json()
+    await finalizarRevisionDeSesion('sesion-1', { store: m.store, sesion: async () => ({ status: 'failed', finalReport: null }) })
+    for (const id of [a.id, w.id]) {
+      expect(m.filas.get(id)).toMatchObject({ status: 'failed', verdict: 'malicious', confidence: 0 })
+      const g = await (await manejarGet(get(), id, m.deps.store)).json()
+      expect(g).toMatchObject({ status: 'failed', verdict: 'malicious', confidence: 0, failClosed: true })
+    }
+    // Un fallo no se cachea: el mismo patrón vuelve a mesa.
+    const j = await (await manejarPost(post(cuerpo({ logId: 'log-3' })), m.deps)).json()
+    expect(j.status).toBe('queued')
+  })
+
   it('idempotente por logId: el reintento del remitente no abre otra mesa', async () => {
     const m = montar()
     const a = await (await manejarPost(post(cuerpo()), m.deps)).json()
@@ -151,7 +166,7 @@ describe('GET /api/v1/firewall/revisar/:id', () => {
     expect((await manejarGet(get(), 'nada', m.store)).status).toBe(404)
     const { id } = await (await manejarPost(post(cuerpo()), m.deps)).json()
     const j = await (await manejarGet(get(), id, m.store)).json()
-    expect(Object.keys(j).sort()).toEqual(['cached', 'confidence', 'decidedAt', 'id', 'logId', 'patternKey', 'rationale', 'status', 'tenantId', 'verdict'])
+    expect(Object.keys(j).sort()).toEqual(['cached', 'confidence', 'decidedAt', 'failClosed', 'id', 'logId', 'patternKey', 'rationale', 'status', 'tenantId', 'verdict'])
     expect(j).toMatchObject({ id, logId: 'log-1', tenantId: 'tenant-1', status: 'queued', verdict: null, confidence: null, cached: false, decidedAt: null })
   })
 })

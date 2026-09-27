@@ -300,7 +300,7 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
     (testeable sin Next ni BD).
   - **Contrato de salida**: `GET /api/v1/firewall/revisar/<id>` (mismo Bearer) →
     `{ id, logId, tenantId, status: queued|running|done|failed, verdict: benign|malicious|null,
-    confidence, rationale, patternKey, cached, decidedAt }`. **Webhook**: con `WORDNEXT_CALLBACK_URL` +
+    confidence, rationale, patternKey, cached, failClosed, decidedAt }`. **Webhook**: con `WORDNEXT_CALLBACK_URL` +
     `WORDNEXT_CALLBACK_SECRET`, al terminar una mesa (y a las revisiones en espera) POST de ese mismo
     JSON con `X-Banda-Signature: sha256=<hex HMAC-SHA256(secreto, cuerpo exacto)>`; 2xx = entregado;
     reintentos del cron con el backoff de peticiones (1, 5, 15, 60 min; 12 intentos o 24 h). Sin URL o
@@ -310,6 +310,16 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
     `FIREWALL_MODELO_MESA`, `FIREWALL_MODELO_JUEZ`, `FIREWALL_CACHE_TTL_DIAS`,
     `FIREWALL_MAX_POR_TENANT_DIA`. Requiere `ANTHROPIC_API_KEY`. El receptor del webhook en
     wp-next-starter va en otro PR.
+
+- **2026-09-27, firewall: FAIL-CLOSED (v0.10.1)**. Al repasar la Fase 2b contra la especificación de Javier
+  («si la Banda no responde o se agota maxSteps, el veredicto es veto») faltaba: una mesa fallida (error del
+  modelo, tope de pasos, sesión abandonada por la bomba, mesa que no se pudo abrir) dejaba la revisión `failed`
+  SIN veredicto. Ahora `falloCerrado` (`src/lib/firewall/veredicto.ts`) la cierra como `failed` + `verdict:
+  malicious` + `confidence: 0` + razón «Bloqueo por fallo (fail-closed): …»; lo heredan las revisiones en espera.
+  El contrato de salida (GET y webhook) gana **`failClosed: boolean`** (`status === 'failed'`) para que WordNext lo
+  distinga de un ataque juzgado («bloqueo por fallo»). Nunca entra en la caché (exige `done` y confianza ≥ 0,7),
+  así que el patrón vuelve a mesa la próxima vez. Las métricas cuentan como «maliciosas» solo las juzgadas.
+  Test en `firewall-api`. Decidido por AskUserQuestion: «veto marcado».
 
 ## Convenciones
 

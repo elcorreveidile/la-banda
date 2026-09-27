@@ -16,7 +16,7 @@
 import type { MotivoCuarentena, Revision } from '@/db/firewall'
 import { CONFIANZA_MINIMA_CACHE, cacheTtlMs, inicioDiaUtc, maxPorTenantDia } from './config'
 import { patternKey } from './patron'
-import { veredictoDeSesion } from './veredicto'
+import { falloCerrado, veredictoDeSesion } from './veredicto'
 import type { FirewallStore, LeerSesion } from './store'
 import { agotadoAviso, avisoConfigurado, intentarAvisoRevision, venceAviso, type DepsAviso } from './webhook'
 
@@ -102,7 +102,7 @@ export async function abrirRevision(c: Cuarentena, deps: DepsAbrir): Promise<Res
     await store.actualizar(revision.id, { sessionId })
     return { tipo: 'mesa', revision: { ...revision, sessionId }, sessionId }
   } catch (err) {
-    await store.actualizar(revision.id, { status: 'failed', rationale: 'no se pudo abrir la mesa', decidedAt: new Date(now) })
+    await store.actualizar(revision.id, falloCerrado('no se pudo abrir la mesa', new Date(now)))
     throw err
   }
 }
@@ -148,7 +148,7 @@ export async function finalizarRevision(rev: Revision, deps: DepsCierre): Promis
         expiresAt: v.confidence >= CONFIANZA_MINIMA_CACHE ? new Date(now.getTime() + cacheTtlMs()) : null,
         avisoEstado: avisoInicial(env),
       }
-    : { status: 'failed' as const, rationale: 'la mesa no llegó a veredicto', decidedAt: now, avisoEstado: avisoInicial(env) }
+    : { ...falloCerrado('la mesa no llegó a veredicto', now), avisoEstado: avisoInicial(env) }
   await store.actualizar(rev.id, patch)
 
   for (const w of await store.enEspera(rev.id)) {
@@ -156,7 +156,7 @@ export async function finalizarRevision(rev: Revision, deps: DepsCierre): Promis
       w.id,
       v
         ? { status: 'done', verdict: v.verdict, confidence: v.confidence, rationale: v.rationale, cached: true, decidedAt: now, avisoEstado: avisoInicial(env) }
-        : { status: 'failed', rationale: 'la mesa del mismo patrón no llegó a veredicto', decidedAt: now, avisoEstado: avisoInicial(env) },
+        : { ...falloCerrado('la mesa del mismo patrón no llegó a veredicto', now), cached: true, avisoEstado: avisoInicial(env) },
     )
     await avisarSiToca(store, w.id, deps)
   }
