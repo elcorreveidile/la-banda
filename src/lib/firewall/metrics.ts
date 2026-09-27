@@ -33,7 +33,7 @@ export async function firewallMetrics(now = Date.now()): Promise<FirewallMetrics
       total: filas.length,
       mesas: filas.filter((f) => !f.cached && !f.origenId).length,
       cache: filas.filter((f) => f.cached).length,
-      maliciosas: filas.filter((f) => f.verdict === 'malicious').length,
+      maliciosas: filas.filter((f) => f.verdict === 'malicious' && f.status === 'done').length,
       benignas: filas.filter((f) => f.verdict === 'benign').length,
       fallidas: filas.filter((f) => f.status === 'failed').length,
       avisosPendientes: filas.filter((f) => f.avisoEstado === 'pendiente').length,

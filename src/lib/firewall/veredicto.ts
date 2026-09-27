@@ -4,7 +4,9 @@
  * El veredicto lo da la ACCIÓN del cortafuegos (Palermo), no lo que diga el texto:
  * - sesión `closed` (close) → benign: la cuarentena fue un falso positivo;
  * - sesión `vetoed` (veto)  → malicious: se confirma el bloqueo;
- * - sesión `failed`         → sin veredicto (la revisión queda `failed`).
+ * - sesión `failed` (fallo del modelo, tope de pasos, mesa abandonada) → FAIL-CLOSED: la
+ *   revisión queda `failed` pero con veredicto de bloqueo (`malicious`, confianza 0) y
+ *   `failClosed: true` en la salida. Nunca entra en la caché (exige `done` y confianza ≥ 0,7).
  * `confidence` y `rationale` salen del payload del cierre/veto.
  */
 
@@ -36,7 +38,18 @@ export function limpiarRationale(texto: unknown, detail: string | null | undefin
   return s.length > MAX_RATIONALE ? `${s.slice(0, MAX_RATIONALE - 1)}…` : s
 }
 
-/** Veredicto de una sesión terminada; null si sigue abierta o falló. */
+/** Parche fail-closed: sin veredicto de la mesa se mantiene el bloqueo, marcado como tal. */
+export function falloCerrado(motivo: string, now: Date) {
+  return {
+    status: 'failed' as const,
+    verdict: 'malicious' as const,
+    confidence: 0,
+    rationale: `Bloqueo por fallo (fail-closed): ${motivo}.`,
+    decidedAt: now,
+  }
+}
+
+/** Veredicto de una sesión terminada; null si sigue abierta o falló (entonces aplica `falloCerrado`). */
 export function veredictoDeSesion(status: SessionStatus, finalReport: unknown, detail?: string | null): Veredicto | null {
   if (status !== 'closed' && status !== 'vetoed') return null
   const fr = obj(finalReport)
@@ -59,6 +72,8 @@ export interface SalidaRevision {
   rationale: string | null
   patternKey: string
   cached: boolean
+  /** true si el veredicto es un bloqueo por fallo de la mesa, no un juicio. */
+  failClosed: boolean
   decidedAt: string | null
 }
 
@@ -73,6 +88,7 @@ export function salidaDe(r: Revision): SalidaRevision {
     rationale: r.rationale ?? null,
     patternKey: r.patternKey,
     cached: r.cached,
+    failClosed: r.status === 'failed',
     decidedAt: r.decidedAt ? r.decidedAt.toISOString() : null,
   }
 }
