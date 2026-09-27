@@ -14,6 +14,7 @@ import { CORPUS_DOMAIN, abrirMuestra, type MuestraInput } from '@/lib/corpus/cyc
 import { bombear } from '@/lib/bomba'
 import { NIVELES, type Nivel } from '@domains/corpus-ele/config'
 import { createPeticion, setPeticionSesion } from '@/lib/peticiones/peticiones'
+import { createSite, setSiteSesion } from '@/lib/sitios/sites'
 
 /** Lanza un ciclo de trading a mano (mismo camino que el cron) y arranca la cadena de ticks. */
 export async function startTradingCycle() {
@@ -141,6 +142,49 @@ export async function startPeticion(formData: FormData) {
   })
 
   redirect(`/panel?s=${opened.session.id}`)
+}
+
+const SUBDOMINIO_PANEL = /^[a-z0-9]+(-[a-z0-9]+)*$/
+
+/** Encarga un sitio web: la banda lo construye desde el brief y lo entrega (WordNext o paquete estático). */
+export async function startSitio(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+
+  const titulo = String(formData.get('titulo') ?? '').trim().slice(0, 200)
+  const modo = String(formData.get('modo') ?? '') === 'estatico' ? 'estatico' : 'wordnext'
+  const alcance = String(formData.get('alcance') ?? '') === 'paginas' ? 'paginas' : 'sitio'
+  const brief = String(formData.get('brief') ?? '').trim().slice(0, 40_000)
+  const tenantId = String(formData.get('tenantId') ?? '').trim().slice(0, 120) || null
+  const subdominio = String(formData.get('subdominio') ?? '')
+    .trim()
+    .toLowerCase()
+    .slice(0, 63) || null
+  if (titulo.length < 1 || brief.length < 10) redirect('/panel?tab=sitios')
+  if (alcance === 'paginas' && !tenantId) redirect('/panel?tab=sitios')
+  if (alcance === 'sitio' && tenantId) redirect('/panel?tab=sitios')
+  if (subdominio && (alcance !== 'sitio' || !SUBDOMINIO_PANEL.test(subdominio))) redirect('/panel?tab=sitios')
+
+  const site = await createSite({ titulo, modo, alcance, brief, tenantId, subdominio, createdBy: session.user.email })
+  const domain = getDomain('sitios')
+  const opened = await engine.openSession(domain, {
+    kind: 'sitio',
+    createdBy: session.user.email,
+    payload: { kind: 'sitio', sitioId: site.id, titulo: site.titulo, modo: site.modo, alcance: site.alcance },
+  })
+  await setSiteSesion(site.id, opened.session.id)
+
+  const h = await headers()
+  const origin = process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('x-forwarded-host') ?? h.get('host')}`
+  after(async () => {
+    try {
+      await kickTick(selfOrigin(origin), 'sitios', opened.session.id)
+    } catch (err) {
+      console.error('[la-banda] kickTick', opened.session.id, err)
+    }
+  })
+
+  redirect(`/panel?tab=sitios&s=${opened.session.id}`)
 }
 
 /**

@@ -4,8 +4,9 @@ import * as core from './schema'
 import * as trading from './trading'
 import * as olvidos from './olvidos'
 import * as peticiones from './peticiones'
+import * as sitios from './sitios'
 
-const schema = { ...core, ...trading, ...olvidos, ...peticiones }
+const schema = { ...core, ...trading, ...olvidos, ...peticiones, ...sitios }
 
 /**
  * Conexión a Neon por HTTP: sin transacciones (cada consulta va sola).

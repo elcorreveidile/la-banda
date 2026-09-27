@@ -5,6 +5,7 @@ import { tradingDomain } from './trading/config'
 import { olvidosDomain } from './olvidos/config'
 import { corpusEleDomain } from './corpus-ele/config'
 import { peticionesDomain } from './peticiones/config'
+import { sitiosDomain } from './sitios/config'
 
 const DOMAINS: Record<string, DomainConfig> = {
   [toyDomain.name]: toyDomain,
@@ -12,6 +13,7 @@ const DOMAINS: Record<string, DomainConfig> = {
   [olvidosDomain.name]: olvidosDomain,
   [corpusEleDomain.name]: corpusEleDomain,
   [peticionesDomain.name]: peticionesDomain,
+  [sitiosDomain.name]: sitiosDomain,
 }
 
 for (const d of Object.values(DOMAINS)) validateDomain(d)
