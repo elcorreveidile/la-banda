@@ -19,6 +19,8 @@ import { peticionesMetrics, type PeticionesMetrics } from '@/lib/peticiones/metr
 import { PeticionesCard } from './PeticionesCard'
 import { sitiosMetrics, type SitiosMetrics } from '@/lib/sitios/metrics'
 import { SitiosCard } from './SitiosCard'
+import { firewallMetrics, type FirewallMetrics } from '@/lib/firewall/metrics'
+import { FirewallCard } from './FirewallCard'
 
 export const dynamic = 'force-dynamic'
 /** El orquestador corre en `after()` de la acción; le damos margen (plan Pro de Vercel). */
@@ -45,6 +47,7 @@ const TABS = [
   { key: 'olvidos', label: 'Olvidos', domain: 'olvidos', activa: 'bg-amber-600 text-white shadow-sm', punto: 'bg-amber-500', chip: 'bg-amber-50 text-amber-900', borde: 'border-l-2 border-amber-500 bg-amber-50' },
   { key: 'peticiones', label: 'Peticiones', domain: 'peticiones', activa: 'bg-violet-600 text-white shadow-sm', punto: 'bg-violet-500', chip: 'bg-violet-50 text-violet-800', borde: 'border-l-2 border-violet-500 bg-violet-50' },
   { key: 'sitios', label: 'Sitios', domain: 'sitios', activa: 'bg-orange-600 text-white shadow-sm', punto: 'bg-orange-500', chip: 'bg-orange-50 text-orange-800', borde: 'border-l-2 border-orange-500 bg-orange-50' },
+  { key: 'firewall', label: 'Firewall', domain: 'firewall', activa: 'bg-rose-600 text-white shadow-sm', punto: 'bg-rose-500', chip: 'bg-rose-50 text-rose-800', borde: 'border-l-2 border-rose-500 bg-rose-50' },
 ] as const
 type TabKey = (typeof TABS)[number]['key']
 
@@ -100,6 +103,14 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
       sitios = await sitiosMetrics()
     } catch (err) {
       console.error('[la-banda] sitiosMetrics', err)
+    }
+  }
+  let firewall: FirewallMetrics | null = null
+  if (activa === 'firewall') {
+    try {
+      firewall = await firewallMetrics()
+    } catch (err) {
+      console.error('[la-banda] firewallMetrics', err)
     }
   }
   const objections = activa === 'olvidos' && elegida?.domain === 'olvidos' ? await objectionsForSession(elegida.id).catch(() => []) : []
@@ -203,6 +214,8 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
           {activa === 'peticiones' && peticiones && <PeticionesCard m={peticiones} />}
 
           {activa === 'sitios' && sitios && <SitiosCard m={sitios} />}
+
+          {activa === 'firewall' && firewall && <FirewallCard m={firewall} />}
 
           {view ? (
             <SessionLive key={view.session.id} initial={view} />

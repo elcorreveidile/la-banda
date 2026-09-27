@@ -252,6 +252,65 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   estética del panel (mono para etiquetas, sans para prosa, tarjetas, fondo claro). Envs
   nuevas: `CONTACT_EMAIL`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`.
 
+- **2026-09-27, firewall agéntico — carril profundo (v0.10.0, Fase 2b de la web agéntica de
+  WordNext)**. wp-next-starter (1.65.x) tiene el carril RÁPIDO determinista (allow/deny/quarantine,
+  sin LLM) y manda aquí las cuarentenas POR CONTENIDO, ya deduplicadas y con tope 50/día por tenant.
+  La Banda NO bloquea en línea: juzga después y el veredicto **solo informa** (no toca las listas del
+  tenant). Decidido con Javier por AskUserQuestion: modelos mixtos, tabla propia, webhook + GET, solo
+  tres mesas, tope 50/día con 429, caché solo con confianza ≥ 0,7, sin webhook en respuestas de caché.
+  - **Dominio `firewall`** (`domains/firewall/`): Tokio (mesa de inyección de prompt) → Berlín (mesa
+    de exfiltración/copia) → Denver (mesa de anomalía) → Profesor (árbitro; puede devolver UNA vez a
+    una mesa) → Palermo (cortafuegos, `canVeto`, `closer`). **La acción de Palermo es el veredicto**:
+    `close` = `benign` (falso positivo), `veto` = `malicious` (se confirma el bloqueo); ambos con
+    `{ verdict, confidence 0-1, rationale }` (`src/lib/firewall/veredicto.ts`). Sin mesas de
+    identidad/authz ni de política de contenido: la superficie es de solo lectura y sin identidad
+    (identidad tendrá sentido en la Fase 3, mandato firmado).
+  - **Modelos**: mesas `FIREWALL_MODELO_MESA` (def. `anthropic:claude-sonnet-5`), árbitro y
+    cortafuegos `FIREWALL_MODELO_JUEZ` (def. `anthropic:claude-opus-5-5`). Un modelo sin prefijo se fija
+    a `anthropic:`; z.ai solo con `zai:…` explícito. **Sin la clave del proveedor nombrado no se abre
+    mesa (503)**, en vez de caer al predeterminado (`providerFor` caería a z.ai): tráfico de clientes
+    nunca va a z.ai por defecto.
+  - **Dato que no es de fiar**: el fragmento, el destino, el host y el user-agent NO van en el payload
+    de la tarea (solo `{ kind, revisionId, reason }`); los sirve la herramienta `leerCuarentena` entre
+    marcas `<<<DATO_NO_FIABLE_<testigo aleatorio>>>` con los invisibles a la vista (`patron.ts`,
+    `delimitar`/`visibilizar`). Es la ÚNICA herramienta y solo lee: ningún agente actúa fuera. Los
+    prompts piden no obedecer ni copiar el fragmento; `limpiarRationale` lo quita si aun así aparece.
+  - **Tabla `firewall_revisiones`** (`src/db/firewall.ts`, `drizzle/0006_firewall.sql`; **Javier
+    ejecuta ese SQL en Neon ANTES de desplegar**). `abrirRevision` (`src/lib/firewall/cycle.ts`)
+    resuelve en orden: idempotencia por `logId` → **caché por patrón** (`patternKey` = sha256 de
+    motivo + destino + fragmento normalizado: NFKC, minúsculas, espacios colapsados, cifras → «#», sin
+    invisibles; veredicto de mesa propia vigente —`expiresAt` = decidedAt + `FIREWALL_CACHE_TTL_DIAS`,
+    def. 30— y con confianza ≥ 0,7) → **espera** (mesa del mismo patrón en curso: la fila hereda su
+    veredicto al cerrar) → **tope** `FIREWALL_MAX_POR_TENANT_DIA` (def. 50, día UTC; caché y espera no
+    cuentan) → mesa nueva. Las filas de caché/espera no guardan fragmento ni user-agent.
+  - **Cierre**: el tick (`/api/engine/tick`), si el dominio es `firewall`, marca la fila `running`
+    antes de procesar y, al terminar la sesión, escribe el veredicto y lanza el primer webhook
+    (`finalizarRevisionDeSesion`). Red de seguridad: cron **`/api/cron/firewall`** (`*/5`) cierra las
+    que nadie cerró (sesiones abandonadas por la bomba: ventana de 60 min en `bomba.ts`), reintenta
+    avisos y, pasado el TTL, borra `detail`/`userAgent` de las filas y **purga la traza** de sesiones del
+    dominio (`purgeClosed`). No se registran fragmentos en logs.
+  - **Contrato de entrada** (no cambiarlo sin avisar a wp-next-starter): `POST /api/v1/firewall/revisar`,
+    `Authorization: Bearer LA_BANDA_API_KEY`, JSON `{ kind: "agent-quarantine", logId: cuid|null,
+    tenantId, host, target: "/api/agent/…" | "mcp:<herramienta>", reason: prompt-injection |
+    exfiltration | arg-unexpected | unknown-tool | hidden-chars | param-schema | param-anomalous,
+    detail?: ≤300, userAgent?: ≤200, createdAt: ISO }` (campos extra ignorados; detail/userAgent se
+    recortan). Respuestas: 401 sin Bearer, 400 cuerpo inválido, 429 `{error:"rate-limited",limit}`, 503
+    sin modelo, **202** `{ id, status: "queued" }` o `{ id, status: "cached", verdict, confidence,
+    rationale, patternKey, cached: true, decidedAt }`. Lógica en `src/lib/firewall/api.ts`
+    (testeable sin Next ni BD).
+  - **Contrato de salida**: `GET /api/v1/firewall/revisar/<id>` (mismo Bearer) →
+    `{ id, logId, tenantId, status: queued|running|done|failed, verdict: benign|malicious|null,
+    confidence, rationale, patternKey, cached, decidedAt }`. **Webhook**: con `WORDNEXT_CALLBACK_URL` +
+    `WORDNEXT_CALLBACK_SECRET`, al terminar una mesa (y a las revisiones en espera) POST de ese mismo
+    JSON con `X-Banda-Signature: sha256=<hex HMAC-SHA256(secreto, cuerpo exacto)>`; 2xx = entregado;
+    reintentos del cron con el backoff de peticiones (1, 5, 15, 60 min; 12 intentos o 24 h). Sin URL o
+    sin secreto no se envía nunca sin firma (queda el GET). Las respuestas de caché no generan webhook.
+  - Panel: pestaña **Firewall** (`FirewallCard`, sin fragmento ni user-agent).
+  - Envs nuevas: `WORDNEXT_CALLBACK_URL`, `WORDNEXT_CALLBACK_SECRET` y opcionales
+    `FIREWALL_MODELO_MESA`, `FIREWALL_MODELO_JUEZ`, `FIREWALL_CACHE_TTL_DIAS`,
+    `FIREWALL_MAX_POR_TENANT_DIA`. Requiere `ANTHROPIC_API_KEY`. El receptor del webhook en
+    wp-next-starter va en otro PR.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
@@ -274,3 +333,4 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
    d3 solo para el grafo (`d3-scale`, `d3-path`), como pide el brief.
 5. Corpus ELE (dominio 3, fase 2 del plan) — **hecho** (v0.5.0): producción y
    anotación contra la API de la Clínica; fases 3-5 en el repo clinica-cultural.
+6. Firewall agéntico de WordNext, carril profundo (Fase 2b) — **hecho** (v0.10.0).

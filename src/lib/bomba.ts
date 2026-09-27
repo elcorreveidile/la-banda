@@ -24,6 +24,8 @@ export const STALE_CLAIM_MS = 7 * 60_000
 const STALE_SESSION_POR_DOMINIO: Record<string, number> = {
   trading: 90 * 60_000,
   'corpus-ele': 6 * 60 * 60_000,
+  // Una revisión de firewall son cinco agentes: si en una hora no terminó, se da por fallida (el cron avisa).
+  firewall: 60 * 60_000,
 }
 const STALE_SESSION_DEFECTO = 6 * 60 * 60_000
 

@@ -3,6 +3,7 @@
     { "path": "/api/cron/tick", "schedule": "* * * * *" },
     { "path": "/api/cron/trading", "schedule": "5 * * * *" },
     { "path": "/api/cron/corpus", "schedule": "20 6 * * *" },
-    { "path": "/api/cron/peticiones", "schedule": "*/5 * * * *" }
+    { "path": "/api/cron/peticiones", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/firewall", "schedule": "*/5 * * * *" }
   ]
 }
