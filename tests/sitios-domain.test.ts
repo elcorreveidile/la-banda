@@ -175,6 +175,16 @@ describe('validarPaginas (wordnext)', () => {
     expect(r.paginas).toHaveLength(MAX_PAGINAS)
     expect(r.paginas[0].slug).toBe('pagina-1')
   })
+
+  it('acepta el título como lo escribe Río («titulo») y también «title»', () => {
+    const r = validarPaginas([
+      { titulo: 'Inicio', slug: 'inicio', kind: 'HOME', blocks: [{ type: 'paragraph', text: 'contenido real' }] },
+      { titulo: 'Nuestros panes', slug: 'panes', blocks: [{ type: 'paragraph', text: 'contenido real' }] },
+      { title: 'Contacto', slug: 'contacto', blocks: [{ type: 'paragraph', text: 'contenido real' }] },
+    ])
+    expect(r.paginas.map((p) => p.titulo)).toEqual(['Inicio', 'Nuestros panes', 'Contacto'])
+    expect(r.descartes).toHaveLength(0)
+  })
 })
 
 describe('validarPaginasEstaticas', () => {
@@ -198,6 +208,15 @@ describe('validarPaginasEstaticas', () => {
     const r = validarPaginasEstaticas([{ path: 'quienes.html', title: 'Quiénes', html: '<p>x</p>' }])
     expect(r.paginas).toHaveLength(1)
     expect(r.descartes.some((d) => d.includes('falta index.html'))).toBe(true)
+  })
+
+  it('acepta el título como «titulo» o «title»; si no hay, usa el path', () => {
+    const r = validarPaginasEstaticas([
+      { path: 'index.html', titulo: 'Inicio', html: '<h1>hola</h1>' },
+      { path: 'carta.html', title: 'Carta', html: '<p>x</p>' },
+      { path: 'contacto.html', html: '<p>sin título</p>' },
+    ])
+    expect(r.paginas.map((p) => p.titulo)).toEqual(['Inicio', 'Carta', 'contacto.html'])
   })
 })
 
