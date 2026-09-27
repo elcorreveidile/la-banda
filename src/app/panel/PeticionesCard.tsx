@@ -1,6 +1,9 @@
 import Link from 'next/link'
 import clsx from 'clsx'
-import type { EstadoPeticion, EstadoAviso } from '@/db/peticiones'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
+import type { EstadoPeticion, EstadoAviso, Peticion } from '@/db/peticiones'
+import type { InformePeticion } from '@/lib/peticiones/informe'
 import type { PeticionesMetrics } from '@/lib/peticiones/metrics'
 import { startPeticion } from './actions'
 
@@ -47,21 +50,27 @@ export function PeticionesCard({ m }: { m: PeticionesMetrics }) {
 
       {m.recientes.length > 0 && (
         <ul className="text-xs">
-          {m.recientes.map((p) => (
-            <li key={p.id} className="flex flex-wrap items-center gap-x-3 border-t border-stone-100 py-1">
-              <b>{p.titulo}</b>
-              <span className={clsx(ESTADO_STYLE[p.estado])}>{p.estado}</span>
-              <span>
-                aviso: <span className={clsx(AVISO_STYLE[p.avisoEstado])}>{p.avisoEstado}</span>
-                {p.avisoIntentos > 0 && <span className="text-stone-400"> ({p.avisoIntentos})</span>}
-              </span>
-              {p.sessionId && (
-                <Link href={`/panel?s=${p.sessionId}`} className="underline">
-                  sesión
-                </Link>
-              )}
-            </li>
-          ))}
+          {m.recientes.map((p) => {
+            const informe = informeDe(p)
+            return (
+              <li key={p.id} className="border-t border-stone-100 py-1">
+                <div className="flex flex-wrap items-center gap-x-3">
+                  <b>{p.titulo}</b>
+                  <span className={clsx(ESTADO_STYLE[p.estado])}>{p.estado}</span>
+                  <span>
+                    aviso: <span className={clsx(AVISO_STYLE[p.avisoEstado])}>{p.avisoEstado}</span>
+                    {p.avisoIntentos > 0 && <span className="text-stone-400"> ({p.avisoIntentos})</span>}
+                  </span>
+                  {p.sessionId && (
+                    <Link href={`/panel?s=${p.sessionId}`} className="underline">
+                      sesión
+                    </Link>
+                  )}
+                </div>
+                {informe && <InformeView informe={informe} />}
+              </li>
+            )
+          })}
         </ul>
       )}
     </section>
@@ -74,5 +83,30 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
       <dt className="text-stone-500">{label}</dt>
       <dd className={clsx('font-bold', tone)}>{value}</dd>
     </div>
+  )
+}
+
+/** El informe registrado, si la fila lo lleva y tiene cuerpo (el jsonb llega como unknown). */
+function informeDe(p: Peticion): InformePeticion | null {
+  const i = p.informe
+  if (!i || typeof i !== 'object') return null
+  const c = (i as Record<string, unknown>).cuerpo
+  return typeof c === 'string' && c.trim() ? (i as InformePeticion) : null
+}
+
+/** Vista plegable del informe: título, resumen y cuerpo en Markdown. Servidor. */
+function InformeView({ informe }: { informe: InformePeticion }) {
+  return (
+    <details className="mt-1">
+      <summary className="cursor-pointer select-none text-violet-700">ver informe</summary>
+      <div className="mt-2 rounded-lg border border-stone-200 bg-stone-50 p-3">
+        <p className="font-bold">{informe.titulo}</p>
+        {informe.resumenEjecutivo && <p className="mt-1 text-sm text-stone-600">{informe.resumenEjecutivo}</p>}
+        <div className="prose prose-sm mt-3 max-w-none">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{informe.cuerpo}</ReactMarkdown>
+        </div>
+        <p className="mt-3 text-xs text-stone-400">generado {new Date(informe.generadoAt).toLocaleString('es-ES')}</p>
+      </div>
+    </details>
   )
 }
