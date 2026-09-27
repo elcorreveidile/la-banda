@@ -129,6 +129,12 @@ describe('validación de bloques (vocabulario cerrado)', () => {
 
     const cta = validarBloque({ type: 'hero', title: 'T', ctaText: 'Reservar', ctaHref: '/contacto' })
     expect(cta.ok && cta.valor).toMatchObject({ ctaHref: '/contacto' })
+
+    const heroImagen = validarBloque({ type: 'hero', title: 'Hornada', image: 'https://images.unsplash.com/foto.jpg', layout: 'cover' })
+    expect(heroImagen.ok && heroImagen.valor).toEqual({ type: 'hero', title: 'Hornada', image: 'https://images.unsplash.com/foto.jpg', layout: 'cover' })
+    // Imagen no https o layout fuera del vocabulario: se omite el campo, el hero sigue válido.
+    const heroRaro = validarBloque({ type: 'hero', title: 'T', image: 'http://x.com/f.jpg', layout: 'pantalla' })
+    expect(heroRaro.ok && heroRaro.valor).toEqual({ type: 'hero', title: 'T' })
   })
 
   it('las imágenes solo con URL https absoluta', () => {
