@@ -37,6 +37,9 @@ type Resultado<T> = { ok: true; valor: T } | { ok: false; motivo: string }
 
 const esTexto = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0
 
+/** El título de una página del borrador de Río: «titulo» (como lo pide el prompt) o «title». */
+const tituloDe = (raw: Record<string, unknown>): string => (esTexto(raw.titulo) ? raw.titulo : esTexto(raw.title) ? raw.title : '').trim()
+
 /** Valida UN bloque contra el vocabulario cerrado. Los campos desconocidos se quitan. */
 export function validarBloque(b: unknown): Resultado<BloqueValido> {
   if (!b || typeof b !== 'object' || Array.isArray(b)) return { ok: false, motivo: 'bloque no es un objeto' }
@@ -130,7 +133,7 @@ export function validarPaginas(input: unknown[]): { paginas: PaginaValida[]; des
       descartes.push(`${donde}: no es un objeto`)
       continue
     }
-    const titulo = esTexto(raw.title) ? raw.title.trim() : ''
+    const titulo = tituloDe(raw)
     if (!titulo) {
       descartes.push(`${donde}: sin título`)
       continue
@@ -209,7 +212,7 @@ export function validarPaginasEstaticas(input: unknown[]): { paginas: PaginaEsta
       continue
     }
     rutas.add(path)
-    paginas.push({ path, titulo: esTexto(raw.title) ? raw.title.trim() : path, html })
+    paginas.push({ path, titulo: tituloDe(raw) || path, html })
   }
 
   // Enlaces internos rotos: aviso, no descarte (no rompen la entrega).
