@@ -17,7 +17,7 @@ import { sitiosTools } from './tools'
 const COMUN = `Trabajas en La Banda construyendo un sitio web a partir del brief de un cliente.
 El sitio tiene MODO ("wordnext": páginas de bloques que se siembran en la plataforma WordNext por su API | "estatico": páginas HTML sueltas que se entregan como paquete descargable) y ALCANCE ("sitio": se crea el sitio entero | "paginas": se añaden páginas a un sitio que ya existe). Compruébalos con leerBrief o en el payload de la tarea: cambian lo que puedes pedir y lo que se espera de ti.
 El payload que recibes es un dossier acumulado: devuelve SOLO TU CAMPO NUEVO en la RAÍZ del payload (nunca dentro de otro campo); el motor lo funde solo con lo de los demás. No repitas ni resumas lo de otros.
-El brief del cliente manda: cita sus párrafos como [¶n]. Nunca inventes datos del cliente (teléfonos, direcciones, precios, horarios, nombres propios): si el brief no lo da, usa el marcador [RELLENAR]. Sin lorem ipsum ni relleno. Frases cortas, español natural.`
+El brief del cliente manda: puedes citar sus párrafos como [¶n] SOLO dentro de tus justificaciones (criterios, hallazgos, motivos); los marcadores [¶n] NUNCA aparecen en el contenido del sitio ni en los resúmenes para el cliente. Nunca inventes datos del cliente (teléfonos, direcciones, precios, horarios, nombres propios): si el brief no lo da, usa el marcador [RELLENAR]. Sin lorem ipsum ni relleno. Frases cortas, español natural.`
 
 const agents: AgentConfig[] = [
   {

@@ -11,6 +11,7 @@ import { handoffs } from '@/db/schema'
 import { siteForTask, setEntrega, setErrorEntrega, writeFiles } from './sites'
 import { agregarPaginas, crearSitio, esError, type PaginaWordNext } from './wordnext'
 import { MAX_CSS_BYTES, validarPaginas, validarPaginasEstaticas } from '@domains/sitios/bloques'
+import { quitarCitas } from '@/lib/limpiar'
 import type { EntregaSitio } from '@/db/sitios'
 
 /** Payloads de los traspasos de la tarea, del más reciente al más antiguo. */
@@ -48,7 +49,7 @@ const leerBorrador = (v: unknown): BorradorSitio | null => {
   const paginas = Array.isArray(v.paginas) ? v.paginas : []
   if (!paginas.length && !esTexto(v.stylesCss)) return null
   return {
-    nombre: typeof v.nombre === 'string' && v.nombre.trim() ? v.nombre.trim() : null,
+    nombre: esTexto(v.nombre) ? quitarCitas(v.nombre) : null,
     tema: esObjeto(v.tema) ? v.tema : null,
     paginasWordNext: paginas,
     paginasEstaticas: paginas,

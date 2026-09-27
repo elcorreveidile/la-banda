@@ -7,6 +7,8 @@
  * Para el modo estático define además el esqueleto del paquete (rutas, límites).
  */
 
+import { quitarCitas } from '@/lib/limpiar'
+
 export const KINDS = ['PAGE', 'HOME', 'LEGAL', 'LANDING'] as const
 export type KindPagina = (typeof KINDS)[number]
 
@@ -38,7 +40,22 @@ type Resultado<T> = { ok: true; valor: T } | { ok: false; motivo: string }
 const esTexto = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0
 
 /** El título de una página del borrador de Río: «titulo» (como lo pide el prompt) o «title». */
-const tituloDe = (raw: Record<string, unknown>): string => (esTexto(raw.titulo) ? raw.titulo : esTexto(raw.title) ? raw.title : '').trim()
+const tituloDe = (raw: Record<string, unknown>): string => {
+  const t = esTexto(raw.titulo) ? raw.titulo : esTexto(raw.title) ? raw.title : ''
+  return quitarCitas(t)
+}
+
+/** Limpia los marcadores [¶n] de los campos de texto de un bloque ya validado. */
+const limpiarBloque = (b: BloqueValido): BloqueValido => {
+  const out: BloqueValido = { type: b.type }
+  for (const [k, v] of Object.entries(b)) {
+    if (k === 'type') continue
+    if (typeof v === 'string') out[k] = quitarCitas(v)
+    else if (Array.isArray(v) && v.every((x) => typeof x === 'string')) out[k] = (v as string[]).map(quitarCitas)
+    else out[k] = v
+  }
+  return out
+}
 
 /** Valida UN bloque contra el vocabulario cerrado. Los campos desconocidos se quitan. */
 export function validarBloque(b: unknown): Resultado<BloqueValido> {
@@ -152,7 +169,7 @@ export function validarPaginas(input: unknown[]): { paginas: PaginaValida[]; des
     const blocks: BloqueValido[] = []
     for (let j = 0; j < bloquesCrudos.length; j++) {
       const r = validarBloque(bloquesCrudos[j])
-      if (r.ok) blocks.push(r.valor)
+      if (r.ok) blocks.push(limpiarBloque(r.valor))
       else descartes.push(`${donde} (${slug}) bloques[${j}]: ${r.motivo}`)
     }
     if (!blocks.length) {
@@ -202,7 +219,7 @@ export function validarPaginasEstaticas(input: unknown[]): { paginas: PaginaEsta
       descartes.push(`${donde}: ruta repetida (${path})`)
       continue
     }
-    const html = esTexto(raw.html) ? raw.html.trim() : ''
+    const html = esTexto(raw.html) ? quitarCitas(raw.html.trim()) : ''
     if (!html) {
       descartes.push(`${donde} (${path}): html vacío`)
       continue

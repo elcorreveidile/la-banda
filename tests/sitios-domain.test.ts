@@ -185,6 +185,26 @@ describe('validarPaginas (wordnext)', () => {
     expect(r.paginas.map((p) => p.titulo)).toEqual(['Inicio', 'Nuestros panes', 'Contacto'])
     expect(r.descartes).toHaveLength(0)
   })
+
+  it('limpia los marcadores [¶n] de títulos y bloques (son citas internas, no para el sitio)', () => {
+    const r = validarPaginas([
+      {
+        titulo: 'Inicio [¶1]',
+        slug: 'inicio',
+        kind: 'HOME',
+        blocks: [
+          { type: 'hero', title: 'Hornada [¶1]', subtitle: 'Pan del barrio [¶4]' },
+          { type: 'paragraph', text: 'Hecho cada día en Granada [¶1].' },
+          { type: 'list', items: ['Masa madre [¶2]', 'Horno de leña [¶4]'] },
+        ],
+      },
+    ])
+    expect(r.paginas[0].titulo).toBe('Inicio')
+    expect(r.paginas[0].blocks[0]).toMatchObject({ title: 'Hornada', subtitle: 'Pan del barrio' })
+    expect(r.paginas[0].blocks[1]).toMatchObject({ text: 'Hecho cada día en Granada.' })
+    expect(r.paginas[0].blocks[2]).toMatchObject({ items: ['Masa madre', 'Horno de leña'] })
+    expect(JSON.stringify(r.paginas)).not.toContain('[¶')
+  })
 })
 
 describe('validarPaginasEstaticas', () => {
@@ -217,6 +237,14 @@ describe('validarPaginasEstaticas', () => {
       { path: 'contacto.html', html: '<p>sin título</p>' },
     ])
     expect(r.paginas.map((p) => p.titulo)).toEqual(['Inicio', 'Carta', 'contacto.html'])
+  })
+
+  it('limpia los marcadores [¶n] del título y del HTML', () => {
+    const r = validarPaginasEstaticas([
+      { path: 'index.html', titulo: 'Inicio [¶1]', html: '<p>Masa madre y horno de leña [¶1].</p><h2>Horario</h2><p>Martes a sábado, de 8:00 a 14:30 [¶4].</p>' },
+    ])
+    expect(r.paginas[0].titulo).toBe('Inicio')
+    expect(r.paginas[0].html).toBe('<p>Masa madre y horno de leña.</p><h2>Horario</h2><p>Martes a sábado, de 8:00 a 14:30.</p>')
   })
 })
 

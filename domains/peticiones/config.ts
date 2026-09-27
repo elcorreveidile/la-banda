@@ -13,7 +13,7 @@ import { peticionesTools } from './tools'
 
 const COMUN = `Trabajas en La Banda analizando una petición libre: alguien pidió un análisis y el entregable es un INFORME.
 El payload que recibes es un dossier acumulado: devuelve SOLO TU CAMPO NUEVO en la RAÍZ del payload (nunca dentro de otro campo); el motor lo funde solo con lo de los demás. No repitas ni resumas lo de otros.
-No inventes hechos: todo dato externo debe venir de la investigación (con fuente) o quedar marcado como "sin verificar". Cita párrafos de la petición como [¶n]. Frases cortas, sin adjetivos vacíos.`
+No inventes hechos: todo dato externo debe venir de la investigación (con fuente) o quedar marcado como "sin verificar". Puedes citar párrafos de la petición como [¶n] SOLO dentro de tus justificaciones (criterios, verificación, motivos); los marcadores [¶n] NUNCA aparecen en el informe ni en los resúmenes. Frases cortas, sin adjetivos vacíos.`
 
 const agents: AgentConfig[] = [
   {

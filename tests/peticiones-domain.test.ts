@@ -78,6 +78,19 @@ describe('informe desde el dossier', () => {
     expect(componerInformeDesdeDossier([{ informeBorrador: { titulo: 'x', cuerpo: '   ' } }], 'T')).toBeNull()
   })
 
+  it('limpia los marcadores [¶n] del informe (son citas internas, no para el cliente)', () => {
+    const payloads = [
+      { resumenEjecutivo: 'Mercado ELE [¶4] con datos [¶1-2]' },
+      { informeBorrador: { titulo: 'Mercado [¶1]', cuerpo: 'La demanda crece [¶3]. El precio medio sube [¶4].' } },
+    ]
+    const informe = componerInformeDesdeDossier(payloads, 'T')
+    expect(informe).toMatchObject({
+      titulo: 'Mercado',
+      resumenEjecutivo: 'Mercado ELE con datos',
+      cuerpo: 'La demanda crece. El precio medio sube.',
+    })
+  })
+
   it('la guarda de huecos compone desde el finalReport del Profesor', () => {
     const informe = componerInformeDesdeFinalReport({ resultado: 'completada', titulo: 'T', resumenEjecutivo: 'r', informe: 'cuerpo del cierre' }, 'petición')
     expect(informe).toMatchObject({ titulo: 'T', resumenEjecutivo: 'r', cuerpo: 'cuerpo del cierre' })
