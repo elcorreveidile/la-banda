@@ -43,6 +43,13 @@
       "when": 1790466522365,
       "tag": "0005_sitios",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790533839108,
+      "tag": "0006_firewall",
+      "breakpoints": true
     }
   ]
 }
