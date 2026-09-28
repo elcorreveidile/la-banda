@@ -15,6 +15,7 @@
  * Todo con dependencias inyectables: se prueba sin BD, sin red y sin modelos.
  */
 
+import { normalizarPayload } from '@/engine/decision'
 import type { EstadoTema, Pieza, Tema } from '@/db/marketing'
 import { leerVeredicto, validarArticulo, validarTemas, type ArticuloValido } from './articulo'
 import { esDiaDePlan, esDiaDeRedaccion, esHoraDeResumen, haceDias, lunesSemanaSiguiente, madridAUtc, primerHuecoLibre } from './calendario'
@@ -107,7 +108,8 @@ export async function porQueNoRedacta(deps: DepsCiclo): Promise<string> {
 /** El campo más reciente del dossier que pasa la validación. */
 function ultimo<T>(dossier: unknown[], campo: string, leer: (v: unknown) => T | null): T | null {
   for (const p of dossier) {
-    const v = p && typeof p === 'object' ? (p as Record<string, unknown>)[campo] : undefined
+    const e = normalizarPayload(p)
+    const v = e && typeof e === 'object' ? normalizarPayload((e as Record<string, unknown>)[campo]) : undefined
     const r = leer(v)
     if (r !== null) return r
   }
@@ -180,7 +182,8 @@ export async function enviarArticulo(tema: Tema, dossier: unknown[], deps: Pick<
 
 function erroresDe(dossier: unknown[], campo: string): string[] {
   for (const p of dossier) {
-    const v = p && typeof p === 'object' ? (p as Record<string, unknown>)[campo] : undefined
+    const e = normalizarPayload(p)
+    const v = e && typeof e === 'object' ? normalizarPayload((e as Record<string, unknown>)[campo]) : undefined
     if (v === undefined) continue
     const r = validarArticulo(v)
     return r.ok ? [] : r.errores

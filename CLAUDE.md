@@ -485,6 +485,15 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   **Checklist**: (1) pegar antes el SQL del escaparate en WordNext (wp-next-starter#205); (2) revisar `MARKETING_DESTINOS` en Vercel;
   (3) el tema vetado de la tienda online se recupera con «Reescribir» tras desplegar.
 
+- **2026-09-28, payload que llega como texto (v0.14.1)**. El artículo «carta y reservas sin plugins» del restaurante
+  agotó los 22 traspasos: Estocolmo entregaba `articuloEn` como una CADENA con JSON en vez de objeto (`decide` validaba
+  `payload` con `z.unknown()`), el motor la guardaba tal cual, `revisarArticulos` no la encontraba y Palermo la devolvió
+  ocho veces. Ahora **`parseDecision` normaliza el payload** (`normalizarPayload`, `src/engine/decision.ts`): un texto con
+  forma de JSON se convierte en objeto (reparando saltos de línea en crudo dentro de las cadenas) y, si no se puede leer,
+  la decisión se rechaza y el agente reintenta. Además `articulosDelDossier` y el envío de Helsinki (`ultimo`/`erroresDe`)
+  aceptan traspasos o campos que ya llegaron como texto. La ficha de hechos gana `guardianEn`
+  (`https://www.wordnext.tech/en/guardian`), que Palermo rechazaba por no estar en ella. Vale para todos los dominios.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
