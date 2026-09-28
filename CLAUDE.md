@@ -494,6 +494,12 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   aceptan traspasos o campos que ya llegaron como texto. La ficha de hechos gana `guardianEn`
   (`https://www.wordnext.tech/en/guardian`), que Palermo rechazaba por no estar en ella. Vale para todos los dominios.
 
+- **2026-09-28, ficha de hechos: carta y aforo (v0.14.2)**. Palermo tachaba en el artículo del restaurante funciones que
+  la ficha no tenía. WordNext las implementa (wp-next-starter#206, 1.82.0: bloque «Carta» con alérgenos, distintivos y
+  «agotado»; reservas con aforo y nº de personas) y la ficha las recoge, junto con lo que ya existía y no estaba (horario
+  semanal por servicio, confirmación al momento sin señal, recordatorio). También aclara que el migrador trae el contenido y
+  que conservar diseño y URLs es el servicio de reconstrucción. **Fusionar DESPUÉS de desplegar wp-next-starter#206.**
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
