@@ -453,6 +453,10 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   se redacta de jueves a sábado» y se puede descartar. «Redactar el siguiente aprobado» dice la causa concreta cuando
   no abre mesa (`porQueNoRedacta`: claves, redacción en curso, sin aprobados o semana completa).
 
+- **2026-09-28, marketing: ángulo largo se recorta (v0.13.3)**. El primer plan real registró 3 de 4 temas: el de
+  firewall-ia traía un ángulo de más de 400 caracteres y `validarTemas` lo descartaba. Ahora se **recorta** a 400
+  (`recortar`, `articulo.ts`: por el último espacio, con «…») y el tema entra; solo se descarta si tiene menos de 20.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&

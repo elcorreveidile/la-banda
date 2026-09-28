@@ -355,3 +355,14 @@ describe('panel: por qué no redacta', () => {
     expect(await porQueNoRedacta({ ...ctx.d, modelosOk: () => false })).toContain('faltan las claves')
   })
 })
+
+describe('temas: ángulo largo', () => {
+  it('se recorta a 400 con «…» en vez de descartar el tema', () => {
+    const largo = 'Explica a un pequeño negocio qué es un firewall de IA y por qué le importa. '.repeat(8)
+    const r = validarTemas([{ categoria: 'firewall-ia', titulo: 'Qué es un firewall de IA para tu web', angulo: largo }], 4)
+    expect(r.descartes).toEqual([])
+    expect(r.temas[0].angulo.length).toBeLessThanOrEqual(400)
+    expect(r.temas[0].angulo.endsWith('…')).toBe(true)
+    expect(r.temas[0].angulo.startsWith('Explica a un pequeño negocio')).toBe(true)
+  })
+})
