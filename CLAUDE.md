@@ -321,6 +321,15 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   así que el patrón vuelve a mesa la próxima vez. Las métricas cuentan como «maliciosas» solo las juzgadas.
   Test en `firewall-api`. Decidido por AskUserQuestion: «veto marcado».
 
+- **2026-09-28, estado para el panel de WordNext (v0.11.0)**. Javier quiere ver La Banda integrada en el Inicio de su
+  panel de superadmin de WordNext («resumen en vivo + enlace», decidido por AskUserQuestion). Nuevo
+  **`GET /api/v1/estado`** (mismo Bearer `LA_BANDA_API_KEY`, `no-store`): sesiones de los últimos 7 días por dominio
+  (abiertas, cerradas, vetadas, fallidas, última), las 8 últimas y las 5 últimas fallidas, y el firewall de 30 días
+  (en revisión, ataques, falsos positivos, bloqueos por fallo, desde caché) + `panelUrl` (`APP_URL` + `/panel`).
+  **Solo cifras, ids, dominios, estados y fechas**: nunca traza, informes finales ni fragmentos del firewall. Agregado
+  puro en `src/lib/estado.ts` (`resumirEstado`, test `tests/estado.test.ts`). Sin esquema ni variables nuevas. Lo
+  consume wp-next-starter (1.76.0) con `LA_BANDA_URL` + `LA_BANDA_API_KEY`, que ya tiene.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
