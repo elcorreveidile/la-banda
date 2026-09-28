@@ -341,3 +341,28 @@ describe('búsqueda web', () => {
     expect(r).toEqual({ resumen: '- Dato con fuente', fuentes: [{ titulo: 'INE', url: 'https://ine.es/a' }] })
   })
 })
+
+describe('panel: por qué no redacta', () => {
+  it('dice la causa concreta y descartar vale también para un aprobado', async () => {
+    const { porQueNoRedacta } = await import('@/lib/marketing/ciclo')
+    const ctx = deps({ now: () => VIERNES.getTime() })
+    expect(await porQueNoRedacta(ctx.d)).toContain('no hay temas aprobados')
+    const a = await temaAprobado(ctx, 'Tema aprobado para descartar luego')
+    expect((await decidirTema(a.id, 'descartar', null, ctx.d)).ok).toBe(true)
+    const b = await temaAprobado(ctx, 'Tema que se queda redactando')
+    await abrirRedaccion(b, ctx.d)
+    expect(await porQueNoRedacta(ctx.d)).toContain('ya hay una redacción en curso')
+    expect(await porQueNoRedacta({ ...ctx.d, modelosOk: () => false })).toContain('faltan las claves')
+  })
+})
+
+describe('temas: ángulo largo', () => {
+  it('se recorta a 400 con «…» en vez de descartar el tema', () => {
+    const largo = 'Explica a un pequeño negocio qué es un firewall de IA y por qué le importa. '.repeat(8)
+    const r = validarTemas([{ categoria: 'firewall-ia', titulo: 'Qué es un firewall de IA para tu web', angulo: largo }], 4)
+    expect(r.descartes).toEqual([])
+    expect(r.temas[0].angulo.length).toBeLessThanOrEqual(400)
+    expect(r.temas[0].angulo.endsWith('…')).toBe(true)
+    expect(r.temas[0].angulo.startsWith('Explica a un pequeño negocio')).toBe(true)
+  })
+})

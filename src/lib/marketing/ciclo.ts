@@ -92,6 +92,16 @@ export async function abrirRedaccion(tema: Tema, deps: DepsCiclo): Promise<Resul
   return { tipo: 'abierta', sessionId, programadoPara: hueco }
 }
 
+/** Por qué «Redactar ahora» no abrió mesa, en claro para el panel. */
+export async function porQueNoRedacta(deps: DepsCiclo): Promise<string> {
+  if (!(deps.modelosOk ?? modelosDisponibles)()) return 'faltan las claves de los modelos (ANTHROPIC_API_KEY)'
+  const redactando = await deps.store.temasEnEstado(['redactando'])
+  if (redactando.length) return `ya hay una redacción en curso: «${redactando[0].titulo}»`
+  const aprobados = await deps.store.temasEnEstado(['aprobado'])
+  if (!aprobados.length) return 'no hay temas aprobados: aprueba alguno de los propuestos'
+  return 'la semana siguiente ya tiene sus artículos programados (se redactará en la próxima)'
+}
+
 // ─── Envío a WordNext (herramienta de Helsinki) ────────────────────────────────
 
 /** El campo más reciente del dossier que pasa la validación. */
@@ -247,7 +257,7 @@ export async function decidirTema(id: string, decision: 'aprobar' | 'descartar' 
     return { ok: true }
   }
   if (decision === 'descartar') {
-    if (t.estado !== 'propuesto' && !cerrable.includes(t.estado)) return { ok: false, error: `no se descarta un tema «${t.estado}»` }
+    if (t.estado !== 'propuesto' && t.estado !== 'aprobado' && !cerrable.includes(t.estado)) return { ok: false, error: `no se descarta un tema «${t.estado}»` }
     await deps.store.actualizarTema(id, { estado: 'descartado', nota: limpia ?? t.nota, decididoAt: now })
     return { ok: true }
   }

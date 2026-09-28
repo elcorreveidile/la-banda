@@ -22,6 +22,16 @@ export interface TemaPropuesto {
 }
 
 /** Valida la lista de temas de un plan. Descarta los malos (con motivo) y los repetidos. */
+export const ANGULO_MAX = 400
+
+/** Recorta a `max` caracteres por el último espacio y cierra con «…». */
+export function recortar(t: string, max: number): string {
+  if (t.length <= max) return t
+  const corte = t.slice(0, max - 1)
+  const espacio = corte.lastIndexOf(' ')
+  return `${(espacio > max * 0.6 ? corte.slice(0, espacio) : corte).replace(/[\s,;:.\-–—]+$/, '')}…`
+}
+
 export function validarTemas(v: unknown, max: number, titulosExistentes: string[] = []): { temas: TemaPropuesto[]; descartes: string[] } {
   const lista = Array.isArray(v) ? v : []
   const vistos = new Set(titulosExistentes.map(normalizarTitulo))
@@ -38,7 +48,8 @@ export function validarTemas(v: unknown, max: number, titulosExistentes: string[
     }
     const categoria = limpio(x.categoria)
     const titulo = limpio(x.titulo)
-    const angulo = limpio(x.angulo)
+    // Un ángulo demasiado largo se recorta (no tira el tema): es texto para Javier y la mesa, no va al blog.
+    const angulo = recortar(limpio(x.angulo), ANGULO_MAX)
     if (!IDS_CATEGORIA.has(categoria)) {
       descartes.push(`#${i + 1}: categoría desconocida «${categoria.slice(0, 40)}»`)
       continue
@@ -47,8 +58,8 @@ export function validarTemas(v: unknown, max: number, titulosExistentes: string[
       descartes.push(`#${i + 1}: título de 10 a 120 caracteres`)
       continue
     }
-    if (angulo.length < 20 || angulo.length > 400) {
-      descartes.push(`#${i + 1}: ángulo de 20 a 400 caracteres`)
+    if (angulo.length < 20) {
+      descartes.push(`#${i + 1}: ángulo de al menos 20 caracteres`)
       continue
     }
     const clave = normalizarTitulo(titulo)
