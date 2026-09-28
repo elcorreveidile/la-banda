@@ -5,6 +5,9 @@ import { getDomain } from '@domains/index'
 import { FIREWALL_DOMAIN } from '@/lib/firewall/config'
 import { finalizarRevisionDeSesion, marcarEnCurso } from '@/lib/firewall/cycle'
 import { firewallStoreDb, leerSesionDb } from '@/lib/firewall/store'
+import { NEGOCIACION_DOMAIN } from '@/lib/negociacion/config'
+import { finalizarNegociacionDeSesion } from '@/lib/negociacion/ciclo'
+import { redStoreDb } from '@/lib/negociacion/store'
 
 export const dynamic = 'force-dynamic'
 /** Una invocación de agente (GLM/Claude con herramientas) puede tardar más de un minuto. */
@@ -35,6 +38,14 @@ export async function POST(req: Request) {
         await finalizarRevisionDeSesion(sessionId, { store: firewallStoreDb, sesion: leerSesionDb })
       } catch (err) {
         console.error('[la-banda] firewall cierre', sessionId, err)
+      }
+    }
+    // Negociación: al terminar la mesa, el desenlace (fijado por el código) pasa a la fila y se avisa.
+    if (domain.name === NEGOCIACION_DOMAIN) {
+      try {
+        await finalizarNegociacionDeSesion(sessionId, { store: redStoreDb, sesion: leerSesionDb })
+      } catch (err) {
+        console.error('[la-banda] negociacion cierre', sessionId, err)
       }
     }
   })
