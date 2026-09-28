@@ -31,6 +31,9 @@ describe('dominio marketing', () => {
     expect(marketingDomain.closer).toBe('Profesor')
     expect(marketingDomain.transitions.Helsinki).toEqual(['Profesor'])
     expect(marketingDomain.agents.find((a) => a.codename === 'Profesor')?.tools).toEqual(['leerCadena'])
+    // Río ve el recuento de su versión anterior; la longitud sola no es motivo de veto.
+    expect(marketingDomain.agents.find((a) => a.codename === 'Río')?.tools).toContain('revisarArticulos')
+    expect(marketingDomain.agents.find((a) => a.codename === 'Palermo')?.systemPrompt).toContain('LONGITUD sola nunca es motivo de veto')
     expect(marketingDomain.agents.find((a) => a.codename === 'Palermo')?.canVeto).toBe(true)
     expect(marketingDomain.agents.find((a) => a.codename === 'Río')?.tools).not.toContain('enviarArticulo')
   })

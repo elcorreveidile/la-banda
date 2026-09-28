@@ -477,7 +477,13 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   categorías que no son del destino, `articulosPorSemana`/`temasPorPlan` y los huecos van por destino. **Destinos por defecto**:
   `blog.wordnext.tech,restaurante.wordnext.tech` (`DESTINOS_POR_DEFECTO`; si Vercel tiene `MARKETING_DESTINOS`, hay que añadir el
   restaurante ahí). Panel y correo del domingo muestran el destino de cada tema. Tests en `tests/marketing.test.ts`.
-  **Checklist**: (1) pegar antes el SQL del escaparate en WordNext (wp-next-starter#205); (2) revisar `MARKETING_DESTINOS` en Vercel.
+  **Longitud** (en el mismo PR, tras el veto de «Qué necesita de verdad una tienda online pequeña…»: Río entregó 1.962 y
+  luego 1.810 palabras y Palermo vetó con todo lo demás correcto): Río apunta a **1.100-1.400** (el tope sigue en 1.600) y
+  tiene `revisarArticulos` para ver el recuento de su versión anterior y recortar lo que falte; y **la longitud sola nunca es
+  motivo de veto** (el envío admite hasta 2.500): si tras una devolución sigue larga y lo demás cumple, Palermo aprueba y lo
+  anota con el recuento para Javier.
+  **Checklist**: (1) pegar antes el SQL del escaparate en WordNext (wp-next-starter#205); (2) revisar `MARKETING_DESTINOS` en Vercel;
+  (3) el tema vetado de la tienda online se recupera con «Reescribir» tras desplegar.
 
 ## Convenciones
 
