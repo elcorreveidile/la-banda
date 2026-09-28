@@ -2,7 +2,8 @@
  * Ciclo del dominio marketing: lo que hace el CÓDIGO alrededor de las mesas de la banda.
  *
  * - `abrirPlan`: sesión «plan» que propone temas (Tokio → Denver → Palermo → Helsinki, que los
- *   registra con `registrarTemas`); quedan «propuesto» hasta que Javier los aprueba en el panel.
+ *   registra con `registrarTemas`, → Profesor, que cierra con su informe); quedan «propuesto»
+ *   hasta que Javier los aprueba en el panel.
  * - `abrirRedaccion`: sesión «articulo» para un tema aprobado, con su hueco de publicación de la
  *   semana siguiente ya fijado.
  * - `enviarArticulo`: la herramienta de Helsinki. Exige la aprobación de Palermo y la validación
@@ -18,6 +19,7 @@ import type { EstadoTema, Pieza, Tema } from '@/db/marketing'
 import { leerVeredicto, validarArticulo, validarTemas, type ArticuloValido } from './articulo'
 import { esDiaDePlan, esDiaDeRedaccion, esHoraDeResumen, haceDias, lunesSemanaSiguiente, madridAUtc, primerHuecoLibre } from './calendario'
 import { articulosPorSemana, destinos, MARKETING_SESION_MAX_MS, modelosDisponibles, temasPorPlan } from './config'
+import { leerInforme, resultadoDeCierre, type InformeProfesor } from './informe'
 import type { MarketingStore, SesionAbierta } from './store'
 import { claveTraduccion, enviarPieza, refPieza, type EnvioPieza, type ResultadoEnvio, type VistaPieza } from './wordnext'
 
@@ -190,10 +192,9 @@ export async function finalizarSesion(sessionId: string, deps: Pick<DepsCiclo, '
   if (!tema || tema.estado !== 'redactando') return null
   const s = await deps.leerSesion(sessionId)
   if (!s || s.status === 'open') return null
-  const informe = s.finalReport && typeof s.finalReport === 'object' ? (s.finalReport as Record<string, unknown>) : {}
-  const texto = (v: unknown) => (typeof v === 'string' ? v : v ? JSON.stringify(v) : '')
-  const estado: EstadoTema = s.status === 'vetoed' || informe.resultado === 'vetado' ? 'vetado' : 'fallido'
-  const motivo = (texto(informe.motivo) || texto(informe.razon) || texto(informe.reason) || (s.status === 'failed' ? 'la mesa falló (proveedor o tiempo agotado)' : 'la mesa terminó sin enviar el artículo')).slice(0, 1000)
+  const cierre = resultadoDeCierre(s.finalReport)
+  const estado: EstadoTema = s.status === 'vetoed' || cierre.resultado === 'vetado' ? 'vetado' : 'fallido'
+  const motivo = (cierre.motivo || (s.status === 'failed' ? 'la mesa falló (proveedor o tiempo agotado)' : 'la mesa terminó sin enviar el artículo')).slice(0, 1000)
   await deps.store.actualizarTema(tema.id, { estado, motivo })
   return estado
 }
@@ -266,6 +267,24 @@ export interface DatosResumen {
   propuestos: Tema[]
   problemas: Tema[]
   panelUrl: string | null
+  /** Informes del Profesor por id de sesión (artículo o plan). Opcional. */
+  informes?: Record<string, InformeProfesor>
+}
+
+function informeHtml(inf: InformeProfesor): string {
+  const partes = [`<em>Profesor:</em> ${esc(inf.resumen)}`]
+  if (inf.revisar.length) partes.push(`<br><em>Mira antes de aprobar:</em><ul>${inf.revisar.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>`)
+  if (inf.objeciones.length) partes.push(`<em>Objeciones de Palermo${inf.devoluciones ? ` (${inf.devoluciones} devolución/es)` : ''}:</em> ${esc(inf.objeciones.join(' · '))}<br>`)
+  if (inf.fuentes.length) partes.push(`<em>Fuentes:</em> ${inf.fuentes.map((u, i) => `<a href="${esc(u)}">${i + 1}</a>`).join(' ')}`)
+  return `<div style="margin:4px 0 10px;color:#444">${partes.join('')}</div>`
+}
+
+function informeTexto(inf: InformeProfesor): string[] {
+  const l = [`  Profesor: ${inf.resumen}`]
+  for (const r of inf.revisar) l.push(`  · Mira: ${r}`)
+  if (inf.objeciones.length) l.push(`  · Objeciones: ${inf.objeciones.join(' · ')}`)
+  if (inf.fuentes.length) l.push(`  · Fuentes: ${inf.fuentes.join(' ')}`)
+  return l
 }
 
 /** Correo del domingo. Puro. */
@@ -279,14 +298,24 @@ export function componerResumen(d: DatosResumen): { asunto: string; html: string
     texto.push(`Artículos por aprobar en WordNext (${pendientes.length}):`)
     for (const { tema, piezas } of pendientes) {
       const enlaces = piezas.filter((p) => p.reviewUrl).map((p) => `<a href="${esc(p.reviewUrl!)}">${p.locale.toUpperCase()}</a>`).join(' · ')
-      partes.push(`<li><strong>${esc(tema.titulo)}</strong> — ${esc(fechaCorta(tema.programadoPara))} — ${enlaces}</li>`)
+      const inf = tema.sessionId ? d.informes?.[tema.sessionId] : undefined
+      partes.push(`<li><strong>${esc(tema.titulo)}</strong> — ${esc(fechaCorta(tema.programadoPara))} — ${enlaces}${inf ? informeHtml(inf) : ''}</li>`)
       texto.push(`- ${tema.titulo} (${fechaCorta(tema.programadoPara)}): ${piezas.map((p) => `${p.locale.toUpperCase()} ${p.reviewUrl ?? ''}`).join(' | ')}`)
+      if (inf) texto.push(...informeTexto(inf))
     }
     partes.push('</ul>')
   }
   if (d.propuestos.length) {
-    partes.push(`<h2>Temas propuestos para la semana que viene (${d.propuestos.length})</h2><ul>`)
+    partes.push(`<h2>Temas propuestos para la semana que viene (${d.propuestos.length})</h2>`)
     texto.push('', `Temas propuestos (${d.propuestos.length}):`)
+    const planes = [...new Set(d.propuestos.map((t) => t.planSessionId).filter((x): x is string => !!x))]
+    for (const id of planes) {
+      const inf = d.informes?.[id]
+      if (!inf) continue
+      partes.push(informeHtml(inf))
+      texto.push(...informeTexto(inf))
+    }
+    partes.push('<ul>')
     for (const t of d.propuestos) {
       partes.push(`<li><strong>${esc(t.titulo)}</strong> <em>(${esc(t.categoria)})</em><br>${esc(t.angulo)}</li>`)
       texto.push(`- ${t.titulo} (${t.categoria}): ${t.angulo}`)
@@ -308,13 +337,23 @@ export function componerResumen(d: DatosResumen): { asunto: string; html: string
   return { asunto, html: `<p>Esto es lo que espera tu revisión esta semana.</p>${partes.join('')}<p>— La Banda</p>`, texto: ['Esto es lo que espera tu revisión esta semana.', '', ...texto].join('\n') }
 }
 
-export async function datosResumen(deps: Pick<DepsCiclo, 'store' | 'env'>): Promise<DatosResumen> {
+export async function datosResumen(deps: Pick<DepsCiclo, 'store' | 'env' | 'leerSesion'>): Promise<DatosResumen> {
   const enRevisionTemas = await deps.store.temasEnEstado(['en_revision'])
   const enRevision = await Promise.all(enRevisionTemas.map(async (tema) => ({ tema, piezas: await deps.store.piezasDeTema(tema.id, tema.version) })))
   const propuestos = await deps.store.temasEnEstado(['propuesto'])
   const problemas = await deps.store.temasEnEstado(['rechazado', 'vetado', 'fallido'])
   const app = (deps.env ?? process.env).APP_URL?.trim().replace(/\/$/, '')
-  return { enRevision, propuestos, problemas, panelUrl: app ? `${app}/panel?tab=marketing` : null }
+  return { enRevision, propuestos, problemas, panelUrl: app ? `${app}/panel?tab=marketing` : null, informes: await informesDe([...enRevisionTemas.map((t) => t.sessionId), ...propuestos.map((t) => t.planSessionId)], deps) }
+}
+
+/** Informes del Profesor de esas sesiones (las que no tengan, se omiten). */
+export async function informesDe(ids: (string | null)[], deps: Pick<DepsCiclo, 'leerSesion'>): Promise<Record<string, InformeProfesor>> {
+  const out: Record<string, InformeProfesor> = {}
+  for (const id of new Set(ids.filter((x): x is string => !!x))) {
+    const inf = leerInforme((await deps.leerSesion(id))?.finalReport)
+    if (inf) out[id] = inf
+  }
+  return out
 }
 
 // ─── Cron ──────────────────────────────────────────────────────────────────────

@@ -432,6 +432,17 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
     `ANTHROPIC_API_KEY`); opcionales `MARKETING_*` (ver `.env.example`);
     (4) en WordNext, la ficha de `blog.wordnext.tech` ya tiene «Aceptar artículos de La Banda».
 
+- **2026-09-28, marketing: el Profesor cierra cada mesa (v0.13.1)**. Javier vio en el panel solo 6 agentes y
+  pidió el Profesor. Ahora cierra las dos sesiones: Helsinki registra o envía, añade `envio` { resultado, motivo,
+  detalle } y pasa → **Profesor** (`closer`, `maxSteps` 16, `MARKETING_MODELO_MESA`), que con `leerCadena` (el
+  recorrido SIN contenido: traspasos, motivos de devolución, eventos; el dossier ya lo tiene en su carga) cierra con
+  `{ resultado, motivo, informe: { resumen, fuentes, objeciones, revisar, devoluciones } }`. **No decide ni cambia
+  nada**: lo enviado ya está enviado; si el Profesor falla, el tema no se toca. El informe se lee del `finalReport`
+  de la sesión (`src/lib/marketing/informe.ts`: `leerInforme` sanea —solo fuentes https, topes— y
+  `resultadoDeCierre` lee el motivo también del `envio` de Helsinki), **sin columnas nuevas ni SQL**. Sale en el
+  **correo del domingo** (bajo cada artículo; el del plan, encima de los temas propuestos) y en la pestaña
+  Marketing (plegado: «Informe del Profesor · N puntos que mirar»). Tests en `tests/marketing.test.ts`.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
@@ -456,4 +467,4 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
    anotación contra la API de la Clínica; fases 3-5 en el repo clinica-cultural.
 6. Firewall agéntico de WordNext, carril profundo (Fase 2b) — **hecho** (v0.10.0).
 7. Red de webs agénticas, registro y negociación B2B (Fase 4a) — **hecho** (v0.12.0). Fase 4b en wp-next-starter.
-8. Marketing de WordNext (Fase 3 de la hoja de ruta de producto): dominio `marketing` — **hecho** (v0.13.0).
+8. Marketing de WordNext (Fase 3 de la hoja de ruta de producto): dominio `marketing` — **hecho** (v0.13.0; Profesor en v0.13.1).
