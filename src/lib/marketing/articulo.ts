@@ -4,6 +4,7 @@
  * pasa aquí no sale hacia WordNext. Puro, sin BD.
  */
 
+import { normalizarPayload } from '@/engine/decision'
 import { IDS_CATEGORIA } from './config'
 
 const esObjeto = (v: unknown): v is Record<string, unknown> => Boolean(v && typeof v === 'object' && !Array.isArray(v))
@@ -198,8 +199,10 @@ export interface VersionEnDossier {
  */
 export function articulosDelDossier(dossier: unknown[]): { es: VersionEnDossier; en: VersionEnDossier } {
   const version = (campo: string): VersionEnDossier => {
-    for (const p of dossier) {
-      const v = esObjeto(p) ? p[campo] : undefined
+    for (const bruto of dossier) {
+      // Un traspaso o un campo que llegó como texto con JSON también cuenta (ver normalizarPayload).
+      const p = normalizarPayload(bruto)
+      const v = esObjeto(p) ? normalizarPayload(p[campo]) : undefined
       // Solo cuenta una versión con texto: si otro agente pisó el campo con una nota o un objeto
       // vacío, se sigue buscando la de quien la escribió.
       if (!esObjeto(v) || typeof v.html !== 'string' || !v.html.trim()) continue

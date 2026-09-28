@@ -385,6 +385,17 @@ describe('revisarArticulos', () => {
     expect(r.es.errores).toEqual([])
     expect(articulosDelDossier([{ articuloEn: nuevo }]).es).toMatchObject({ presente: false })
   })
+
+  it('encuentra el inglés aunque haya llegado como TEXTO con JSON (traspaso o campo)', async () => {
+    const { articulosDelDossier } = await import('@/lib/marketing/articulo')
+    const es = articulo('carta-y-reservas')
+    const en = articulo('menu-and-bookings')
+    // Traspaso entero como cadena, con saltos de línea en crudo dentro del HTML (JSON inválido tal cual).
+    const crudo = JSON.stringify({ articuloEn: en }, null, 2).replace(/\\n/g, '\n')
+    expect(articulosDelDossier([crudo, { articuloEs: es }]).en).toMatchObject({ presente: true, slug: 'menu-and-bookings' })
+    // Campo como cadena dentro de un objeto.
+    expect(articulosDelDossier([{ articuloEn: JSON.stringify(en) }, { articuloEs: es }]).en.presente).toBe(true)
+  })
 })
 
 describe('perfiles por destino (Fase 4)', () => {

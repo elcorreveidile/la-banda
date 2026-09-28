@@ -18,6 +18,7 @@ export const HECHOS_WORDNEXT = {
     configurar: 'https://app.wordnext.tech/configurar',
     crear: 'https://app.wordnext.tech/crear',
     guardian: 'https://www.wordnext.tech/guardian',
+    guardianEn: 'https://www.wordnext.tech/en/guardian',
     docencia: 'https://www.wordnext.tech/docencia',
     blog: 'https://blog.wordnext.tech',
   },
