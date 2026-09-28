@@ -15,7 +15,7 @@ import { bombear } from '@/lib/bomba'
 import { NIVELES, type Nivel } from '@domains/corpus-ele/config'
 import { createPeticion, setPeticionSesion } from '@/lib/peticiones/peticiones'
 import { createSite, setSiteSesion } from '@/lib/sitios/sites'
-import { cicloMarketing, decidirTema } from '@/lib/marketing/ciclo'
+import { cicloMarketing, decidirTema, porQueNoRedacta } from '@/lib/marketing/ciclo'
 import { depsMarketing } from '@/lib/marketing/deps'
 import { marketingStoreDb } from '@/lib/marketing/store'
 
@@ -211,15 +211,29 @@ export async function resumeStalledSessions(formData: FormData) {
 }
 
 /** Marketing: aprobar, descartar o pedir reescritura de un tema (Javier, en su revisión del domingo). */
-export async function decidirTemaMarketing(formData: FormData) {
+async function decidirTemaMarketing(decision: 'aprobar' | 'descartar' | 'reescribir', formData: FormData) {
   const session = await auth()
   if (!session?.user?.email) redirect('/login')
   const id = String(formData.get('id') ?? '')
-  const decision = String(formData.get('decision') ?? '')
   const nota = String(formData.get('nota') ?? '')
-  if (!id || !['aprobar', 'descartar', 'reescribir'].includes(decision)) redirect('/panel?tab=marketing')
-  const r = await decidirTema(id, decision as 'aprobar' | 'descartar' | 'reescribir', nota, { store: marketingStoreDb })
+  if (!id) redirect(`/panel?tab=marketing&error=${encodeURIComponent('falta el tema')}`)
+  const r = await decidirTema(id, decision, nota, { store: marketingStoreDb })
   redirect(`/panel?tab=marketing${r.ok ? '' : `&error=${encodeURIComponent(r.error ?? 'error')}`}`)
+}
+
+/**
+ * Marketing: una acción por botón (via `formAction`). No se lee el botón pulsado del FormData:
+ * el envío de la acción de servidor no incluye el botón pulsado: la decisión llegaba vacía y la
+ * acción no hacía nada.
+ */
+export async function aprobarTemaMarketing(formData: FormData) {
+  await decidirTemaMarketing('aprobar', formData)
+}
+export async function descartarTemaMarketing(formData: FormData) {
+  await decidirTemaMarketing('descartar', formData)
+}
+export async function reescribirTemaMarketing(formData: FormData) {
+  await decidirTemaMarketing('reescribir', formData)
 }
 
 /** Marketing: proponer temas o redactar el siguiente tema aprobado ahora, sin esperar al calendario. */
@@ -232,5 +246,7 @@ export async function lanzarMarketing(formData: FormData) {
   const origin = process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('x-forwarded-host') ?? h.get('host')}`
   const r = await cicloMarketing(depsMarketing(origin), { forzar: que })
   const abierta = r.planes[0] ?? r.redacciones[0]
-  redirect(abierta ? `/panel?tab=marketing&s=${abierta}` : `/panel?tab=marketing&error=${encodeURIComponent(que === 'plan' ? 'ya hay un plan en curso o faltan las claves de los modelos' : 'no hay temas aprobados, ya hay una redacción en curso, la semana siguiente está completa o faltan las claves')}`)
+  if (abierta) redirect(`/panel?tab=marketing&s=${abierta}`)
+  const motivo = que === 'plan' ? 'ya hay un plan en curso o faltan las claves de los modelos' : await porQueNoRedacta(depsMarketing(origin))
+  redirect(`/panel?tab=marketing&error=${encodeURIComponent(motivo)}`)
 }

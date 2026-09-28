@@ -341,3 +341,17 @@ describe('búsqueda web', () => {
     expect(r).toEqual({ resumen: '- Dato con fuente', fuentes: [{ titulo: 'INE', url: 'https://ine.es/a' }] })
   })
 })
+
+describe('panel: por qué no redacta', () => {
+  it('dice la causa concreta y descartar vale también para un aprobado', async () => {
+    const { porQueNoRedacta } = await import('@/lib/marketing/ciclo')
+    const ctx = deps({ now: () => VIERNES.getTime() })
+    expect(await porQueNoRedacta(ctx.d)).toContain('no hay temas aprobados')
+    const a = await temaAprobado(ctx, 'Tema aprobado para descartar luego')
+    expect((await decidirTema(a.id, 'descartar', null, ctx.d)).ok).toBe(true)
+    const b = await temaAprobado(ctx, 'Tema que se queda redactando')
+    await abrirRedaccion(b, ctx.d)
+    expect(await porQueNoRedacta(ctx.d)).toContain('ya hay una redacción en curso')
+    expect(await porQueNoRedacta({ ...ctx.d, modelosOk: () => false })).toContain('faltan las claves')
+  })
+})

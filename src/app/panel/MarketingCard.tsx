@@ -1,7 +1,8 @@
 import clsx from 'clsx'
 import type { MarketingMetrics } from '@/lib/marketing/metrics'
 import type { EstadoTema } from '@/db/marketing'
-import { decidirTemaMarketing, lanzarMarketing } from './actions'
+import { aprobarTemaMarketing, descartarTemaMarketing, lanzarMarketing, reescribirTemaMarketing } from './actions'
+import { BotonTema } from './BotonTema'
 
 const ESTADO_STYLE: Record<EstadoTema, string> = {
   propuesto: 'bg-amber-50 text-amber-900',
@@ -25,8 +26,11 @@ type TemaVista = MarketingMetrics['temas'][number]
  * necesitan decisión (rechazados, vetados, fallidos).
  */
 export function MarketingCard({ m, error }: { m: MarketingMetrics; error?: string }) {
-  const propuestos = m.temas.filter((t) => t.estado === 'propuesto')
-  const enMarcha = m.temas.filter((t) => ['aprobado', 'redactando', 'en_revision', 'publicado'].includes(t.estado))
+  // Los aprobados siguen en su sitio con el botón ya en «✓ Aprobado» hasta que empieza su redacción.
+  const propuestos = m.temas.filter((t) => t.estado === 'propuesto' || t.estado === 'aprobado')
+  const nPropuestos = propuestos.filter((t) => t.estado === 'propuesto').length
+  const nAprobados = propuestos.length - nPropuestos
+  const enMarcha = m.temas.filter((t) => ['redactando', 'en_revision', 'publicado'].includes(t.estado))
   const decidir = m.temas.filter((t) => ['rechazado', 'vetado', 'fallido'].includes(t.estado))
   const faltas = [!m.configuracion.modelos && 'claves de los modelos (ANTHROPIC_API_KEY)', !m.configuracion.publicacion && 'publicación en WordNext (WORDNEXT_URL y WORDNEXT_CALLBACK_SECRET)'].filter(Boolean)
 
@@ -52,19 +56,28 @@ export function MarketingCard({ m, error }: { m: MarketingMetrics; error?: strin
         </form>
       </div>
 
-      <Bloque titulo={`Temas propuestos (${propuestos.length})`} vacio="Ninguno pendiente.">
+      <Bloque titulo={`Temas propuestos (${nPropuestos})${nAprobados ? ` · aprobados (${nAprobados})` : ''}`} vacio="Ninguno pendiente.">
         {propuestos.map((t) => (
           <li key={t.id} className="flex flex-col gap-1 border-t border-stone-100 py-2">
             <Cabecera t={t} />
             <p className="text-xs text-stone-600">{t.angulo}</p>
             {t.palabrasClave.length > 0 && <p className="text-xs text-stone-400">{t.palabrasClave.join(' · ')}</p>}
             <Informe t={t} />
-            <form action={decidirTemaMarketing} className="flex flex-wrap items-center gap-2">
-              <input type="hidden" name="id" value={t.id} />
-              <input name="nota" placeholder="Nota para la banda (opcional)" className="min-w-0 flex-1 rounded border border-stone-300 px-2 py-1 text-xs" />
-              <button name="decision" value="aprobar" className="rounded bg-emerald-600 px-2 py-1 text-xs font-semibold text-white hover:bg-emerald-700">Aprobar</button>
-              <button name="decision" value="descartar" className="rounded border border-stone-300 px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-100">Descartar</button>
-            </form>
+            {t.estado === 'aprobado' ? (
+              <form className="flex flex-wrap items-center gap-2">
+                <input type="hidden" name="id" value={t.id} />
+                {t.nota && <span className="min-w-0 flex-1 text-xs text-stone-500">Nota: {t.nota}</span>}
+                <span className="rounded bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-800">✓ Aprobado · se redacta de jueves a sábado</span>
+                <BotonTema action={descartarTemaMarketing} label="Descartar" pendiente="Descartando…" className="border border-stone-300 text-stone-600 hover:bg-stone-100" />
+              </form>
+            ) : (
+              <form className="flex flex-wrap items-center gap-2">
+                <input type="hidden" name="id" value={t.id} />
+                <input name="nota" placeholder="Nota para la banda (opcional)" className="min-w-0 flex-1 rounded border border-stone-300 px-2 py-1 text-xs" />
+                <BotonTema action={aprobarTemaMarketing} label="Aprobar" pendiente="Aprobando…" className="bg-emerald-600 text-white hover:bg-emerald-700" />
+                <BotonTema action={descartarTemaMarketing} label="Descartar" pendiente="Descartando…" className="border border-stone-300 text-stone-600 hover:bg-stone-100" />
+              </form>
+            )}
           </li>
         ))}
       </Bloque>
@@ -74,11 +87,11 @@ export function MarketingCard({ m, error }: { m: MarketingMetrics; error?: strin
           <li key={t.id} className="flex flex-col gap-1 border-t border-stone-100 py-2">
             <Cabecera t={t} />
             {t.motivo && <p className="text-xs text-red-800">{t.motivo}</p>}
-            <form action={decidirTemaMarketing} className="flex flex-wrap items-center gap-2">
+            <form className="flex flex-wrap items-center gap-2">
               <input type="hidden" name="id" value={t.id} />
               <input name="nota" placeholder="Qué cambiar (si no, se usa el motivo)" className="min-w-0 flex-1 rounded border border-stone-300 px-2 py-1 text-xs" />
-              <button name="decision" value="reescribir" className="rounded bg-sky-600 px-2 py-1 text-xs font-semibold text-white hover:bg-sky-700">Reescribir</button>
-              <button name="decision" value="descartar" className="rounded border border-stone-300 px-2 py-1 text-xs font-semibold text-stone-600 hover:bg-stone-100">Descartar</button>
+              <BotonTema action={reescribirTemaMarketing} label="Reescribir" pendiente="Enviando…" className="bg-sky-600 text-white hover:bg-sky-700" />
+              <BotonTema action={descartarTemaMarketing} label="Descartar" pendiente="Descartando…" className="border border-stone-300 text-stone-600 hover:bg-stone-100" />
             </form>
           </li>
         ))}

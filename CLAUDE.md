@@ -443,6 +443,16 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   **correo del domingo** (bajo cada artículo; el del plan, encima de los temas propuestos) y en la pestaña
   Marketing (plegado: «Informe del Profesor · N puntos que mirar»). Tests en `tests/marketing.test.ts`.
 
+- **2026-09-28, marketing: «Aprobar» no hacía nada (v0.13.2)**. Javier pulsaba Aprobar en los temas propuestos y la
+  página volvía igual, sin error; los logs de Vercel mostraban el POST con su 303. La lógica guardaba bien (probada
+  contra una rama de Neon); el fallo era el formulario: un solo `action` para Aprobar y Descartar que leía el botón
+  pulsado de `formData.get('decision')`, y la decisión llegaba VACÍA (comprobado con Chromium: el envío de la acción de servidor no incluye el botón pulsado)
+  → la acción redirigía en silencio. **Regla: una acción de servidor por botón (`formAction`), nunca decidir por el
+  name/value del botón**. Ahora `aprobarTemaMarketing` / `descartarTemaMarketing` / `reescribirTemaMarketing` y el
+  componente cliente `BotonTema` («Aprobando…» mientras procesa); un aprobado se queda en su sitio con «✓ Aprobado ·
+  se redacta de jueves a sábado» y se puede descartar. «Redactar el siguiente aprobado» dice la causa concreta cuando
+  no abre mesa (`porQueNoRedacta`: claves, redacción en curso, sin aprobados o semana completa).
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
