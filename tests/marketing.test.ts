@@ -366,3 +366,19 @@ describe('temas: ángulo largo', () => {
     expect(r.temas[0].angulo.startsWith('Explica a un pequeño negocio')).toBe(true)
   })
 })
+
+describe('revisarArticulos', () => {
+  it('toma la versión más reciente de cada idioma de toda la sesión y cuenta en código', async () => {
+    const { articulosDelDossier } = await import('@/lib/marketing/articulo')
+    const viejo = articulo('llenar-mesas-viejo')
+    const nuevo = articulo('llenar-mesas')
+    // Más reciente primero: el último traspaso (Estocolmo) solo trae el inglés.
+    // Estocolmo pisa articuloEs con una nota: se ignora y vale la de Río.
+    const r = articulosDelDossier([{ articuloEn: nuevo, articuloEs: { nota: 'sin cambios' } }, { articuloEs: nuevo }, { articuloEs: viejo }])
+    expect(r.es.slug).toBe('llenar-mesas')
+    expect(r.en.presente).toBe(true)
+    expect(r.es.palabras).toBeGreaterThan(600)
+    expect(r.es.errores).toEqual([])
+    expect(articulosDelDossier([{ articuloEn: nuevo }]).es).toMatchObject({ presente: false })
+  })
+})

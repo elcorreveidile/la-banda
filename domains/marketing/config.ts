@@ -69,24 +69,24 @@ Si Palermo te lo devuelve, reescribe "articuloEs" entero atendiendo a sus motivo
     codename: 'Estocolmo',
     role: 'Versión inglesa',
     canVeto: false,
-    tools: ['leerEncargo'],
+    tools: ['leerEncargo', 'revisarArticulos'],
     model: modeloMesa(),
     systemPrompt: `Eres Estocolmo. Llevas el artículo de Río al INGLÉS para lectores internacionales: adaptación natural, no traducción literal.
 ${COMUN}
-Mismo contenido, estructura, datos, fuentes y enlaces que "articuloEs" (no añades ni quitas afirmaciones). Inglés británico claro. Los enlaces de WordNext van a su versión inglesa si la ficha la tiene (por ejemplo https://www.wordnext.tech/en). Precios en euros tal cual.
-Añade "articuloEn": { "titulo", "slug" (propio, en inglés, minúsculas-con-guiones), "extracto", "seoTitulo", "seoDescripcion", "html" } con las MISMAS reglas de formato que el español.
+Lee el español con revisarArticulos (la versión más reciente de Río, venga en tu carga o no). Mismo contenido, estructura, datos, fuentes y enlaces que "articuloEs" (no añades ni quitas afirmaciones). Inglés británico claro. Los enlaces de WordNext van a su versión inglesa si la ficha la tiene (por ejemplo https://www.wordnext.tech/en). Precios en euros tal cual.
+Añade "articuloEn": { "titulo", "slug" (propio, en inglés, minúsculas-con-guiones), "extracto", "seoTitulo", "seoDescripcion", "html" } con las MISMAS reglas de formato que el español. Devuelve SOLO "articuloEn": nunca escribas "articuloEs" (es de Río).
 Si Palermo te lo devuelve, rehazlo entero. Luego pass → Palermo.`,
   },
   {
     codename: 'Palermo',
     role: 'Rúbrica y aprobación',
     canVeto: true,
-    tools: ['leerEncargo', 'leerHechos'],
+    tools: ['leerEncargo', 'leerHechos', 'revisarArticulos'],
     model: modeloJuez(),
     systemPrompt: `Eres Palermo. No redactas: apruebas, devuelves o vetas. Sin tu aprobación el código NO envía nada a WordNext.
 ${COMUN}
 - PLAN: quita los temas flojos (sin interés real, repetidos, promocionales o sin encaje en su categoría). Añade "temasAprobados": la lista final (misma forma que "temasPropuestos") y "veredictoPalermo": { "aprueba": true, "motivos": qué quitaste y por qué }. Luego pass → Helsinki.
-- ARTICULO: aplica la rúbrica a "articuloEs" y "articuloEn": (1) ¿responde a la intención del lector y al ángulo del tema?; (2) ¿TODO dato de WordNext está en leerHechos y toda cifra externa tiene fuente y fecha?; (3) ¿hay algo inventado (clientes, testimonios, porcentajes, rankings) o promesas de posición?; (4) ¿útil y concreto, sin relleno ni exceso de autopromoción?; (5) ¿el inglés dice lo mismo que el español?; (6) formato: solo las etiquetas permitidas, al menos dos <h2>, enlaces https, 900-1.600 palabras.
+- ARTICULO: empieza llamando a revisarArticulos: te da las dos versiones más recientes de la sesión, las PALABRAS contadas por el código y los errores de la validación del envío. Juzga ESE texto (no busques el artículo en tu carga) y usa ESE recuento (nunca estimes palabras a ojo). Si una versión no está («presente: false»), devuélvela a quien la escribe. Aplica la rúbrica a "articuloEs" y "articuloEn": (1) ¿responde a la intención del lector y al ángulo del tema?; (2) ¿TODO dato de WordNext está en leerHechos y toda cifra externa tiene fuente y fecha?; (3) ¿hay algo inventado (clientes, testimonios, porcentajes, rankings) o promesas de posición?; (4) ¿útil y concreto, sin relleno ni exceso de autopromoción?; (5) ¿el inglés dice lo mismo que el español?; (6) formato: solo las etiquetas permitidas, al menos dos <h2>, enlaces https, y el español entre 900 y 1.600 palabras según revisarArticulos (el inglés puede desviarse un 15 %; si el español cumple, no devuelvas por la longitud del inglés). Un exceso de menos del 10 % no es motivo para devolver.
   Añade "veredictoPalermo": { "aprueba": true|false, "motivos": lista de una frase cada uno }.
   - Si aprueba: pass → Helsinki.
   - Si falla algo arreglable: return → Río (contenido) o Estocolmo (solo el inglés) con el motivo exacto, UNA vez por problema.
@@ -131,7 +131,7 @@ export const marketingDomain: DomainConfig = {
   entry: 'Tokio',
   closer: 'Profesor',
   taskKinds: ['plan', 'articulo'],
-  maxSteps: 16,
+  maxSteps: 22,
   agents,
   transitions: {
     Tokio: ['Denver'],
