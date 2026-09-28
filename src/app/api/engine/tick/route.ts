@@ -8,6 +8,9 @@ import { firewallStoreDb, leerSesionDb } from '@/lib/firewall/store'
 import { NEGOCIACION_DOMAIN } from '@/lib/negociacion/config'
 import { finalizarNegociacionDeSesion } from '@/lib/negociacion/ciclo'
 import { redStoreDb } from '@/lib/negociacion/store'
+import { MARKETING_DOMAIN } from '@/lib/marketing/config'
+import { finalizarSesion as finalizarMarketing } from '@/lib/marketing/ciclo'
+import { leerSesion as leerSesionMarketing, marketingStoreDb } from '@/lib/marketing/store'
 
 export const dynamic = 'force-dynamic'
 /** Una invocación de agente (GLM/Claude con herramientas) puede tardar más de un minuto. */
@@ -46,6 +49,14 @@ export async function POST(req: Request) {
         await finalizarNegociacionDeSesion(sessionId, { store: redStoreDb, sesion: leerSesionDb })
       } catch (err) {
         console.error('[la-banda] negociacion cierre', sessionId, err)
+      }
+    }
+    // Marketing: si la mesa terminó sin enviar el artículo, el tema pasa a vetado o fallido con su motivo.
+    if (domain.name === MARKETING_DOMAIN) {
+      try {
+        await finalizarMarketing(sessionId, { store: marketingStoreDb, leerSesion: leerSesionMarketing })
+      } catch (err) {
+        console.error('[la-banda] marketing cierre', sessionId, err)
       }
     }
   })

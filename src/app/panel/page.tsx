@@ -21,6 +21,8 @@ import { sitiosMetrics, type SitiosMetrics } from '@/lib/sitios/metrics'
 import { SitiosCard } from './SitiosCard'
 import { firewallMetrics, type FirewallMetrics } from '@/lib/firewall/metrics'
 import { FirewallCard } from './FirewallCard'
+import { marketingMetrics, type MarketingMetrics } from '@/lib/marketing/metrics'
+import { MarketingCard } from './MarketingCard'
 
 export const dynamic = 'force-dynamic'
 /** El orquestador corre en `after()` de la acción; le damos margen (plan Pro de Vercel). */
@@ -47,6 +49,7 @@ const TABS = [
   { key: 'olvidos', label: 'Olvidos', domain: 'olvidos', activa: 'bg-amber-600 text-white shadow-sm', punto: 'bg-amber-500', chip: 'bg-amber-50 text-amber-900', borde: 'border-l-2 border-amber-500 bg-amber-50' },
   { key: 'peticiones', label: 'Peticiones', domain: 'peticiones', activa: 'bg-violet-600 text-white shadow-sm', punto: 'bg-violet-500', chip: 'bg-violet-50 text-violet-800', borde: 'border-l-2 border-violet-500 bg-violet-50' },
   { key: 'sitios', label: 'Sitios', domain: 'sitios', activa: 'bg-orange-600 text-white shadow-sm', punto: 'bg-orange-500', chip: 'bg-orange-50 text-orange-800', borde: 'border-l-2 border-orange-500 bg-orange-50' },
+  { key: 'marketing', label: 'Marketing', domain: 'marketing', activa: 'bg-fuchsia-600 text-white shadow-sm', punto: 'bg-fuchsia-500', chip: 'bg-fuchsia-50 text-fuchsia-800', borde: 'border-l-2 border-fuchsia-500 bg-fuchsia-50' },
   { key: 'firewall', label: 'Firewall', domain: 'firewall', activa: 'bg-rose-600 text-white shadow-sm', punto: 'bg-rose-500', chip: 'bg-rose-50 text-rose-800', borde: 'border-l-2 border-rose-500 bg-rose-50' },
 ] as const
 type TabKey = (typeof TABS)[number]['key']
@@ -56,9 +59,9 @@ function tabDeDominio(domain: string | undefined): TabKey {
   return (TABS.find((t) => t.domain === domain)?.key ?? 'corpus') as TabKey
 }
 
-export default async function PanelPage({ searchParams }: { searchParams: Promise<{ s?: string; tab?: string }> }) {
+export default async function PanelPage({ searchParams }: { searchParams: Promise<{ s?: string; tab?: string; error?: string }> }) {
   const me = await auth()
-  const { s, tab } = await searchParams
+  const { s, tab, error } = await searchParams
 
   // La sesión elegida puede ser de cualquier dominio (llega por ?s=).
   const selected = s ? (await db.select().from(sessions).where(eq(sessions.id, s)).limit(1))[0] : undefined
@@ -111,6 +114,14 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
       firewall = await firewallMetrics()
     } catch (err) {
       console.error('[la-banda] firewallMetrics', err)
+    }
+  }
+  let marketing: MarketingMetrics | null = null
+  if (activa === 'marketing') {
+    try {
+      marketing = await marketingMetrics()
+    } catch (err) {
+      console.error('[la-banda] marketingMetrics', err)
     }
   }
   const objections = activa === 'olvidos' && elegida?.domain === 'olvidos' ? await objectionsForSession(elegida.id).catch(() => []) : []
@@ -216,6 +227,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
           {activa === 'sitios' && sitios && <SitiosCard m={sitios} />}
 
           {activa === 'firewall' && firewall && <FirewallCard m={firewall} />}
+          {activa === 'marketing' && marketing && <MarketingCard m={marketing} error={error} />}
 
           {view ? (
             <SessionLive key={view.session.id} initial={view} />

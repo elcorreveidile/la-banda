@@ -15,6 +15,9 @@ import { bombear } from '@/lib/bomba'
 import { NIVELES, type Nivel } from '@domains/corpus-ele/config'
 import { createPeticion, setPeticionSesion } from '@/lib/peticiones/peticiones'
 import { createSite, setSiteSesion } from '@/lib/sitios/sites'
+import { cicloMarketing, decidirTema } from '@/lib/marketing/ciclo'
+import { depsMarketing } from '@/lib/marketing/deps'
+import { marketingStoreDb } from '@/lib/marketing/store'
 
 /** Lanza un ciclo de trading a mano (mismo camino que el cron) y arranca la cadena de ticks. */
 export async function startTradingCycle() {
@@ -205,4 +208,29 @@ export async function resumeStalledSessions(formData: FormData) {
   const primera = r.kicked[0]?.split(':').slice(1).join(':')
 
   redirect(primera ? `/panel?s=${primera}` : '/panel')
+}
+
+/** Marketing: aprobar, descartar o pedir reescritura de un tema (Javier, en su revisión del domingo). */
+export async function decidirTemaMarketing(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+  const id = String(formData.get('id') ?? '')
+  const decision = String(formData.get('decision') ?? '')
+  const nota = String(formData.get('nota') ?? '')
+  if (!id || !['aprobar', 'descartar', 'reescribir'].includes(decision)) redirect('/panel?tab=marketing')
+  const r = await decidirTema(id, decision as 'aprobar' | 'descartar' | 'reescribir', nota, { store: marketingStoreDb })
+  redirect(`/panel?tab=marketing${r.ok ? '' : `&error=${encodeURIComponent(r.error ?? 'error')}`}`)
+}
+
+/** Marketing: proponer temas o redactar el siguiente tema aprobado ahora, sin esperar al calendario. */
+export async function lanzarMarketing(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+  const que = String(formData.get('que') ?? '')
+  if (que !== 'plan' && que !== 'redaccion') redirect('/panel?tab=marketing')
+  const h = await headers()
+  const origin = process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('x-forwarded-host') ?? h.get('host')}`
+  const r = await cicloMarketing(depsMarketing(origin), { forzar: que })
+  const abierta = r.planes[0] ?? r.redacciones[0]
+  redirect(abierta ? `/panel?tab=marketing&s=${abierta}` : `/panel?tab=marketing&error=${encodeURIComponent(que === 'plan' ? 'ya hay un plan en curso o faltan las claves de los modelos' : 'no hay temas aprobados, ya hay una redacción en curso, la semana siguiente está completa o faltan las claves')}`)
 }
