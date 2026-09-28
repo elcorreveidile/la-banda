@@ -8,6 +8,7 @@ import { abrirRedaccion, aplicarAviso, cicloMarketing, componerResumen, datosRes
 import { modeloJuez, modeloRedactor, modelosDisponibles, revisorEmail } from '@/lib/marketing/config'
 import { avisoFirmado, claveTraduccion, enviarPieza, firmaPlataforma, leerVistaPieza, refPieza, type EnvioPieza } from '@/lib/marketing/wordnext'
 import { leerRespuestaBusqueda } from '@/lib/marketing/busqueda'
+import { leerInforme, resultadoDeCierre } from '@/lib/marketing/informe'
 import { createMarketingMemoryStore } from './marketingMemoryStore'
 
 const DESTINO = 'blog.wordnext.tech'
@@ -27,7 +28,9 @@ describe('dominio marketing', () => {
   it('pasa validateDomain y el grafo cubre plan y artículo', () => {
     expect(() => validateDomain(marketingDomain)).not.toThrow()
     expect(marketingDomain.transitions.Denver).toEqual(['Río', 'Palermo'])
-    expect(marketingDomain.closer).toBe('Helsinki')
+    expect(marketingDomain.closer).toBe('Profesor')
+    expect(marketingDomain.transitions.Helsinki).toEqual(['Profesor'])
+    expect(marketingDomain.agents.find((a) => a.codename === 'Profesor')?.tools).toEqual(['leerCadena'])
     expect(marketingDomain.agents.find((a) => a.codename === 'Palermo')?.canVeto).toBe(true)
     expect(marketingDomain.agents.find((a) => a.codename === 'Río')?.tools).not.toContain('enviarArticulo')
   })
@@ -98,7 +101,7 @@ function deps(extra: Partial<DepsCiclo> & { now?: () => number } = {}) {
   const mem = createMarketingMemoryStore()
   const abiertas: { kind: string; payload: Record<string, unknown> }[] = []
   const envios: EnvioPieza[] = []
-  const correos: { asunto: string; texto: string }[] = []
+  const correos: { asunto: string; html: string; texto: string }[] = []
   const sesiones = new Map<string, { status: string; finalReport: unknown }>()
   let n = 0
   const d: DepsCiclo = {
@@ -225,6 +228,30 @@ describe('ciclo: del tema aprobado al artículo publicado', () => {
     expect(await finalizarSesion(rb.sessionId, ctx.d)).toBe('fallido')
     expect((await ctx.mem.store.tema(b.id))!.motivo).toBe('WordNext respondió 403')
   })
+
+  it('fin de mesa: si el Profesor no copia el motivo, se lee del «envio» de Helsinki', async () => {
+    const ctx = deps({ now: () => VIERNES.getTime() })
+    const a = await temaAprobado(ctx, 'Tema cuyo envío falla en WordNext')
+    const ra = await abrirRedaccion(a, ctx.d)
+    if (ra.tipo !== 'abierta') throw new Error('sin mesa')
+    ctx.sesiones.set(ra.sessionId, { status: 'closed', finalReport: { informe: { resumen: 'No se pudo enviar.' }, envio: { resultado: 'no_enviado', motivo: 'firma rechazada (401)' } } })
+    expect(await finalizarSesion(ra.sessionId, ctx.d)).toBe('fallido')
+    expect((await ctx.mem.store.tema(a.id))!.motivo).toBe('firma rechazada (401)')
+  })
+})
+
+describe('informe del Profesor', () => {
+  it('lee y sanea el informe; sin informe → null', () => {
+    const inf = leerInforme({
+      resultado: 'enviado',
+      informe: { resumen: '  Explica cómo llenar mesas.  ', fuentes: ['https://ine.es/dato', 'javascript:alert(1)', 'http://inseguro.es'], objeciones: 'Faltaba la fuente del 30 %', revisar: ['La cifra del INE es de 2024', '', 'Comprueba el enlace a la carta'], devoluciones: '2' },
+    })
+    expect(inf).toEqual({ resumen: 'Explica cómo llenar mesas.', fuentes: ['https://ine.es/dato'], objeciones: ['Faltaba la fuente del 30 %'], revisar: ['La cifra del INE es de 2024', 'Comprueba el enlace a la carta'], devoluciones: 2 })
+    expect(leerInforme({ resultado: 'enviado' })).toBeNull()
+    expect(leerInforme(null)).toBeNull()
+    expect(leerInforme({ informe: { resumen: '', revisar: [] } })).toBeNull()
+    expect(resultadoDeCierre({ resultado: 'enviado' })).toEqual({ resultado: 'enviado', motivo: '' })
+  })
 })
 
 describe('cron semanal', () => {
@@ -242,12 +269,19 @@ describe('cron semanal', () => {
     expect((await cicloMarketing(domingo.d)).resumen).toBe('vacio')
     const t = await temaAprobado(domingo)
     await domingo.mem.store.actualizarTema(t.id, { estado: 'redactando', programadoPara: madridAUtc(2026, 10, 6, 9) })
+    await domingo.mem.store.actualizarTema(t.id, { sessionId: 's-art' })
     await enviarArticulo((await domingo.mem.store.tema(t.id))!, dossierAprobado('llenar-mesas'), domingo.d)
     await registrarTemas({ kind: 'plan', destino: DESTINO, cuantos: 4 }, 'p2', [{ categoria: 'firewall-ia', titulo: 'Qué es un firewall de IA para tu web', angulo: 'Explica el carril rápido y la revisión posterior.' }], domingo.d)
+    domingo.sesiones.set('s-art', { status: 'closed', finalReport: { resultado: 'enviado', informe: { resumen: 'Ideas para llenar mesas.', revisar: ['La cifra del 30 % viene de un blog'], fuentes: ['https://ejemplo.es/estudio'] } } })
+    domingo.sesiones.set('p2', { status: 'closed', finalReport: { resultado: 'registrado', informe: { resumen: 'Quedó un tema de firewall; Palermo quitó dos repetidos.', revisar: ['Encaja con la semana de Guardian'] } } })
     const res = await cicloMarketing(domingo.d)
     expect(res.resumen).toBe('enviado')
     expect(domingo.correos[0].asunto).toBe('Revisión del domingo: 1 artículo(s) y 1 tema(s)')
     expect(domingo.correos[0].texto).toContain('https://kupeku.com/panel?tab=marketing')
+    expect(domingo.correos[0].texto).toContain('Profesor: Ideas para llenar mesas.')
+    expect(domingo.correos[0].texto).toContain('Mira: La cifra del 30 % viene de un blog')
+    expect(domingo.correos[0].html).toContain('Quedó un tema de firewall')
+    expect(domingo.correos[0].html).toContain('href="https://ejemplo.es/estudio"')
   })
 
   it('viernes redacta UNA mesa por destino con el tema aprobado más antiguo', async () => {

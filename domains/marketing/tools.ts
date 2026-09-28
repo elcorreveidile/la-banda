@@ -1,4 +1,8 @@
 import type { ToolDef } from '../types'
+import { asc, eq } from 'drizzle-orm'
+import { db } from '@/db'
+import { events, handoffs, tasks } from '@/db/schema'
+import { codenameOf } from '@/engine/store'
 import { fetchLimpio } from '@/lib/httpLimpio'
 import { delimitar } from '@/lib/firewall/patron'
 import { CATEGORIAS, articulosPorSemana } from '@/lib/marketing/config'
@@ -141,6 +145,26 @@ export const marketingTools: Record<string, ToolDef> = {
       if (!tema) return { error: 'tema no encontrado para esta tarea' }
       if (typeof p.version === 'number' && p.version !== tema.version) return { error: 'esta sesión es de una versión anterior del tema' }
       return enviarArticulo(tema, await dossierDeTarea(ctx.taskId), { store: marketingStoreDb })
+    },
+  },
+
+  leerCadena: {
+    name: 'leerCadena',
+    description:
+      'El recorrido de esta sesión SIN el contenido: cada traspaso (de quién a quién, estado, motivo de las devoluciones) y cada evento en orden. El dossier ya lo tienes en tu carga. Úsala una vez, al empezar.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    run: async (_input, ctx) => {
+      const hs = await db
+        .select({ h: handoffs })
+        .from(handoffs)
+        .innerJoin(tasks, eq(handoffs.taskId, tasks.id))
+        .where(eq(tasks.sessionId, ctx.sessionId))
+        .orderBy(asc(handoffs.createdAt))
+      const es = await db.select().from(events).where(eq(events.sessionId, ctx.sessionId)).orderBy(asc(events.id))
+      return {
+        traspasos: hs.map(({ h }) => ({ de: h.fromAgent ? codenameOf(h.fromAgent) : 'motor', a: codenameOf(h.toAgent), estado: h.status, motivo: h.reason })),
+        eventos: es.map((e) => ({ quien: e.agentId ? codenameOf(e.agentId) : 'motor', tipo: e.type, mensaje: e.message.slice(0, 500) })),
+      }
     },
   },
 }

@@ -58,6 +58,7 @@ export function MarketingCard({ m, error }: { m: MarketingMetrics; error?: strin
             <Cabecera t={t} />
             <p className="text-xs text-stone-600">{t.angulo}</p>
             {t.palabrasClave.length > 0 && <p className="text-xs text-stone-400">{t.palabrasClave.join(' · ')}</p>}
+            <Informe t={t} />
             <form action={decidirTemaMarketing} className="flex flex-wrap items-center gap-2">
               <input type="hidden" name="id" value={t.id} />
               <input name="nota" placeholder="Nota para la banda (opcional)" className="min-w-0 flex-1 rounded border border-stone-300 px-2 py-1 text-xs" />
@@ -88,6 +89,7 @@ export function MarketingCard({ m, error }: { m: MarketingMetrics; error?: strin
           <li key={t.id} className="flex flex-col gap-1 border-t border-stone-100 py-2">
             <Cabecera t={t} />
             <p className="text-xs text-stone-500">Publicación prevista: {fecha(t.programadoPara)}</p>
+            {t.sessionId && <Informe t={t} />}
             {t.piezas.length > 0 && (
               <p className="flex flex-wrap gap-3 text-xs">
                 {t.piezas.map((p) => (
@@ -117,6 +119,40 @@ function Cabecera({ t }: { t: TemaVista }) {
       <b>{t.titulo}</b>
       <span className="text-xs text-stone-400">{t.categoria}{t.version > 1 ? ` · v${t.version}` : ''}</span>
     </div>
+  )
+}
+
+/** Informe del Profesor: plegado, para no alargar la lista. */
+function Informe({ t }: { t: TemaVista }) {
+  const inf = t.informe
+  if (!inf) return null
+  return (
+    <details className="rounded border border-stone-200 bg-stone-50 px-2 py-1 text-xs text-stone-700">
+      <summary className="cursor-pointer font-semibold">Informe del Profesor{inf.revisar.length ? ` · ${inf.revisar.length} punto(s) que mirar` : ''}</summary>
+      {inf.resumen && <p className="mt-1">{inf.resumen}</p>}
+      {inf.revisar.length > 0 && (
+        <ul className="mt-1 list-disc pl-4">
+          {inf.revisar.map((r, i) => (
+            <li key={i}>{r}</li>
+          ))}
+        </ul>
+      )}
+      {inf.objeciones.length > 0 && (
+        <p className="mt-1 text-stone-500">
+          Palermo{inf.devoluciones ? ` (${inf.devoluciones} devolución/es)` : ''}: {inf.objeciones.join(' · ')}
+        </p>
+      )}
+      {inf.fuentes.length > 0 && (
+        <p className="mt-1 flex flex-wrap gap-2">
+          Fuentes:
+          {inf.fuentes.map((u, i) => (
+            <a key={u} className="underline" href={u} target="_blank" rel="noreferrer">
+              {i + 1}
+            </a>
+          ))}
+        </p>
+      )}
+    </details>
   )
 }
 
