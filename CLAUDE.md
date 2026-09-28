@@ -500,6 +500,14 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   semanal por servicio, confirmación al momento sin señal, recordatorio). También aclara que el migrador trae el contenido y
   que conservar diseño y URLs es el servicio de reconstrucción. **Fusionar DESPUÉS de desplegar wp-next-starter#206.**
 
+- **2026-09-28, marketing: destino de la academia de La Clase Digital (v0.15.0)**. Segundo escaparate de la Fase 4 y primero
+  REAL (wp-next-starter#207, 1.83.0): la academia de Javier en `laclasedigital.wordnext.tech` (→ academia.laclasedigital.com)
+  con el curso «Monta y vende tu web (para profes)», 49 €. Perfil propio (`perfilDestino`, también bajo el dominio propio):
+  público = profesores de idiomas y formadores, solo categoría `docencia`, **1 artículo por semana**, cierre hacia el curso
+  (`/curso`, `/en-course` en inglés) y la regla de NO inventar alumnos, anécdotas ni resultados de Javier. Entra en
+  `DESTINOS_POR_DEFECTO`; si Vercel tiene `MARKETING_DESTINOS`, hay que añadir `laclasedigital.wordnext.tech`. Fusionar
+  DESPUÉS de pegar el SQL de la academia en WordNext (si no, el envío da 404 y el tema queda «fallido»).
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&

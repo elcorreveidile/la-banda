@@ -8,8 +8,8 @@
 
 export const MARKETING_DOMAIN = 'marketing'
 
-/** Destinos por defecto: el blog de WordNext y el escaparate de restauración (Fase 4). */
-export const DESTINOS_POR_DEFECTO = 'blog.wordnext.tech,restaurante.wordnext.tech'
+/** Destinos por defecto: el blog de WordNext y los escaparates de la Fase 4 (restaurante y academia). */
+export const DESTINOS_POR_DEFECTO = 'blog.wordnext.tech,restaurante.wordnext.tech,laclasedigital.wordnext.tech'
 export function destinos(env: Record<string, string | undefined> = process.env): string[] {
   const lista = (env.MARKETING_DESTINOS ?? DESTINOS_POR_DEFECTO)
     .split(',')
@@ -65,6 +65,24 @@ export function perfilDestino(destino: string): PerfilDestino {
         'Taberna del Olivar NO existe: nunca la presentes como un restaurante real ni cuentes experiencias, cifras o clientes suyos («en nuestra taberna conseguimos…»). Si la usas de ejemplo, di que es un ejemplo.',
         'Útil para el dueño de un restaurante (reservas, carta online, reseñas, temporada, equipo, costes); WordNext sale solo en el cierre o donde de verdad resuelve algo.',
         'Enlaces internos: solo a URLs de leerBlog de este destino o de la ficha de hechos.',
+      ],
+    }
+  }
+  if (destino === 'laclasedigital.wordnext.tech' || destino === 'academia.laclasedigital.com') {
+    return {
+      nombre: 'Blog de la academia de La Clase Digital (Javier Benítez Láinez), hecha con WordNext',
+      publico: 'profesores de idiomas (sobre todo de español como lengua extranjera) y formadores que dan clase por su cuenta o en academias pequeñas',
+      categorias: ['docencia'],
+      porSemana: 1,
+      cierre: {
+        es: 'Cierra con una línea que invite al curso «Monta y vende tu web» (49 €, en /curso de este blog) o a suscribirse, sin exagerar.',
+        en: 'End with one line inviting readers to the course «Monta y vende tu web» (€49, taught in Spanish, at /en-course on this site), without overselling.',
+      },
+      notas: [
+        'Escribe como la academia de un profesor real (Javier, profesor de ELE en Granada), pero NUNCA inventes anécdotas, alumnos, cifras ni resultados suyos («mis alumnos aprobaron…»): si pones un ejemplo, di que es un ejemplo.',
+        'Temas: la web y la venta online de un profe (web de clases, curso online, actividades autocorregidas, cobrar, lista de correo, blog) y la IA en clase con criterio. Útil para el profe primero; WordNext solo donde de verdad resuelve algo.',
+        'El curso «Monta y vende tu web (para profes)»: 49 €, pago único, 5 módulos, 15 lecciones, 5 actividades autocorregidas, tarea final y certificado; se imparte en español.',
+        'Enlaces internos: solo a URLs de leerBlog de este destino, a /curso (o /en-course en inglés) o de la ficha de hechos.',
       ],
     }
   }
