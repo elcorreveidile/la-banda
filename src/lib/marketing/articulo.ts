@@ -32,7 +32,7 @@ export function recortar(t: string, max: number): string {
   return `${(espacio > max * 0.6 ? corte.slice(0, espacio) : corte).replace(/[\s,;:.\-–—]+$/, '')}…`
 }
 
-export function validarTemas(v: unknown, max: number, titulosExistentes: string[] = []): { temas: TemaPropuesto[]; descartes: string[] } {
+export function validarTemas(v: unknown, max: number, titulosExistentes: string[] = [], categoriasPermitidas?: string[]): { temas: TemaPropuesto[]; descartes: string[] } {
   const lista = Array.isArray(v) ? v : []
   const vistos = new Set(titulosExistentes.map(normalizarTitulo))
   const temas: TemaPropuesto[] = []
@@ -52,6 +52,10 @@ export function validarTemas(v: unknown, max: number, titulosExistentes: string[
     const angulo = recortar(limpio(x.angulo), ANGULO_MAX)
     if (!IDS_CATEGORIA.has(categoria)) {
       descartes.push(`#${i + 1}: categoría desconocida «${categoria.slice(0, 40)}»`)
+      continue
+    }
+    if (categoriasPermitidas && !categoriasPermitidas.includes(categoria)) {
+      descartes.push(`#${i + 1}: la categoría «${categoria}» no es de este destino`)
       continue
     }
     if (titulo.length < 10 || titulo.length > 120) {

@@ -8,23 +8,77 @@
 
 export const MARKETING_DOMAIN = 'marketing'
 
-/** Destinos por defecto: el blog de WordNext (tenant de la plataforma). */
+/** Destinos por defecto: el blog de WordNext y el escaparate de restauración (Fase 4). */
+export const DESTINOS_POR_DEFECTO = 'blog.wordnext.tech,restaurante.wordnext.tech'
 export function destinos(env: Record<string, string | undefined> = process.env): string[] {
-  const lista = (env.MARKETING_DESTINOS ?? 'blog.wordnext.tech')
+  const lista = (env.MARKETING_DESTINOS ?? DESTINOS_POR_DEFECTO)
     .split(',')
     .map((d) => d.trim().toLowerCase())
     .filter((d) => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d))
   return lista.length ? lista : ['blog.wordnext.tech']
 }
 
-/** Artículos por semana y destino (def. 2, lo decidió Javier). Entre 1 y 5. */
-export function articulosPorSemana(env: Record<string, string | undefined> = process.env): number {
+/**
+ * Artículos por semana. Con destino, manda el ritmo de su perfil (el escaparate de restauración
+ * arranca con 1); si no, `MARKETING_ARTICULOS_SEMANA` (def. 2, lo decidió Javier). Entre 1 y 5.
+ */
+export function articulosPorSemana(env: Record<string, string | undefined> = process.env, destino?: string): number {
+  const propio = destino ? perfilDestino(destino).porSemana : undefined
+  if (propio) return propio
   const n = Math.round(Number(env.MARKETING_ARTICULOS_SEMANA))
   return Number.isFinite(n) && n >= 1 ? Math.min(n, 5) : 2
 }
 
 /** Temas que propone cada plan: el doble de la cadencia, para que haya dónde elegir. */
-export const temasPorPlan = (env: Record<string, string | undefined> = process.env) => articulosPorSemana(env) * 2
+export const temasPorPlan = (env: Record<string, string | undefined> = process.env, destino?: string) => articulosPorSemana(env, destino) * 2
+
+/**
+ * Perfil de cada destino (Fase 4): a quién escribe, de qué categorías, a qué ritmo y cómo cierra.
+ * Lo leen los agentes en leerEncargo y el código al validar temas. Un destino sin perfil usa el
+ * del blog de WordNext.
+ */
+export interface PerfilDestino {
+  nombre: string
+  publico: string
+  /** Categorías permitidas (ids de CATEGORIAS). */
+  categorias: string[]
+  /** Artículos por semana propios (si no, el general). */
+  porSemana?: number
+  /** Cómo cierra cada artículo, en español y en inglés. */
+  cierre: { es: string; en: string }
+  /** Reglas propias del destino. */
+  notas: string[]
+}
+
+export function perfilDestino(destino: string): PerfilDestino {
+  if (destino === 'restaurante.wordnext.tech') {
+    return {
+      nombre: 'Blog de «Taberna del Olivar», restaurante de EJEMPLO hecho con WordNext (escaparate de restauración)',
+      publico: 'dueños y gerentes de restaurantes, bares y cafeterías de España',
+      categorias: ['restauracion'],
+      porSemana: 1,
+      cierre: {
+        es: 'Cierra con una línea que recuerde que este blog es de un restaurante de ejemplo hecho con WordNext y enlace a https://app.wordnext.tech/crear?tpl=restaurante («crea la web de tu restaurante gratis»), sin exagerar.',
+        en: 'End with one line reminding that this blog belongs to an example restaurant built with WordNext, linking to https://app.wordnext.tech/crear?tpl=restaurante&lang=en, without overselling.',
+      },
+      notas: [
+        'Taberna del Olivar NO existe: nunca la presentes como un restaurante real ni cuentes experiencias, cifras o clientes suyos («en nuestra taberna conseguimos…»). Si la usas de ejemplo, di que es un ejemplo.',
+        'Útil para el dueño de un restaurante (reservas, carta online, reseñas, temporada, equipo, costes); WordNext sale solo en el cierre o donde de verdad resuelve algo.',
+        'Enlaces internos: solo a URLs de leerBlog de este destino o de la ficha de hechos.',
+      ],
+    }
+  }
+  return {
+    nombre: 'El Quirófano, el blog de WordNext',
+    publico: 'dueños de pequeños negocios que tienen o necesitan web',
+    categorias: CATEGORIAS.map((c) => c.id),
+    cierre: {
+      es: 'Termina con una sección breve de preguntas frecuentes y un cierre que mencione WordNext con un enlace de la ficha, sin exagerar.',
+      en: 'End with a short FAQ section and a closing line mentioning WordNext with a link from the facts sheet, without overselling.',
+    },
+    notas: ['Incluye un tema de firewall de IA / WordNext Guardian cada semana que puedas (lo pidió Javier).'],
+  }
+}
 
 /**
  * Modelos. Río redacta con Fable (decidido en el doc de trazabilidad); el resto de mesas con

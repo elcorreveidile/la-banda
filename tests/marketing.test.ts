@@ -258,8 +258,9 @@ describe('cron semanal', () => {
   it('jueves abre un plan; lunes no hace nada; el domingo manda el resumen', async () => {
     const jueves = deps({ now: () => JUEVES_10H.getTime() })
     const r = await cicloMarketing(jueves.d)
-    expect(r.planes).toHaveLength(1)
+    expect(r.planes).toHaveLength(2)
     expect(jueves.abiertas[0]).toMatchObject({ kind: 'plan', payload: { destino: DESTINO, cuantos: 4 } })
+    expect(jueves.abiertas[1]).toMatchObject({ kind: 'plan', payload: { destino: 'restaurante.wordnext.tech', cuantos: 2 } })
 
     const lunes = deps({ now: () => LUNES.getTime() })
     await temaAprobado(lunes)
@@ -380,5 +381,44 @@ describe('revisarArticulos', () => {
     expect(r.es.palabras).toBeGreaterThan(600)
     expect(r.es.errores).toEqual([])
     expect(articulosDelDossier([{ articuloEn: nuevo }]).es).toMatchObject({ presente: false })
+  })
+})
+
+describe('perfiles por destino (Fase 4)', () => {
+  it('el escaparate de restauración: 1 por semana, solo restauración y cierre hacia /crear', async () => {
+    const { perfilDestino, articulosPorSemana, destinos, temasPorPlan } = await import('@/lib/marketing/config')
+    expect(destinos({})).toEqual(['blog.wordnext.tech', 'restaurante.wordnext.tech'])
+    expect(articulosPorSemana({}, 'restaurante.wordnext.tech')).toBe(1)
+    expect(temasPorPlan({}, 'restaurante.wordnext.tech')).toBe(2)
+    expect(articulosPorSemana({}, 'blog.wordnext.tech')).toBe(2)
+    const p = perfilDestino('restaurante.wordnext.tech')
+    expect(p.categorias).toEqual(['restauracion'])
+    expect(p.cierre.es).toContain('https://app.wordnext.tech/crear?tpl=restaurante')
+    expect(p.notas.join(' ')).toContain('NO existe')
+  })
+
+  it('registrarTemas descarta categorías que no son del destino', async () => {
+    const ctx = deps({ now: () => JUEVES_10H.getTime() })
+    const r = await registrarTemas(
+      { kind: 'plan', destino: 'restaurante.wordnext.tech', cuantos: 2 },
+      'plan-rest',
+      [
+        { categoria: 'restauracion', titulo: 'Cómo llenar mesas entre semana', angulo: 'Ideas para restaurantes que pierden entre semana.' },
+        { categoria: 'firewall-ia', titulo: 'Qué es un firewall de IA para tu web', angulo: 'Explica el carril rápido y la revisión posterior.' },
+      ],
+      ctx.d,
+    )
+    expect(r).toMatchObject({ registrados: 1 })
+    expect(JSON.stringify(r)).toContain('no es de este destino')
+  })
+
+  it('redacción del restaurante: un solo hueco por semana', async () => {
+    const ctx = deps({ now: () => VIERNES.getTime() })
+    const nuevo = async (titulo: string) => {
+      const now = new Date(VIERNES)
+      return ctx.mem.store.insertarTema({ id: titulo, destino: 'restaurante.wordnext.tech', categoria: 'restauracion', titulo, angulo: 'Ángulo suficientemente largo para pasar.', estado: 'aprobado', createdAt: now, updatedAt: now })
+    }
+    expect(await abrirRedaccion(await nuevo('Primer tema del restaurante'), ctx.d)).toMatchObject({ tipo: 'abierta' })
+    expect(await abrirRedaccion(await nuevo('Segundo tema del restaurante'), ctx.d)).toEqual({ tipo: 'sin-hueco' })
   })
 })

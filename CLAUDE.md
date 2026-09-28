@@ -466,6 +466,19 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   se mide en el español (el inglés ±15 %, y un exceso < 10 % no es motivo de devolución). Estocolmo lee el español con
   ella y no escribe nunca `articuloEs`. `maxSteps` sube a 22 (con tres devoluciones de Palermo la mesa llegaba al tope de 16).
 
+- **2026-09-28, marketing — Fase 4: perfil por destino y primer escaparate (v0.14.0)**. Javier arrancó la Fase 4 de la hoja de
+  ruta de producto «poco a poco»: primero `restaurante.wordnext.tech`, un **restaurante de EJEMPLO** («Taberna del Olivar»,
+  wp-next-starter 1.81.0), con **1 artículo por semana** al principio y rondas de jueves a sábado como el resto. Cada destino
+  tiene ahora un **perfil** (`perfilDestino`, `src/lib/marketing/config.ts`): nombre, **público**, **categorías permitidas**,
+  **ritmo propio** (`porSemana`), **cierre** ES/EN y **notas**. El restaurante: público = dueños y gerentes de hostelería,
+  solo `restauracion`, 1/semana, cierre hacia `app.wordnext.tech/crear?tpl=restaurante`, y la regla de que Taberna del Olivar
+  **no existe** (nunca se presenta como real). El blog de WordNext conserva lo de antes (todas las categorías, un tema de
+  firewall de IA cuando se pueda). Lo leen los agentes en `leerEncargo` (`perfil`) y el código: `validarTemas` descarta las
+  categorías que no son del destino, `articulosPorSemana`/`temasPorPlan` y los huecos van por destino. **Destinos por defecto**:
+  `blog.wordnext.tech,restaurante.wordnext.tech` (`DESTINOS_POR_DEFECTO`; si Vercel tiene `MARKETING_DESTINOS`, hay que añadir el
+  restaurante ahí). Panel y correo del domingo muestran el destino de cada tema. Tests en `tests/marketing.test.ts`.
+  **Checklist**: (1) pegar antes el SQL del escaparate en WordNext (wp-next-starter#205); (2) revisar `MARKETING_DESTINOS` en Vercel.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
