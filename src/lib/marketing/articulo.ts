@@ -175,3 +175,35 @@ export function leerVeredicto(v: unknown): { aprueba: boolean; motivos: string[]
   const motivos = (Array.isArray(v.motivos) ? v.motivos : []).map(limpio).filter(Boolean).slice(0, 10)
   return { aprueba: v.aprueba, motivos }
 }
+
+export interface VersionEnDossier {
+  presente: boolean
+  titulo: string | null
+  slug: string | null
+  /** Palabras del texto visible, contadas por el código (no a ojo). */
+  palabras: number
+  /** Lo que falla en la validación dura del envío (vacío = pasaría). */
+  errores: string[]
+  html: string | null
+}
+
+/**
+ * Las dos versiones MÁS RECIENTES del artículo que hay en el dossier (cargas de los traspasos, de la
+ * más reciente a la más antigua), con recuento y validación hechos en código. Así Palermo y
+ * Estocolmo no dependen de encontrar el campo en su traspaso ni de contar palabras a ojo. Puro.
+ */
+export function articulosDelDossier(dossier: unknown[]): { es: VersionEnDossier; en: VersionEnDossier } {
+  const version = (campo: string): VersionEnDossier => {
+    for (const p of dossier) {
+      const v = esObjeto(p) ? p[campo] : undefined
+      // Solo cuenta una versión con texto: si otro agente pisó el campo con una nota o un objeto
+      // vacío, se sigue buscando la de quien la escribió.
+      if (!esObjeto(v) || typeof v.html !== 'string' || !v.html.trim()) continue
+      const html = v.html
+      const r = validarArticulo(v)
+      return { presente: true, titulo: limpio(v.titulo) || null, slug: limpio(v.slug) || null, palabras: html ? contarPalabras(html) : 0, errores: r.ok ? [] : r.errores, html }
+    }
+    return { presente: false, titulo: null, slug: null, palabras: 0, errores: ['no está en el dossier'], html: null }
+  }
+  return { es: version('articuloEs'), en: version('articuloEn') }
+}

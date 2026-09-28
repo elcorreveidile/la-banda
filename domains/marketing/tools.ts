@@ -7,6 +7,7 @@ import { fetchLimpio } from '@/lib/httpLimpio'
 import { delimitar } from '@/lib/firewall/patron'
 import { CATEGORIAS, articulosPorSemana } from '@/lib/marketing/config'
 import { fichaDeHechos } from '@/lib/marketing/hechos'
+import { articulosDelDossier } from '@/lib/marketing/articulo'
 import { buscarWeb } from '@/lib/marketing/busqueda'
 import { enviarArticulo, registrarTemas } from '@/lib/marketing/ciclo'
 import { dossierDeTarea, marketingStoreDb, payloadDeTarea } from '@/lib/marketing/store'
@@ -146,6 +147,14 @@ export const marketingTools: Record<string, ToolDef> = {
       if (typeof p.version === 'number' && p.version !== tema.version) return { error: 'esta sesión es de una versión anterior del tema' }
       return enviarArticulo(tema, await dossierDeTarea(ctx.taskId), { store: marketingStoreDb })
     },
+  },
+
+  revisarArticulos: {
+    name: 'revisarArticulos',
+    description:
+      'SOLO en un artículo. Devuelve las versiones MÁS RECIENTES de "articuloEs" y "articuloEn" de toda la sesión (no solo de tu traspaso), con su HTML, las PALABRAS contadas por el código y los errores de la validación dura del envío. Es la fuente de verdad: úsala en vez de buscar el artículo en tu carga o contar palabras a ojo.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    run: async (_input, ctx) => articulosDelDossier(await dossierDeTarea(ctx.taskId)),
   },
 
   leerCadena: {

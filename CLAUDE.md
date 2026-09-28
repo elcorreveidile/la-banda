@@ -434,7 +434,7 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 
 - **2026-09-28, marketing: el Profesor cierra cada mesa (v0.13.1)**. Javier vio en el panel solo 6 agentes y
   pidió el Profesor. Ahora cierra las dos sesiones: Helsinki registra o envía, añade `envio` { resultado, motivo,
-  detalle } y pasa → **Profesor** (`closer`, `maxSteps` 16, `MARKETING_MODELO_MESA`), que con `leerCadena` (el
+  detalle } y pasa → **Profesor** (`closer`, `maxSteps` 16 → 22 en 0.13.4, `MARKETING_MODELO_MESA`), que con `leerCadena` (el
   recorrido SIN contenido: traspasos, motivos de devolución, eventos; el dossier ya lo tiene en su carga) cierra con
   `{ resultado, motivo, informe: { resumen, fuentes, objeciones, revisar, devoluciones } }`. **No decide ni cambia
   nada**: lo enviado ya está enviado; si el Profesor falla, el tema no se toca. El informe se lee del `finalReport`
@@ -456,6 +456,15 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 - **2026-09-28, marketing: ángulo largo se recorta (v0.13.3)**. El primer plan real registró 3 de 4 temas: el de
   firewall-ia traía un ángulo de más de 400 caracteres y `validarTemas` lo descartaba. Ahora se **recorta** a 400
   (`recortar`, `articulo.ts`: por el último espacio, con «…») y el tema entra; solo se descarta si tiene menos de 20.
+
+- **2026-09-28, marketing: Palermo lee el artículo con una herramienta (v0.13.4)**. En el primer artículo real
+  («carta y reservas sin plugins») Palermo devolvió dos veces a Río diciendo que no le llegaba `articuloEs` y que
+  el texto pasaba de 1.600 palabras «a ojo». Nueva herramienta **`revisarArticulos`** (Palermo y Estocolmo;
+  `articulosDelDossier` en `articulo.ts`, puro): las versiones MÁS RECIENTES con texto de `articuloEs` y
+  `articuloEn` de toda la sesión (no solo del traspaso; ignora un campo pisado sin `html`), con las **palabras
+  contadas en código** y los errores de la validación del envío. Palermo juzga ese texto y ese recuento; la longitud
+  se mide en el español (el inglés ±15 %, y un exceso < 10 % no es motivo de devolución). Estocolmo lee el español con
+  ella y no escribe nunca `articuloEs`. `maxSteps` sube a 22 (con tres devoluciones de Palermo la mesa llegaba al tope de 16).
 
 ## Convenciones
 
