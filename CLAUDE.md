@@ -376,6 +376,62 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
     vetado; si corrige, sigue); aceptación por encima del presupuesto; inyección en un mensaje y en la solicitud;
     privacidad de límites; aviso firmado; nodos; caducidad; API.
 
+- **2026-09-28, marketing — Fase 3: dominio `marketing` (v0.13.0)**. Hoja de ruta del doc «WordNext — Definición de
+  producto y trazabilidad» (fase 3: «dominio marketing en La Banda, Fable + revisión humana»). Decidido por AskUserQuestion:
+  **solo artículos de blog** (las redes llegan en las fases 11-12, cuando haya cuentas y apps de Meta/TikTok); **La Banda
+  propone temas y Javier los aprueba**; cada artículo **en ES + EN enlazados**; fuentes = **ficha de hechos + búsqueda web
+  (Anthropic por defecto, z.ai configurable, nunca por defecto)**; y, a mitad de trabajo, **revisión semanal en domingo**.
+  **Requiere SQL en Neon de LA BANDA ANTES de desplegar** (`scripts/marketing.sql`, idempotente; o
+  `drizzle/0008_marketing.sql`): tablas `marketing_temas` y `marketing_piezas`. Necesita wp-next-starter 1.80.0
+  (`locale` + `translationKey` en la API de publicación).
+  - **Calendario (hora de Madrid, `src/lib/marketing/calendario.ts`, puro)**: el cron `/api/cron/marketing` (`40 * * * *`)
+    propone temas el **jueves** (desde las 07:00; si esa semana no hubo plan y quedan menos propuestos que la cadencia);
+    de **jueves a sábado** redacta los temas APROBADOS, uno a la vez por destino, para la **semana siguiente** (huecos:
+    martes y jueves a las 09:00 con `MARKETING_ARTICULOS_SEMANA=2`; 1-5); el **domingo a las 08:00** manda el **resumen de
+    revisión** por Brevo a `MARKETING_REVISOR_EMAIL` (def. informa@blablaele.com; javier@ no existe): artículos por aprobar
+    en WordNext (enlaces de revisión ES/EN), temas propuestos (enlace al panel) y los que necesitan decisión. Además abandona
+    mesas colgadas (3 h) y purga la traza de 90 días.
+  - **Dominio** (`domains/marketing/`): dos tipos de sesión en un solo grafo. **plan**: Tokio (propone) → Denver (contrasta
+    con búsquedas) → Palermo (filtra) → Helsinki (`registrarTemas`). **articulo**: Tokio (esquema) → Denver (datos con fuente
+    y fecha) → **Río (redacta en español con Fable, `MARKETING_MODELO_REDACTOR` def. `claude-fable-5-1`)** → Estocolmo
+    (versión inglesa) → Palermo (rúbrica: aprueba, devuelve a Río/Estocolmo o veta; `MARKETING_MODELO_JUEZ` def. Opus 5.5)
+    → Helsinki (`enviarArticulo`, cierra). Resto de mesas `MARKETING_MODELO_MESA` (def. Sonnet 5). Sin prefijo = `anthropic:`;
+    sin la clave del proveedor no se abre mesa.
+  - **Hechos** (`src/lib/marketing/hechos.ts`): única fuente de precios, planes y funciones de WordNext; se mantiene a mano
+    al cambiar precios (deben coincidir con wp-next-starter y el escaparate). Palermo veta lo que no esté ahí; incluye lo que
+    NO se puede decir (clientes, testimonios o porcentajes inventados, promesas de posición, funciones que aún no existen).
+  - **Búsqueda** (`busqueda.ts`, herramienta `buscarWeb` de Denver, máx. 3 por sesión): llamada aparte con la herramienta de
+    servidor `web_search_20260209` (`MARKETING_MODELO_BUSQUEDA`, def. Sonnet 5) → resumen + fuentes que abrió el buscador;
+    `MARKETING_BUSQUEDA=zai` usa la de z.ai, `ninguna` la apaga. El resumen llega delimitado como DATO_NO_FIABLE.
+  - **Validación dura en código** (`articulo.ts`): temas (categoría de la lista —las 8 del escaparate + `firewall-ia` +
+    `migracion`—, longitudes, sin repetir) y artículo (título, slug, extracto, SEO, HTML solo con h2/h3/p/listas/strong/em/
+    a https/blockquote/br, sin h1, ≥ 2 h2, 600-2.500 palabras). **`enviarArticulo` exige la aprobación de Palermo** y las dos
+    versiones válidas; manda ES y EN a WordNext (`wordnext.ts`: firma de plataforma HMAC de `<ts>.<MÉTODO>.<ruta>.<cuerpo>`
+    con `WORDNEXT_CALLBACK_SECRET`, `fetchLimpio`; origen `WORDNEXT_PUBLISH_URL`, `WORDNEXT_URL` o el de `WORDNEXT_CALLBACK_URL`) como **borradores
+    programados** con `externalRef` `lb-mkt.<tema>.v<versión>.<idioma>` (idempotente) y la misma `translationKey`.
+  - **Vuelta** `POST /api/v1/marketing/publicaciones` (la URL que wp-next-starter ya usa por defecto: origen de
+    `LA_BANDA_URL`): Bearer `LA_BANDA_API_KEY` + `X-Banda-Signature` del cuerpo exacto. Estado del tema por sus piezas:
+    las dos publicadas → `publicado`; una rechazada → `rechazado` con el motivo; retirada → `fallido`.
+  - **Estados del tema**: propuesto → aprobado | descartado; aprobado → redactando → en_revision → publicado | rechazado;
+    redactando → vetado | fallido (hook del tick `finalizarSesion` + red en el cron). Rechazado, vetado o fallido →
+    «Reescribir» (versión + 1, la nota o el motivo llegan a la mesa) o «Descartar».
+  - **Panel**: pestaña **Marketing** (`MarketingCard`): temas propuestos con Aprobar/Descartar y nota, los que necesitan
+    decisión, en marcha (fecha prevista y enlaces «revisar»/«ver» de WordNext) y botones «Proponer temas ahora» /
+    «Redactar el siguiente aprobado» (saltan el calendario).
+  - **Prueba de punta a punta** (wp-next-starter 1.80.0 con `next start` + rama de Neon; lado La Banda con el código real
+    de `ciclo.ts`/`wordnext.ts` y un receptor local con la lógica de la ruta, almacén en memoria; **sin modelos**: el
+    contenedor no tiene clave de Anthropic): dos temas aprobados → huecos martes 06-10 09:00; envío ES+EN = 4 borradores con
+    `locale` y la misma `translationKey`; reenvío idempotente; web inexistente → 404 legible; firma mala → 401. Aprobadas
+    las dos versiones del primero y el cron de WordNext → **avisos firmados** → tema `publicado`; en el blog, «Read in
+    English» / «Leer en español» cruzados con `hreflang`. Rechazado el segundo → aviso con motivo → tema `rechazado`. Datos
+    de prueba borrados. **Sin probar aquí**: los agentes con modelos reales (Fable/Opus/Sonnet) y el correo del domingo por
+    Brevo. Tests `tests/marketing.test.ts` (18).
+  - **Checklist para Javier**: (1) pegar `scripts/marketing.sql` en Neon de **La Banda**; (2) fusionar antes
+    elcorreveidile/wp-next-starter#204; (3) variables en Vercel de la-banda: nada obligatorio nuevo (el origen de WordNext sale de
+    `WORDNEXT_URL` o, si no está, de `WORDNEXT_CALLBACK_URL`; firma con `WORDNEXT_CALLBACK_SECRET`; modelos con
+    `ANTHROPIC_API_KEY`); opcionales `MARKETING_*` (ver `.env.example`);
+    (4) en WordNext, la ficha de `blog.wordnext.tech` ya tiene «Aceptar artículos de La Banda».
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
@@ -400,3 +456,4 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
    anotación contra la API de la Clínica; fases 3-5 en el repo clinica-cultural.
 6. Firewall agéntico de WordNext, carril profundo (Fase 2b) — **hecho** (v0.10.0).
 7. Red de webs agénticas, registro y negociación B2B (Fase 4a) — **hecho** (v0.12.0). Fase 4b en wp-next-starter.
+8. Marketing de WordNext (Fase 3 de la hoja de ruta de producto): dominio `marketing` — **hecho** (v0.13.0).
