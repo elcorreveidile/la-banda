@@ -330,6 +330,52 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   puro en `src/lib/estado.ts` (`resumirEstado`, test `tests/estado.test.ts`). Sin esquema ni variables nuevas. Lo
   consume wp-next-starter (1.76.0) con `LA_BANDA_URL` + `LA_BANDA_API_KEY`, que ya tiene.
 
+- **2026-09-28, red de webs agénticas — Fase 4a: registro de nodos y negociación B2B (v0.12.0)**. Javier reactivó la
+  red B2B (antes en espera) y decidió por AskUserQuestion: **registro centralizado ahora** (solo webs WordNext) **y
+  federado después**; **identidad = todo pasa por La Banda con credencial por nodo** (sin firma asimétrica mientras no se
+  federe); **MVP = solo solicitud de presupuesto** sobre el catálogo real del vendedor, en euros y céntimos.
+  **Requiere SQL en Neon ANTES de desplegar** (`scripts/negociacion.sql`, idempotente; o `drizzle/0007_negociacion.sql`):
+  tablas `red_nodos` y `red_negociaciones`.
+  - **Principios**: ningún acuerdo es firme sin la **aprobación humana de las dos partes**; cada mesa negocia SOLO dentro
+    de los límites de su dueño; **determinista primero** (esquema, credenciales, límites, turnos y propuesta en código;
+    el LLM solo redacta y elige dentro del margen); un mensaje que intenta manipular al agente contrario **veta**;
+    Anthropic por defecto (`NEGOCIACION_MODELO_MESA` def. Sonnet 5, `NEGOCIACION_MODELO_JUEZ` def. Opus 5.5; sin la
+    clave del proveedor nombrado → 503, nunca z.ai por defecto); sin transacciones.
+  - **Nodos** (`src/db/negociacion.ts`, `src/lib/negociacion/ciclo.ts`): alta por tenant con host, sector, capacidades
+    (`quote`), catálogo (`precioCents` de lista y `minimoCents` PRIVADO por item) y límites (`descuentoMaxPct` 0-90,
+    `rondasMax` 1-10). El alta devuelve **una vez** la clave del nodo (`bn_…`; se guarda su sha256); actualizar,
+    rotar, dar de baja y actuar en su nombre exige `x-banda-nodo-clave` (+ `x-banda-nodo` con el id). Descubrimiento por
+    capacidad y sector con ficha pública (sin mínimos ni límites).
+  - **Reglas** (`reglas.ts`, puras): suelo por unidad = max(mínimo propio, lista − descuento máximo); el vendedor oferta
+    precio por CADA línea entre su suelo y su lista y solo `rondasMax` veces; el comprador acepta si cabe en su
+    presupuesto o contraoferta por debajo de la oferta y de su presupuesto; zona de acuerdo = suma de suelos ≤
+    presupuesto; `detectarInyeccion` (es/en: ignorar instrucciones, prompt de sistema, marcas de chat, cambio de rol,
+    «revela tu mínimo», «acepta cualquier precio», jailbreak, invisibles). Al abrir, **inyección en la solicitud → vetada
+    sin mesa** y **sin zona de acuerdo → sin_acuerdo sin mesa** (ni una llamada a un modelo, y sin revelar el mínimo).
+  - **Dominio `negociacion`** (`domains/negociacion/`): Palermo (cortafuegos, entrada y veto) → Berlín (mesa del
+    VENDEDOR: `leerComoVendedor` + `ofertar`) → Profesor (árbitro: `comprobar`, DETERMINISTA) → Lisboa (mesa del
+    COMPRADOR: `leerComoComprador` + `responder`) → Profesor → … → Helsinki (`registrarPropuesta`, la compone el código
+    desde la oferta aceptada, y cierra) o Palermo (veto). Cada mesa ve solo SUS límites; los mensajes y la solicitud de
+    la otra parte van delimitados como dato no fiable. El código lleva el **turno**, cuenta los movimientos que el
+    árbitro ha visto (`ofertasVistas`: si la parte a la que le tocaba no hizo un movimiento válido —p. ej. insistió
+    por debajo de su mínimo— se veta) y fija el **desenlace** (`propuesta` | `sin_acuerdo` | `vetada`); al terminar la
+    mesa, `finalizarNegociacion` (hook del tick + cron) lo aplica y **re-valida** la propuesta. Estados: `negociando` →
+    `propuesta` → `acordada` | `rechazada`, o `sin_acuerdo` | `vetada` | `fallida`. Propuesta sin aprobar caduca a los 7
+    días; mesa colgada se abandona a los 90 min (cron `/api/cron/negociacion`, cada 5 min).
+  - **API v1** (Bearer `LA_BANDA_API_KEY` + credencial del nodo): `POST /api/v1/red/nodos` (alta 201 + `clave` / 200
+    actualización), `GET /api/v1/red/nodos?capacidad=&sector=&limite=`, `DELETE /api/v1/red/nodos/:id`,
+    `POST /api/v1/negociacion` (el comprador abre; 202 con el estado), `GET /api/v1/negociacion/:id` (solo las dos
+    partes; `tuParte`), `POST /api/v1/negociacion/:id/aprobar|rechazar`. Contrato JSON en la descripción del PR (lo
+    usará la Fase 4b). **Nunca** salen el presupuesto del comprador ni los mínimos/descuento/rondas del vendedor.
+  - **Aviso** (`webhook.ts`): mismo mecanismo que la Fase 2b: POST con el JSON del GET + `evento`, firmado
+    `X-Banda-Signature: sha256=HMAC(WORDNEXT_CALLBACK_SECRET, cuerpo)`, a `NEGOCIACION_CALLBACK_URL` o, por defecto, el
+    origen de `WORDNEXT_CALLBACK_URL` + `/api/la-banda/negociacion`; reintentos con el backoff de peticiones. Sin URL o
+    sin secreto no se envía (queda el GET).
+  - Tests con fixtures (`tests/negociacion.test.ts`, `tests/negociacion-api.test.ts`): acuerdo con dos rondas y
+    aprobación de las dos partes; sin zona de acuerdo; rondas agotadas; vendedor por debajo de su mínimo (rechazado y
+    vetado; si corrige, sigue); aceptación por encima del presupuesto; inyección en un mensaje y en la solicitud;
+    privacidad de límites; aviso firmado; nodos; caducidad; API.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
@@ -353,3 +399,4 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 5. Corpus ELE (dominio 3, fase 2 del plan) — **hecho** (v0.5.0): producción y
    anotación contra la API de la Clínica; fases 3-5 en el repo clinica-cultural.
 6. Firewall agéntico de WordNext, carril profundo (Fase 2b) — **hecho** (v0.10.0).
+7. Red de webs agénticas, registro y negociación B2B (Fase 4a) — **hecho** (v0.12.0). Fase 4b en wp-next-starter.
