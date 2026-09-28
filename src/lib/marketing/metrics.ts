@@ -6,8 +6,7 @@ import { articulosPorSemana, destinos, modelosDisponibles, proveedorBusqueda } f
 import { publicacionConfigurada } from './wordnext'
 
 export interface MarketingMetrics {
-  destinos: string[]
-  porSemana: number
+  destinos: { destino: string; porSemana: number }[]
   configuracion: { modelos: boolean; publicacion: boolean; busqueda: string }
   temas: (Tema & { piezas: Pieza[]; informe: InformeProfesor | null })[]
 }
@@ -25,8 +24,7 @@ export async function marketingMetrics(): Promise<MarketingMetrics> {
     })),
   )
   return {
-    destinos: destinos(),
-    porSemana: articulosPorSemana(),
+    destinos: destinos().map((destino) => ({ destino, porSemana: articulosPorSemana(process.env, destino) })),
     configuracion: { modelos: modelosDisponibles(), publicacion: publicacionConfigurada(), busqueda: proveedorBusqueda() },
     temas: conPiezas,
   }

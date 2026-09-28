@@ -5,7 +5,7 @@ import { events, handoffs, tasks } from '@/db/schema'
 import { codenameOf } from '@/engine/store'
 import { fetchLimpio } from '@/lib/httpLimpio'
 import { delimitar } from '@/lib/firewall/patron'
-import { CATEGORIAS, articulosPorSemana } from '@/lib/marketing/config'
+import { CATEGORIAS, articulosPorSemana, perfilDestino } from '@/lib/marketing/config'
 import { fichaDeHechos } from '@/lib/marketing/hechos'
 import { articulosDelDossier } from '@/lib/marketing/articulo'
 import { buscarWeb } from '@/lib/marketing/busqueda'
@@ -36,18 +36,21 @@ export const marketingTools: Record<string, ToolDef> = {
   leerEncargo: {
     name: 'leerEncargo',
     description:
-      'El encargo de esta sesión. Tipo "plan": destino, cuántos temas proponer, categorías y títulos ya usados (no repetir). Tipo "articulo": el tema aprobado (título, ángulo, público, palabras clave, categoría), la fecha de publicación prevista y, si es una reescritura, el motivo del rechazo anterior y la nota de Javier.',
+      'El encargo de esta sesión, con el PERFIL del destino (a quién se escribe, categorías permitidas, cómo se cierra y sus reglas propias: mandan). Tipo "plan": destino, cuántos temas proponer, categorías y títulos ya usados (no repetir). Tipo "articulo": el tema aprobado (título, ángulo, público, palabras clave, categoría), la fecha de publicación prevista y, si es una reescritura, el motivo del rechazo anterior y la nota de Javier.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     run: async (_input, ctx) => {
       const p = await payloadDeTarea(ctx.taskId)
       if (p.kind === 'plan') {
         const destino = String(p.destino ?? '')
+        const perfil = perfilDestino(destino)
+        const porSemana = articulosPorSemana(process.env, destino)
         return {
           tipo: 'plan',
           destino,
+          perfil,
           cuantos: p.cuantos,
-          ritmo: `${articulosPorSemana()} artículos por semana (${diasPublicacion(articulosPorSemana()).map((d) => DIAS[d]).join(' y ')}), cada uno en español e inglés`,
-          categorias: CATEGORIAS,
+          ritmo: `${porSemana} artículo(s) por semana (${diasPublicacion(porSemana).map((d) => DIAS[d]).join(' y ')}), cada uno en español e inglés`,
+          categorias: CATEGORIAS.filter((c) => perfil.categorias.includes(c.id)),
           titulosYaUsados: await marketingStoreDb.titulosRecientes(destino, 100),
         }
       }
@@ -56,6 +59,7 @@ export const marketingTools: Record<string, ToolDef> = {
       return {
         tipo: 'articulo',
         destino: tema.destino,
+        perfil: perfilDestino(tema.destino),
         categoria: CATEGORIAS.find((c) => c.id === tema.categoria) ?? tema.categoria,
         titulo: tema.titulo,
         angulo: tema.angulo,

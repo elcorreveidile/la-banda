@@ -37,9 +37,9 @@ export function MarketingCard({ m, error }: { m: MarketingMetrics; error?: strin
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-1">
-        <p className="flex items-center gap-1.5 font-bold"><span className="h-2 w-2 rounded-full bg-fuchsia-500" />Marketing · {m.destinos.join(', ')}</p>
+        <p className="flex items-center gap-1.5 font-bold"><span className="h-2 w-2 rounded-full bg-fuchsia-500" />Marketing · {m.destinos.map((d) => `${d.destino} (${d.porSemana}/sem.)`).join(' · ')}</p>
         <span className="text-xs text-stone-500">
-          {m.porSemana} artículos por semana, en español e inglés. Jueves: la banda propone temas. Jueves a sábado: redacta los aprobados para la semana siguiente. Domingo 08:00: te llega el resumen para revisar. Búsqueda web: {m.configuracion.busqueda}.
+          Cada artículo en español e inglés. Jueves: la banda propone temas. Jueves a sábado: redacta los aprobados para la semana siguiente. Domingo 08:00: te llega el resumen para revisar. Búsqueda web: {m.configuracion.busqueda}.
         </span>
         {faltas.length > 0 && <span className="text-xs font-semibold text-amber-700">Falta configurar: {faltas.join(' · ')}.</span>}
         {error && <span className="text-xs font-semibold text-red-700">{error}</span>}
@@ -130,7 +130,7 @@ function Cabecera({ t }: { t: TemaVista }) {
     <div className="flex flex-wrap items-center gap-2">
       <span className={clsx('rounded-full px-2 py-0.5 text-[11px] font-semibold', ESTADO_STYLE[t.estado])}>{t.estado.replace('_', ' ')}</span>
       <b>{t.titulo}</b>
-      <span className="text-xs text-stone-400">{t.categoria}{t.version > 1 ? ` · v${t.version}` : ''}</span>
+      <span className="text-xs text-stone-400">{t.destino} · {t.categoria}{t.version > 1 ? ` · v${t.version}` : ''}</span>
     </div>
   )
 }

@@ -18,7 +18,7 @@
 import type { EstadoTema, Pieza, Tema } from '@/db/marketing'
 import { leerVeredicto, validarArticulo, validarTemas, type ArticuloValido } from './articulo'
 import { esDiaDePlan, esDiaDeRedaccion, esHoraDeResumen, haceDias, lunesSemanaSiguiente, madridAUtc, primerHuecoLibre } from './calendario'
-import { articulosPorSemana, destinos, MARKETING_SESION_MAX_MS, modelosDisponibles, temasPorPlan } from './config'
+import { articulosPorSemana, destinos, MARKETING_SESION_MAX_MS, modelosDisponibles, perfilDestino, temasPorPlan } from './config'
 import { leerInforme, resultadoDeCierre, type InformeProfesor } from './informe'
 import type { MarketingStore, SesionAbierta } from './store'
 import { claveTraduccion, enviarPieza, refPieza, type EnvioPieza, type ResultadoEnvio, type VistaPieza } from './wordnext'
@@ -48,7 +48,7 @@ export async function abrirPlan(destino: string, deps: DepsCiclo, abiertas?: Ses
   const enCurso = (abiertas ?? (await deps.store.sesionesAbiertas())).some((s) => s.kind === 'plan' && s.payload.destino === destino)
   if (enCurso) return { tipo: 'en-curso' }
   if (!(deps.modelosOk ?? modelosDisponibles)()) return { tipo: 'sin-modelos' }
-  const cuantos = temasPorPlan(deps.env)
+  const cuantos = temasPorPlan(deps.env, destino)
   const sessionId = await deps.abrirSesion('plan', { kind: 'plan', destino, cuantos })
   return { tipo: 'abierto', sessionId }
 }
@@ -59,9 +59,9 @@ export async function registrarTemas(payloadTarea: Record<string, unknown>, sess
   if (payloadTarea.kind !== 'plan' || !destino) return { error: 'registrarTemas solo vale en una sesión de plan' }
   const ya = await deps.store.temasDesde(destino, new Date(0))
   if (ya.some((t) => t.planSessionId === sessionId)) return { error: 'los temas de este plan ya están registrados', registrados: ya.filter((t) => t.planSessionId === sessionId).length }
-  const max = typeof payloadTarea.cuantos === 'number' ? payloadTarea.cuantos : temasPorPlan(deps.env)
+  const max = typeof payloadTarea.cuantos === 'number' ? payloadTarea.cuantos : temasPorPlan(deps.env, destino)
   const existentes = await deps.store.titulosRecientes(destino, 200)
-  const { temas, descartes } = validarTemas(input, max, existentes)
+  const { temas, descartes } = validarTemas(input, max, existentes, perfilDestino(destino).categorias)
   const now = new Date((deps.now ?? Date.now)())
   for (const t of temas) {
     await deps.store.insertarTema({ id: uuid(), destino, ...t, estado: 'propuesto', planSessionId: sessionId, createdAt: now, updatedAt: now })
@@ -78,7 +78,7 @@ export async function abrirRedaccion(tema: Tema, deps: DepsCiclo): Promise<Resul
   if (tema.estado !== 'aprobado') return { tipo: 'no-aprobado' }
   if (!(deps.modelosOk ?? modelosDisponibles)()) return { tipo: 'sin-modelos' }
   const now = ahora(deps)
-  const porSemana = articulosPorSemana(deps.env)
+  const porSemana = articulosPorSemana(deps.env, tema.destino)
   const l = lunesSemanaSiguiente(now)
   const lunes = madridAUtc(l.y, l.m, l.d, 0)
   const siguienteLunes = madridAUtc(l.y, l.m, l.d + 7, 0)
@@ -309,8 +309,8 @@ export function componerResumen(d: DatosResumen): { asunto: string; html: string
     for (const { tema, piezas } of pendientes) {
       const enlaces = piezas.filter((p) => p.reviewUrl).map((p) => `<a href="${esc(p.reviewUrl!)}">${p.locale.toUpperCase()}</a>`).join(' · ')
       const inf = tema.sessionId ? d.informes?.[tema.sessionId] : undefined
-      partes.push(`<li><strong>${esc(tema.titulo)}</strong> — ${esc(fechaCorta(tema.programadoPara))} — ${enlaces}${inf ? informeHtml(inf) : ''}</li>`)
-      texto.push(`- ${tema.titulo} (${fechaCorta(tema.programadoPara)}): ${piezas.map((p) => `${p.locale.toUpperCase()} ${p.reviewUrl ?? ''}`).join(' | ')}`)
+      partes.push(`<li><strong>${esc(tema.titulo)}</strong> <em>(${esc(tema.destino)})</em> — ${esc(fechaCorta(tema.programadoPara))} — ${enlaces}${inf ? informeHtml(inf) : ''}</li>`)
+      texto.push(`- ${tema.titulo} [${tema.destino}] (${fechaCorta(tema.programadoPara)}): ${piezas.map((p) => `${p.locale.toUpperCase()} ${p.reviewUrl ?? ''}`).join(' | ')}`)
       if (inf) texto.push(...informeTexto(inf))
     }
     partes.push('</ul>')
@@ -327,8 +327,8 @@ export function componerResumen(d: DatosResumen): { asunto: string; html: string
     }
     partes.push('<ul>')
     for (const t of d.propuestos) {
-      partes.push(`<li><strong>${esc(t.titulo)}</strong> <em>(${esc(t.categoria)})</em><br>${esc(t.angulo)}</li>`)
-      texto.push(`- ${t.titulo} (${t.categoria}): ${t.angulo}`)
+      partes.push(`<li><strong>${esc(t.titulo)}</strong> <em>(${esc(t.destino)} · ${esc(t.categoria)})</em><br>${esc(t.angulo)}</li>`)
+      texto.push(`- ${t.titulo} [${t.destino}] (${t.categoria}): ${t.angulo}`)
     }
     partes.push('</ul>')
     if (d.panelUrl) partes.push(`<p><a href="${esc(d.panelUrl)}">Aprobar o descartar temas en La Banda</a></p>`)
@@ -398,9 +398,8 @@ export async function cicloMarketing(deps: DepsCiclo, opts: { forzar?: 'plan' | 
   }
 
   const abiertas = await deps.store.sesionesAbiertas()
-  const porSemana = articulosPorSemana(deps.env)
-
   for (const destino of destinos(deps.env)) {
+    const porSemana = articulosPorSemana(deps.env, destino)
     // 2. Plan: jueves, si esta semana aún no se propuso nada y no quedan propuestos sin decidir de sobra.
     if (opts.forzar === 'plan' || (!opts.forzar && esDiaDePlan(now))) {
       const recientes = await deps.store.temasDesde(destino, haceDias(now, 6))
