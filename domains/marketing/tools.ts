@@ -5,7 +5,7 @@ import { events, handoffs, tasks } from '@/db/schema'
 import { codenameOf } from '@/engine/store'
 import { fetchLimpio } from '@/lib/httpLimpio'
 import { delimitar } from '@/lib/firewall/patron'
-import { CATEGORIAS, articulosPorSemana, perfilDestino } from '@/lib/marketing/config'
+import { CATEGORIAS, articulosPorSemana, idiomasDestino, perfilDestino } from '@/lib/marketing/config'
 import { fichaDeHechos } from '@/lib/marketing/hechos'
 import { articulosDelDossier } from '@/lib/marketing/articulo'
 import { buscarWeb } from '@/lib/marketing/busqueda'
@@ -49,7 +49,7 @@ export const marketingTools: Record<string, ToolDef> = {
           destino,
           perfil,
           cuantos: p.cuantos,
-          ritmo: `${porSemana} artículo(s) por semana (${diasPublicacion(porSemana).map((d) => DIAS[d]).join(' y ')}), cada uno en español e inglés`,
+          ritmo: `${porSemana} artículo(s) por semana (${diasPublicacion(porSemana).map((d) => DIAS[d]).join(' y ')}), ${idiomasDestino(destino).length > 1 ? 'cada uno en español e inglés' : 'solo en español'}`,
           categorias: CATEGORIAS.filter((c) => perfil.categorias.includes(c.id)),
           titulosYaUsados: await marketingStoreDb.titulosRecientes(destino, 100),
         }
@@ -60,6 +60,7 @@ export const marketingTools: Record<string, ToolDef> = {
         tipo: 'articulo',
         destino: tema.destino,
         perfil: perfilDestino(tema.destino),
+        idiomas: idiomasDestino(tema.destino),
         categoria: CATEGORIAS.find((c) => c.id === tema.categoria) ?? tema.categoria,
         titulo: tema.titulo,
         angulo: tema.angulo,
@@ -142,7 +143,7 @@ export const marketingTools: Record<string, ToolDef> = {
   enviarArticulo: {
     name: 'enviarArticulo',
     description:
-      'SOLO en un artículo. Envía el artículo a WordNext: NO escribas aquí el contenido, la herramienta toma "articuloEs" y "articuloEn" del dossier, los valida en código y los manda como borradores enlazados (ES + EN), programados para su fecha. Exige la aprobación de Palermo. Nada se publica sin que una persona lo apruebe en WordNext. Llámala UNA vez.',
+      'SOLO en un artículo. Envía el artículo a WordNext: NO escribas aquí el contenido, la herramienta toma "articuloEs" (y "articuloEn" si el destino es bilingüe) del dossier, los valida en código y los manda como borradores (enlazados si son dos), programados para su fecha. Exige la aprobación de Palermo. Nada se publica sin que una persona lo apruebe en WordNext. Llámala UNA vez.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
     run: async (_input, ctx) => {
       const p = await payloadDeTarea(ctx.taskId)
@@ -158,7 +159,14 @@ export const marketingTools: Record<string, ToolDef> = {
     description:
       'SOLO en un artículo. Devuelve las versiones MÁS RECIENTES de "articuloEs" y "articuloEn" de toda la sesión (no solo de tu traspaso), con su HTML, las PALABRAS contadas por el código y los errores de la validación dura del envío. Es la fuente de verdad: úsala en vez de buscar el artículo en tu carga o contar palabras a ojo.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-    run: async (_input, ctx) => articulosDelDossier(await dossierDeTarea(ctx.taskId)),
+    run: async (_input, ctx) => {
+      const p = await payloadDeTarea(ctx.taskId)
+      const tema = typeof p.temaId === 'string' ? await marketingStoreDb.tema(p.temaId) : null
+      const idiomas = tema ? idiomasDestino(tema.destino) : ['es', 'en']
+      const r = articulosDelDossier(await dossierDeTarea(ctx.taskId))
+      // Destino solo en español: la versión inglesa ni se pide ni se juzga.
+      return idiomas.includes('en') ? { idiomas, ...r } : { idiomas, es: r.es }
+    },
   },
 
   leerCadena: {
