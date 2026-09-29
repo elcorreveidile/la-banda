@@ -95,7 +95,7 @@ export async function abrirRedaccion(tema: Tema, deps: DepsCiclo): Promise<Resul
 
 /** Por qué «Redactar ahora» no abrió mesa, en claro para el panel. */
 export async function porQueNoRedacta(deps: DepsCiclo): Promise<string> {
-  if (!(deps.modelosOk ?? modelosDisponibles)()) return 'faltan las claves de los modelos (ANTHROPIC_API_KEY)'
+  if (!(deps.modelosOk ?? modelosDisponibles)()) return 'faltan las claves de los modelos (ZAI_API_KEY)'
   const redactando = await deps.store.temasEnEstado(['redactando'])
   if (redactando.length) return `ya hay una redacción en curso: «${redactando[0].titulo}»`
   const aprobados = await deps.store.temasEnEstado(['aprobado'])

@@ -10,6 +10,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import { anthropicActivo } from '@/engine/provider'
 import { webSearch } from '@/lib/webSearch'
 import { proveedorBusqueda } from './config'
 
@@ -45,8 +46,8 @@ export function leerRespuestaBusqueda(content: Anthropic.ContentBlock[]): { resu
 }
 
 async function buscarConAnthropic(consulta: string, client?: Anthropic): Promise<ResultadoBusqueda> {
-  const key = process.env.ANTHROPIC_API_KEY?.trim()
-  if (!client && !key) return { consulta, error: 'búsqueda no configurada (falta ANTHROPIC_API_KEY)' }
+  const key = anthropicActivo() ? process.env.ANTHROPIC_API_KEY?.trim() : undefined
+  if (!client && !key) return { consulta, error: 'búsqueda con Anthropic no disponible (apagada o sin ANTHROPIC_API_KEY)' }
   const c = client ?? new Anthropic({ apiKey: key, maxRetries: 0 })
   const ac = new AbortController()
   const timer = setTimeout(() => ac.abort(), TIMEOUT_MS)

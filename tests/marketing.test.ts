@@ -5,7 +5,7 @@ import { validateDomain } from '@domains/types'
 import { contarPalabras, problemasHtml, validarArticulo, validarTemas } from '@/lib/marketing/articulo'
 import { esDiaDePlan, esDiaDeRedaccion, esHoraDeResumen, huecosSemanaSiguiente, lunesSemanaSiguiente, madridAUtc } from '@/lib/marketing/calendario'
 import { abrirRedaccion, aplicarAviso, cicloMarketing, componerResumen, datosResumen, decidirTema, enviarArticulo, estadoPorPiezas, finalizarSesion, registrarTemas, type DepsCiclo } from '@/lib/marketing/ciclo'
-import { modeloJuez, modeloRedactor, modelosDisponibles, revisorEmail } from '@/lib/marketing/config'
+import { modeloJuez, modeloRedactor, modelosDisponibles, proveedorBusqueda, revisorEmail } from '@/lib/marketing/config'
 import { avisoFirmado, claveTraduccion, enviarPieza, firmaPlataforma, leerVistaPieza, refPieza, type EnvioPieza } from '@/lib/marketing/wordnext'
 import { leerRespuestaBusqueda } from '@/lib/marketing/busqueda'
 import { leerInforme, resultadoDeCierre } from '@/lib/marketing/informe'
@@ -38,12 +38,19 @@ describe('dominio marketing', () => {
     expect(marketingDomain.agents.find((a) => a.codename === 'Río')?.tools).not.toContain('enviarArticulo')
   })
 
-  it('modelos: Río con Fable, Palermo con Opus 5.5, y z.ai solo si se pide', () => {
-    expect(modeloRedactor({})).toBe('anthropic:claude-fable-5-1')
-    expect(modeloJuez({})).toBe('anthropic:claude-opus-5-5')
-    expect(modeloRedactor({ MARKETING_MODELO_REDACTOR: 'claude-opus-5' })).toBe('anthropic:claude-opus-5')
-    expect(modelosDisponibles({ ZAI_API_KEY: 'x' })).toBe(false)
-    expect(modelosDisponibles({ ANTHROPIC_API_KEY: 'x' })).toBe(true)
+  it('modelos: con Anthropic activo, Río con Fable y Palermo con Opus 5.5; apagado, todo a z.ai', () => {
+    const on = { ANTHROPIC_ACTIVO: '1' }
+    expect(modeloRedactor(on)).toBe('anthropic:claude-fable-5-1')
+    expect(modeloJuez(on)).toBe('anthropic:claude-opus-5-5')
+    expect(modeloRedactor({ ...on, MARKETING_MODELO_REDACTOR: 'claude-opus-5' })).toBe('anthropic:claude-opus-5')
+    expect(modelosDisponibles({ ...on, ZAI_API_KEY: 'x' })).toBe(false)
+    expect(modelosDisponibles({ ...on, ANTHROPIC_API_KEY: 'x' })).toBe(true)
+    expect(modeloRedactor({})).toBe('zai:glm-5.3')
+    expect(modeloJuez({ ZAI_MODEL: 'glm-4.7' })).toBe('zai:glm-4.7')
+    expect(modelosDisponibles({ ZAI_API_KEY: 'x' })).toBe(true)
+    expect(modelosDisponibles({ ANTHROPIC_API_KEY: 'x' })).toBe(false)
+    expect(proveedorBusqueda({})).toBe('zai')
+    expect(proveedorBusqueda(on)).toBe('anthropic')
   })
 
   it('el resumen nunca va al buzón que no existe', () => {

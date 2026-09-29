@@ -29,18 +29,22 @@ describe('dominio firewall', () => {
     for (const a of firewallDomain.agents) expect(a.tools).toEqual(['leerCuarentena'])
   })
 
-  it('Anthropic por defecto: Sonnet en las mesas, Opus en árbitro y cortafuegos', () => {
+  it('con Anthropic activo: Sonnet en las mesas, Opus en árbitro y cortafuegos; apagado, z.ai', () => {
+    // Sin ANTHROPIC_ACTIVO=1 (el entorno de los tests) todo va a z.ai.
     const modelo = Object.fromEntries(firewallDomain.agents.map((a) => [a.codename, a.model]))
-    expect(modelo).toEqual({ Tokio: MODELO_MESA_DEFECTO, Berlín: MODELO_MESA_DEFECTO, Denver: MODELO_MESA_DEFECTO, Profesor: MODELO_JUEZ_DEFECTO, Palermo: MODELO_JUEZ_DEFECTO })
+    expect(modelo).toEqual({ Tokio: 'zai:glm-5.3', Berlín: 'zai:glm-5.3', Denver: 'zai:glm-5.3', Profesor: 'zai:glm-5.3', Palermo: 'zai:glm-5.3' })
+    expect(modelosDisponibles({ ZAI_API_KEY: 'z' })).toBe(true)
+    expect(modelosDisponibles({ ANTHROPIC_API_KEY: 'a' })).toBe(false)
+    const on = { ANTHROPIC_ACTIVO: '1' }
+    expect(modeloMesa(on)).toBe(MODELO_MESA_DEFECTO)
     expect(MODELO_MESA_DEFECTO.startsWith('anthropic:')).toBe(true)
     expect(MODELO_JUEZ_DEFECTO.startsWith('anthropic:')).toBe(true)
-    // Solo con la clave de z.ai no se juzga: nunca se cae a z.ai por defecto.
-    expect(modelosDisponibles({ ZAI_API_KEY: 'z' })).toBe(false)
-    expect(modelosDisponibles({ ANTHROPIC_API_KEY: 'a' })).toBe(true)
-    expect(modelosDisponibles({ ANTHROPIC_API_KEY: 'a', FIREWALL_MODELO_MESA: 'zai:glm-5.3' })).toBe(false)
-    expect(modelosDisponibles({ ANTHROPIC_API_KEY: 'a', ZAI_API_KEY: 'z', FIREWALL_MODELO_MESA: 'zai:glm-5.3' })).toBe(true)
+    expect(modelosDisponibles({ ...on, ZAI_API_KEY: 'z' })).toBe(false)
+    expect(modelosDisponibles({ ...on, ANTHROPIC_API_KEY: 'a' })).toBe(true)
+    expect(modelosDisponibles({ ...on, ANTHROPIC_API_KEY: 'a', FIREWALL_MODELO_MESA: 'zai:glm-5.3' })).toBe(false)
+    expect(modelosDisponibles({ ...on, ANTHROPIC_API_KEY: 'a', ZAI_API_KEY: 'z', FIREWALL_MODELO_MESA: 'zai:glm-5.3' })).toBe(true)
     // Un modelo sin prefijo se fija a Anthropic (no al predeterminado, que puede ser z.ai).
-    expect(modeloMesa({ FIREWALL_MODELO_MESA: 'claude-haiku-4-5' })).toBe('anthropic:claude-haiku-4-5')
+    expect(modeloMesa({ ...on, FIREWALL_MODELO_MESA: 'claude-haiku-4-5' })).toBe('anthropic:claude-haiku-4-5')
   })
 
   it('los prompts tratan el fragmento como dato y piden no copiarlo', () => {

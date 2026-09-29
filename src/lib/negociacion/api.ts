@@ -108,7 +108,7 @@ export async function manejarAbrir(req: Request, deps: DepsAbrirApi): Promise<Re
     case 'rate-limited':
       return json({ error: 'rate-limited', limit: r.limite }, 429)
     case 'sin-modelos':
-      return json({ error: 'negociación sin modelo disponible (falta ANTHROPIC_API_KEY)' }, 503)
+      return json({ error: 'negociación sin modelo disponible (falta ZAI_API_KEY)' }, 503)
     case 'mesa':
       deps.lanzar(r.sessionId)
       return json(salidaNegociacion(r.negociacion), 202)

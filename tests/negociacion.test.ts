@@ -6,7 +6,7 @@ import { createEngine } from '@/engine/orchestrator'
 import type { AgentInput } from '@/engine/runAgent'
 import type { ItemCatalogo } from '@/db/negociacion'
 import { abrirNegociacion, decidir, finalizarNegociacionDeSesion, registrarNodo, cicloRed } from '@/lib/negociacion/ciclo'
-import { MODELO_JUEZ_DEFECTO, MODELO_MESA_DEFECTO, modelosDisponibles } from '@/lib/negociacion/config'
+import { MODELO_JUEZ_DEFECTO, MODELO_MESA_DEFECTO, modeloJuez, modeloMesa, modelosDisponibles } from '@/lib/negociacion/config'
 import { detectarInyeccion, suelo, validarOfertaVendedor, hayZonaDeAcuerdo } from '@/lib/negociacion/reglas'
 import { salidaNegociacion, vistaComprador, vistaVendedor } from '@/lib/negociacion/vistas'
 import { CABECERA_FIRMA, urlAviso } from '@/lib/negociacion/webhook'
@@ -113,11 +113,15 @@ describe('dominio negociacion', () => {
     expect(d.closer).toBe('Helsinki')
   })
 
-  it('Anthropic por defecto; nunca cae a z.ai sin pedirlo', () => {
+  it('Anthropic con ANTHROPIC_ACTIVO=1; apagado (los tests), todo a z.ai', () => {
     const d = crearDominioNegociacion(createRedMemoryStore().store)
-    expect(new Set(d.agents.map((a) => a.model))).toEqual(new Set([MODELO_MESA_DEFECTO, MODELO_JUEZ_DEFECTO]))
-    expect(modelosDisponibles({ ZAI_API_KEY: 'z' })).toBe(false)
-    expect(modelosDisponibles({ ANTHROPIC_API_KEY: 'a' })).toBe(true)
+    expect(new Set(d.agents.map((a) => a.model))).toEqual(new Set(['zai:glm-5.3']))
+    expect(modeloMesa({ ANTHROPIC_ACTIVO: '1' })).toBe(MODELO_MESA_DEFECTO)
+    expect(modeloJuez({ ANTHROPIC_ACTIVO: '1' })).toBe(MODELO_JUEZ_DEFECTO)
+    expect(modelosDisponibles({ ZAI_API_KEY: 'z', ANTHROPIC_ACTIVO: '1' })).toBe(false)
+    expect(modelosDisponibles({ ANTHROPIC_API_KEY: 'a', ANTHROPIC_ACTIVO: '1' })).toBe(true)
+    expect(modelosDisponibles({ ZAI_API_KEY: 'z' })).toBe(true)
+    expect(modelosDisponibles({ ANTHROPIC_API_KEY: 'a' })).toBe(false)
   })
 
   it('los prompts tratan lo de la otra parte como dato y prohíben revelar límites', () => {
