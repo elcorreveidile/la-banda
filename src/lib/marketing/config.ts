@@ -11,7 +11,7 @@ import { anthropicActivo, hayClavePara, modeloEfectivo } from '@/engine/provider
 export const MARKETING_DOMAIN = 'marketing'
 
 /** Destinos por defecto: el blog de WordNext y los escaparates de la Fase 4 (restaurante, academia y fisioterapia). */
-export const DESTINOS_POR_DEFECTO = 'blog.wordnext.tech,restaurante.wordnext.tech,laclasedigital.wordnext.tech,servicios.wordnext.tech'
+export const DESTINOS_POR_DEFECTO = 'blog.wordnext.tech,restaurante.wordnext.tech,laclasedigital.wordnext.tech,servicios.wordnext.tech,tienda.wordnext.tech'
 export function destinos(env: Record<string, string | undefined> = process.env): string[] {
   const lista = (env.MARKETING_DESTINOS ?? DESTINOS_POR_DEFECTO)
     .split(',')
@@ -84,6 +84,24 @@ export function perfilDestino(destino: string): PerfilDestino {
         'Fisioterapia Alameda NO existe: nunca la presentes como una clínica real ni cuentes pacientes, casos, cifras o resultados suyos. Si la usas de ejemplo, di que es un ejemplo.',
         'Escribe para el PROFESIONAL que lleva la consulta (citas online, recordatorios, cancelaciones, reseñas, explicar sus servicios, videoconsulta), NO para pacientes: nada de consejos médicos, diagnósticos ni promesas de curación.',
         'WordNext sale solo en el cierre o donde de verdad resuelve algo (reservas con agenda, valoración por videollamada, formulario de contacto).',
+        'Enlaces internos: solo a URLs de leerBlog de este destino o de la ficha de hechos.',
+      ],
+    }
+  }
+  if (destino === 'tienda.wordnext.tech') {
+    return {
+      nombre: 'Blog de «La Despensa Verde», tienda ecológica de EJEMPLO hecha con WordNext (escaparate de tienda)',
+      publico: 'dueños de tiendas pequeñas y comercios de proximidad de España que venden o quieren vender por internet (alimentación, productos locales y ecológicos, regalo)',
+      categorias: ['comercio'],
+      porSemana: 1,
+      cierre: {
+        es: 'Cierra con una línea que recuerde que este blog es de una tienda de ejemplo hecha con WordNext y enlace a https://app.wordnext.tech/crear?tpl=tienda («crea la web de tu tienda gratis»), sin exagerar.',
+        en: 'End with one line reminding that this blog belongs to an example shop built with WordNext, linking to https://app.wordnext.tech/crear?tpl=tienda&lang=en, without overselling.',
+      },
+      notas: [
+        'La Despensa Verde NO existe: nunca la presentes como una tienda real ni cuentes clientes, ventas, cifras o pedidos suyos. Si la usas de ejemplo, di que es un ejemplo.',
+        'Escribe para el DUEÑO de la tienda (fichas de producto, fotos, precios y extras, envíos y recogida, pagos, devoluciones, reseñas, temporada), no para el comprador: nada de recetas ni consejos de salud o nutrición.',
+        'WordNext sale solo en el cierre o donde de verdad resuelve algo (productos con su página, extras que suman al precio, cobro con tarjeta en la cuenta de Stripe del comercio).',
         'Enlaces internos: solo a URLs de leerBlog de este destino o de la ficha de hechos.',
       ],
     }

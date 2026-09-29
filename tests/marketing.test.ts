@@ -268,11 +268,12 @@ describe('cron semanal', () => {
   it('jueves abre un plan; lunes no hace nada; el domingo manda el resumen', async () => {
     const jueves = deps({ now: () => JUEVES_10H.getTime() })
     const r = await cicloMarketing(jueves.d)
-    expect(r.planes).toHaveLength(4)
+    expect(r.planes).toHaveLength(5)
     expect(jueves.abiertas[0]).toMatchObject({ kind: 'plan', payload: { destino: DESTINO, cuantos: 4 } })
     expect(jueves.abiertas[1]).toMatchObject({ kind: 'plan', payload: { destino: 'restaurante.wordnext.tech', cuantos: 2 } })
     expect(jueves.abiertas[2]).toMatchObject({ kind: 'plan', payload: { destino: 'laclasedigital.wordnext.tech', cuantos: 2 } })
     expect(jueves.abiertas[3]).toMatchObject({ kind: 'plan', payload: { destino: 'servicios.wordnext.tech', cuantos: 2 } })
+    expect(jueves.abiertas[4]).toMatchObject({ kind: 'plan', payload: { destino: 'tienda.wordnext.tech', cuantos: 2 } })
 
     const lunes = deps({ now: () => LUNES.getTime() })
     await temaAprobado(lunes)
@@ -410,7 +411,7 @@ describe('revisarArticulos', () => {
 describe('perfiles por destino (Fase 4)', () => {
   it('el escaparate de restauración: 1 por semana, solo restauración y cierre hacia /crear', async () => {
     const { perfilDestino, articulosPorSemana, destinos, temasPorPlan } = await import('@/lib/marketing/config')
-    expect(destinos({})).toEqual(['blog.wordnext.tech', 'restaurante.wordnext.tech', 'laclasedigital.wordnext.tech', 'servicios.wordnext.tech'])
+    expect(destinos({})).toEqual(['blog.wordnext.tech', 'restaurante.wordnext.tech', 'laclasedigital.wordnext.tech', 'servicios.wordnext.tech', 'tienda.wordnext.tech'])
     expect(articulosPorSemana({}, 'restaurante.wordnext.tech')).toBe(1)
     expect(temasPorPlan({}, 'restaurante.wordnext.tech')).toBe(2)
     expect(articulosPorSemana({}, 'blog.wordnext.tech')).toBe(2)
@@ -438,6 +439,15 @@ describe('perfiles por destino (Fase 4)', () => {
     expect(p.cierre.es).toContain('https://app.wordnext.tech/crear?tpl=profesional')
     expect(p.notas.join(' ')).toContain('NO existe')
     expect(p.notas.join(' ')).toContain('nada de consejos médicos')
+  })
+
+  it('la tienda ecológica de ejemplo: 1 por semana, solo comercio y cierre hacia /crear?tpl=tienda', async () => {
+    const { perfilDestino, articulosPorSemana } = await import('@/lib/marketing/config')
+    expect(articulosPorSemana({}, 'tienda.wordnext.tech')).toBe(1)
+    const p = perfilDestino('tienda.wordnext.tech')
+    expect(p.categorias).toEqual(['comercio'])
+    expect(p.cierre.es).toContain('https://app.wordnext.tech/crear?tpl=tienda')
+    expect(p.notas.join(' ')).toContain('NO existe')
   })
 
   it('registrarTemas descarta categorías que no son del destino', async () => {

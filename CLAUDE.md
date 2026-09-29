@@ -526,6 +526,14 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `DESTINOS_POR_DEFECTO`; si Vercel tiene `MARKETING_DESTINOS`, añadir `servicios.wordnext.tech`. Fusionar DESPUÉS de pegar
   `scripts/escaparates/servicios.sql` en WordNext (si no, el envío da 404 y el tema queda «fallido»).
 
+- **2026-09-29, marketing: destino de la tienda ecológica de ejemplo (v0.18.0)**. Cuarto escaparate de la Fase 4
+  (wp-next-starter 1.92.0): `tienda.wordnext.tech`, «La Despensa Verde», tienda FICTICIA con productos y extras. Perfil propio:
+  público = dueños de tiendas pequeñas y comercios de proximidad, solo categoría `comercio`, **1 artículo por semana**, cierre
+  hacia `app.wordnext.tech/crear?tpl=tienda` y dos reglas: no presentarla como real ni inventar clientes o ventas, y escribir para
+  el DUEÑO de la tienda (fichas, envíos, pagos, devoluciones), nunca recetas ni consejos de salud. Entra en `DESTINOS_POR_DEFECTO`;
+  si Vercel tiene `MARKETING_DESTINOS`, añadir `tienda.wordnext.tech`. Fusionar DESPUÉS de pegar `scripts/escaparates/tienda.sql`
+  en WordNext (si no, el envío da 404 y el tema queda «fallido»).
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
