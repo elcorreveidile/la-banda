@@ -518,6 +518,14 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   (`hayClavePara`: ahora basta `ZAI_API_KEY`); la búsqueda web de marketing pasa a z.ai. Mismo interruptor en wp-next-starter
   (1.90.3). Para volver a Anthropic cuando haya ingresos: `ANTHROPIC_ACTIVO=1` en Vercel (nada de código).
 
+- **2026-09-29, marketing: destino de la clínica de fisioterapia de ejemplo (v0.17.0)**. Tercer escaparate de la Fase 4
+  (wp-next-starter 1.91.0): `servicios.wordnext.tech`, «Fisioterapia Alameda», clínica FICTICIA con reservas con agenda. Perfil
+  propio: público = fisioterapeutas y dueños de consultas de salud y bienestar, solo categoría `salud`, **1 artículo por semana**,
+  cierre hacia `app.wordnext.tech/crear?tpl=profesional` y dos reglas: no presentarla como real ni inventar pacientes o
+  resultados, y escribir para el PROFESIONAL (citas, recordatorios, reseñas), **nunca consejos médicos**. Entra en
+  `DESTINOS_POR_DEFECTO`; si Vercel tiene `MARKETING_DESTINOS`, añadir `servicios.wordnext.tech`. Fusionar DESPUÉS de pegar
+  `scripts/escaparates/servicios.sql` en WordNext (si no, el envío da 404 y el tema queda «fallido»).
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
