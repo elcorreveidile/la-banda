@@ -1,3 +1,5 @@
+import { hayClavePara, modeloEfectivo } from '@/engine/provider'
+
 /**
  * Ajustes del carril profundo del firewall (todos por env, con valores por defecto).
  */
@@ -30,14 +32,15 @@ export const MODELO_MESA_DEFECTO = 'anthropic:claude-sonnet-5'
 export const MODELO_JUEZ_DEFECTO = 'anthropic:claude-opus-5-5'
 
 /** Sin prefijo de proveedor se entiende Anthropic (sin prefijo, `providerFor` usaría el predeterminado, que puede ser z.ai). */
-export function conProveedor(m: string): string {
-  return /^(anthropic|zai):/.test(m) ? m : `anthropic:${m}`
+/** Con Anthropic apagado (sin ANTHROPIC_ACTIVO=1), el resultado pasa a z.ai (`modeloEfectivo`). */
+export function conProveedor(m: string, env: Record<string, string | undefined> = process.env): string {
+  return modeloEfectivo(/^(anthropic|zai):/.test(m) ? m : `anthropic:${m}`, env)
 }
 export function modeloMesa(env: Record<string, string | undefined> = process.env): string {
-  return conProveedor(env.FIREWALL_MODELO_MESA?.trim() || MODELO_MESA_DEFECTO)
+  return conProveedor(env.FIREWALL_MODELO_MESA?.trim() || MODELO_MESA_DEFECTO, env)
 }
 export function modeloJuez(env: Record<string, string | undefined> = process.env): string {
-  return conProveedor(env.FIREWALL_MODELO_JUEZ?.trim() || MODELO_JUEZ_DEFECTO)
+  return conProveedor(env.FIREWALL_MODELO_JUEZ?.trim() || MODELO_JUEZ_DEFECTO, env)
 }
 
 /**
@@ -46,7 +49,7 @@ export function modeloJuez(env: Record<string, string | undefined> = process.env
  * mandar tráfico de clientes a un proveedor que nadie eligió.
  */
 export function modelosDisponibles(env: Record<string, string | undefined> = process.env): boolean {
-  return [modeloMesa(env), modeloJuez(env)].every((m) => Boolean((m.startsWith('zai:') ? env.ZAI_API_KEY : env.ANTHROPIC_API_KEY)?.trim()))
+  return [modeloMesa(env), modeloJuez(env)].every((m) => hayClavePara(m, env))
 }
 
 /** Inicio del día UTC de `now`. */

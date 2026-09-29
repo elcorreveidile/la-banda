@@ -6,6 +6,8 @@
  * SEMANAL en domingo.
  */
 
+import { anthropicActivo, hayClavePara, modeloEfectivo } from '@/engine/provider'
+
 export const MARKETING_DOMAIN = 'marketing'
 
 /** Destinos por defecto: el blog de WordNext y los escaparates de la Fase 4 (restaurante y academia). */
@@ -103,28 +105,29 @@ export function perfilDestino(destino: string): PerfilDestino {
  * Sonnet 5 y Palermo (el que aprueba) con Opus 5.5. Sin prefijo se fija a `anthropic:`: z.ai
  * solo si se pide explícitamente con `zai:…`.
  */
-function conProveedor(v: string | undefined, def: string): string {
+function conProveedor(v: string | undefined, def: string, env: Record<string, string | undefined>): string {
   const m = v?.trim() || def
-  return m.includes(':') ? m : `anthropic:${m}`
+  return modeloEfectivo(m.includes(':') ? m : `anthropic:${m}`, env)
 }
-export const modeloRedactor = (env: Record<string, string | undefined> = process.env) => conProveedor(env.MARKETING_MODELO_REDACTOR, 'claude-fable-5-1')
-export const modeloMesa = (env: Record<string, string | undefined> = process.env) => conProveedor(env.MARKETING_MODELO_MESA, 'claude-sonnet-5')
-export const modeloJuez = (env: Record<string, string | undefined> = process.env) => conProveedor(env.MARKETING_MODELO_JUEZ, 'claude-opus-5-5')
+export const modeloRedactor = (env: Record<string, string | undefined> = process.env) => conProveedor(env.MARKETING_MODELO_REDACTOR, 'claude-fable-5-1', env)
+export const modeloMesa = (env: Record<string, string | undefined> = process.env) => conProveedor(env.MARKETING_MODELO_MESA, 'claude-sonnet-5', env)
+export const modeloJuez = (env: Record<string, string | undefined> = process.env) => conProveedor(env.MARKETING_MODELO_JUEZ, 'claude-opus-5-5', env)
 
 /** ¿Hay clave para los proveedores que piden los tres modelos? Sin ella no se abre mesa. */
 export function modelosDisponibles(env: Record<string, string | undefined> = process.env): boolean {
-  return [modeloRedactor(env), modeloMesa(env), modeloJuez(env)].every((m) => {
-    const p = m.slice(0, m.indexOf(':'))
-    return p === 'zai' ? Boolean(env.ZAI_API_KEY?.trim()) : Boolean(env.ANTHROPIC_API_KEY?.trim())
-  })
+  return [modeloRedactor(env), modeloMesa(env), modeloJuez(env)].every((m) => hayClavePara(m, env))
 }
 
 export type ProveedorBusqueda = 'anthropic' | 'zai' | 'ninguna'
 
-/** Búsqueda web: Anthropic por defecto; `MARKETING_BUSQUEDA=zai` o `ninguna` la cambian. */
+/**
+ * Búsqueda web: Anthropic por defecto si está activo (ANTHROPIC_ACTIVO=1); si no, z.ai.
+ * `MARKETING_BUSQUEDA=zai` o `ninguna` la cambian; `anthropic` solo vale con Anthropic activo.
+ */
 export function proveedorBusqueda(env: Record<string, string | undefined> = process.env): ProveedorBusqueda {
   const v = env.MARKETING_BUSQUEDA?.trim()
-  return v === 'zai' || v === 'ninguna' ? v : 'anthropic'
+  if (v === 'zai' || v === 'ninguna') return v
+  return anthropicActivo(env) ? 'anthropic' : 'zai'
 }
 
 /** Buzón que recibe el resumen del domingo. javier@blablaele.com NO existe: nunca usarlo. */

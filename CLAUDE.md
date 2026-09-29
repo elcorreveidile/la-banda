@@ -508,6 +508,16 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `DESTINOS_POR_DEFECTO`; si Vercel tiene `MARKETING_DESTINOS`, hay que añadir `laclasedigital.wordnext.tech`. Fusionar
   DESPUÉS de pegar el SQL de la academia en WordNext (si no, el envío da 404 y el tema queda «fallido»).
 
+- **2026-09-29, Anthropic APAGADO: todo por z.ai (v0.16.0)**. Javier: «Tenemos que dejar de usar la API de Anthropic para la
+  banda y demás usos de IA… mientras esté todavía en pruebas y no tenga clientes reales, la API de Z.ai… gasto excesivo».
+  **Revierte** «Anthropic por defecto / z.ai nunca por defecto» del firewall, la negociación y el marketing mientras dure.
+  Un solo interruptor en `src/engine/provider.ts`: **`ANTHROPIC_ACTIVO=1`** enciende Anthropic; sin él, `ANTHROPIC_API_KEY` se
+  ignora aunque esté puesta (tampoco `DEFAULT_PROVIDER=anthropic`) y **`modeloEfectivo`** pasa todo modelo `anthropic:…` o
+  `claude-…` a `zai:<ZAI_MODEL, def. glm-5.3>`. Lo usan `providerFor` (todos los dominios, también `CORPUS_MODELO_REDACTOR`), los
+  modelos del firewall, la negociación y el marketing (`conProveedor`; Fable/Opus/Sonnet → GLM) y `modelosDisponibles`
+  (`hayClavePara`: ahora basta `ZAI_API_KEY`); la búsqueda web de marketing pasa a z.ai. Mismo interruptor en wp-next-starter
+  (1.90.3). Para volver a Anthropic cuando haya ingresos: `ANTHROPIC_ACTIVO=1` en Vercel (nada de código).
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&

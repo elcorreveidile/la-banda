@@ -51,7 +51,7 @@ export async function manejarPost(req: Request, deps: DepsPost): Promise<Respons
     deps,
   )
 
-  if (r.tipo === 'sin-modelos') return NextResponse.json({ error: 'firewall sin modelo disponible (falta ANTHROPIC_API_KEY)' }, { status: 503 })
+  if (r.tipo === 'sin-modelos') return NextResponse.json({ error: 'firewall sin modelo disponible (falta ZAI_API_KEY)' }, { status: 503 })
   if (r.tipo === 'rate-limited') return NextResponse.json({ error: 'rate-limited', limit: r.limite }, { status: 429 })
   if (r.tipo === 'mesa') deps.lanzar(r.sessionId)
 

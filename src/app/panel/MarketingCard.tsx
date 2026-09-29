@@ -32,7 +32,7 @@ export function MarketingCard({ m, error }: { m: MarketingMetrics; error?: strin
   const nAprobados = propuestos.length - nPropuestos
   const enMarcha = m.temas.filter((t) => ['redactando', 'en_revision', 'publicado'].includes(t.estado))
   const decidir = m.temas.filter((t) => ['rechazado', 'vetado', 'fallido'].includes(t.estado))
-  const faltas = [!m.configuracion.modelos && 'claves de los modelos (ANTHROPIC_API_KEY)', !m.configuracion.publicacion && 'publicación en WordNext (WORDNEXT_URL y WORDNEXT_CALLBACK_SECRET)'].filter(Boolean)
+  const faltas = [!m.configuracion.modelos && 'claves de los modelos (ZAI_API_KEY)', !m.configuracion.publicacion && 'publicación en WordNext (WORDNEXT_URL y WORDNEXT_CALLBACK_SECRET)'].filter(Boolean)
 
   return (
     <section className="flex flex-col gap-4 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">

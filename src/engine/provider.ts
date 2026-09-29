@@ -13,6 +13,10 @@ import Anthropic from '@anthropic-ai/sdk'
  * Predeterminado: z.ai si hay clave, si no Anthropic; `DEFAULT_PROVIDER=anthropic|zai`
  * lo fuerza (si esa clave existe) sin quitar la otra (la búsqueda web sigue usando z.ai).
  *
+ * **Anthropic APAGADO salvo `ANTHROPIC_ACTIVO=1`** (Javier, 2026-09-29: gasto excesivo; mientras
+ * no haya clientes reales, todo por z.ai). Apagado, `ANTHROPIC_API_KEY` se ignora aunque esté
+ * puesta y todo modelo `anthropic:…` o `claude-…` pasa al modelo de z.ai (`modeloEfectivo`).
+ *
  * Tiempos: las llamadas van en STREAMING (`runAgent.ts`, `pedir`), con tope propio de
  * `PROVIDER_TIMEOUT_MS` (180 s) por llamada; el `timeout` del SDK solo cubre la espera de
  * cabeceras y el SDK NO reintenta (maxRetries 0): el reintento lo hace el motor (la bomba
@@ -31,6 +35,32 @@ export const PROVIDER_TIMEOUT_MS = 180_000
 
 const cache: Partial<Record<Provider['name'], Provider>> = {}
 
+type Env = Record<string, string | undefined>
+
+/** ¿Se permite gastar en la API de Anthropic? Solo con ANTHROPIC_ACTIVO=1. */
+export function anthropicActivo(env: Env = process.env): boolean {
+  return env.ANTHROPIC_ACTIVO?.trim() === '1'
+}
+
+/** Modelo de z.ai por defecto (ZAI_MODEL, def. glm-5.3). */
+export const modeloZai = (env: Env = process.env) => env.ZAI_MODEL?.trim() || 'glm-5.3'
+
+/**
+ * Con Anthropic apagado, un modelo de Anthropic (`anthropic:…` o `claude-…` sin prefijo) pasa a
+ * `zai:<modelo de z.ai>`; lo demás queda igual. Puro.
+ */
+export function modeloEfectivo(m: string, env: Env = process.env): string {
+  if (anthropicActivo(env)) return m
+  return /^anthropic:/.test(m) || /^claude-/.test(m) ? `zai:${modeloZai(env)}` : m
+}
+
+/** ¿Hay clave del proveedor de este modelo (`zai:` o `anthropic:`) y está permitido? */
+export function hayClavePara(m: string, env: Env = process.env): boolean {
+  const efectivo = modeloEfectivo(m, env)
+  if (efectivo.startsWith('zai:')) return Boolean(env.ZAI_API_KEY?.trim())
+  return anthropicActivo(env) && Boolean(env.ANTHROPIC_API_KEY?.trim())
+}
+
 function construir(name: Provider['name']): Provider | null {
   if (cache[name]) return cache[name]!
   if (name === 'zai') {
@@ -39,12 +69,12 @@ function construir(name: Provider['name']): Provider | null {
     cache.zai = {
       name: 'zai',
       client: new Anthropic({ apiKey: key, baseURL: process.env.ZAI_BASE_URL?.trim() || 'https://api.z.ai/api/anthropic', maxRetries: 0, timeout: PROVIDER_TIMEOUT_MS }),
-      model: process.env.ZAI_MODEL?.trim() || 'glm-5.3',
+      model: modeloZai(),
       native: false,
     }
     return cache.zai
   }
-  const key = process.env.ANTHROPIC_API_KEY?.trim()
+  const key = anthropicActivo() ? process.env.ANTHROPIC_API_KEY?.trim() : undefined
   if (!key) return null
   cache.anthropic = {
     name: 'anthropic',
@@ -72,7 +102,8 @@ export function getProvider(): Provider {
  * - `'anthropic:claude-sonnet-5'` / `'zai:glm-5.3'` → ese proveedor (si hay clave) con ese modelo.
  */
 export function providerFor(model?: string): { provider: Provider; model: string } {
-  const m = model?.trim()
+  const crudo = model?.trim()
+  const m = crudo ? modeloEfectivo(crudo) : crudo
   if (!m) {
     const provider = getProvider()
     return { provider, model: provider.model }
@@ -97,5 +128,5 @@ export function _resetProviders(): void {
 }
 
 export function hasProvider(): boolean {
-  return Boolean(process.env.ZAI_API_KEY?.trim() || process.env.ANTHROPIC_API_KEY?.trim())
+  return Boolean(process.env.ZAI_API_KEY?.trim() || (anthropicActivo() && process.env.ANTHROPIC_API_KEY?.trim()))
 }

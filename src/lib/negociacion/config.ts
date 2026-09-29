@@ -3,6 +3,7 @@
  * Anthropic por defecto para el tráfico de clientes; z.ai solo si se pide (`zai:…`).
  */
 
+import { hayClavePara } from '@/engine/provider'
 import { conProveedor } from '@/lib/firewall/config'
 
 export const NEGOCIACION_DOMAIN = 'negociacion'
@@ -11,15 +12,15 @@ export const MODELO_MESA_DEFECTO = 'anthropic:claude-sonnet-5'
 export const MODELO_JUEZ_DEFECTO = 'anthropic:claude-opus-5-5'
 
 export function modeloMesa(env: Record<string, string | undefined> = process.env): string {
-  return conProveedor(env.NEGOCIACION_MODELO_MESA?.trim() || MODELO_MESA_DEFECTO)
+  return conProveedor(env.NEGOCIACION_MODELO_MESA?.trim() || MODELO_MESA_DEFECTO, env)
 }
 export function modeloJuez(env: Record<string, string | undefined> = process.env): string {
-  return conProveedor(env.NEGOCIACION_MODELO_JUEZ?.trim() || MODELO_JUEZ_DEFECTO)
+  return conProveedor(env.NEGOCIACION_MODELO_JUEZ?.trim() || MODELO_JUEZ_DEFECTO, env)
 }
 
 /** Sin la clave del proveedor nombrado no se abre mesa (nunca se cae a z.ai por defecto). */
 export function modelosDisponibles(env: Record<string, string | undefined> = process.env): boolean {
-  return [modeloMesa(env), modeloJuez(env)].every((m) => Boolean((m.startsWith('zai:') ? env.ZAI_API_KEY : env.ANTHROPIC_API_KEY)?.trim()))
+  return [modeloMesa(env), modeloJuez(env)].every((m) => hayClavePara(m, env))
 }
 
 /** Negociaciones nuevas por comprador y día UTC (NEGOCIACION_MAX_POR_NODO_DIA, def. 20). */
