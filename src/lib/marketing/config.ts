@@ -10,8 +10,8 @@ import { anthropicActivo, hayClavePara, modeloEfectivo } from '@/engine/provider
 
 export const MARKETING_DOMAIN = 'marketing'
 
-/** Destinos por defecto: el blog de WordNext y los escaparates de la Fase 4 (restaurante y academia). */
-export const DESTINOS_POR_DEFECTO = 'blog.wordnext.tech,restaurante.wordnext.tech,laclasedigital.wordnext.tech'
+/** Destinos por defecto: el blog de WordNext y los escaparates de la Fase 4 (restaurante, academia y fisioterapia). */
+export const DESTINOS_POR_DEFECTO = 'blog.wordnext.tech,restaurante.wordnext.tech,laclasedigital.wordnext.tech,servicios.wordnext.tech'
 export function destinos(env: Record<string, string | undefined> = process.env): string[] {
   const lista = (env.MARKETING_DESTINOS ?? DESTINOS_POR_DEFECTO)
     .split(',')
@@ -66,6 +66,24 @@ export function perfilDestino(destino: string): PerfilDestino {
       notas: [
         'Taberna del Olivar NO existe: nunca la presentes como un restaurante real ni cuentes experiencias, cifras o clientes suyos («en nuestra taberna conseguimos…»). Si la usas de ejemplo, di que es un ejemplo.',
         'Útil para el dueño de un restaurante (reservas, carta online, reseñas, temporada, equipo, costes); WordNext sale solo en el cierre o donde de verdad resuelve algo.',
+        'Enlaces internos: solo a URLs de leerBlog de este destino o de la ficha de hechos.',
+      ],
+    }
+  }
+  if (destino === 'servicios.wordnext.tech') {
+    return {
+      nombre: 'Blog de «Fisioterapia Alameda», clínica de fisioterapia de EJEMPLO hecha con WordNext (escaparate de servicios)',
+      publico: 'fisioterapeutas y dueños de consultas y centros de salud y bienestar de España (fisioterapia, osteopatía, podología, nutrición, psicología)',
+      categorias: ['salud'],
+      porSemana: 1,
+      cierre: {
+        es: 'Cierra con una línea que recuerde que este blog es de una clínica de ejemplo hecha con WordNext y enlace a https://app.wordnext.tech/crear?tpl=profesional («crea la web de tu consulta gratis»), sin exagerar.',
+        en: 'End with one line reminding that this blog belongs to an example clinic built with WordNext, linking to https://app.wordnext.tech/crear?tpl=profesional&lang=en, without overselling.',
+      },
+      notas: [
+        'Fisioterapia Alameda NO existe: nunca la presentes como una clínica real ni cuentes pacientes, casos, cifras o resultados suyos. Si la usas de ejemplo, di que es un ejemplo.',
+        'Escribe para el PROFESIONAL que lleva la consulta (citas online, recordatorios, cancelaciones, reseñas, explicar sus servicios, videoconsulta), NO para pacientes: nada de consejos médicos, diagnósticos ni promesas de curación.',
+        'WordNext sale solo en el cierre o donde de verdad resuelve algo (reservas con agenda, valoración por videollamada, formulario de contacto).',
         'Enlaces internos: solo a URLs de leerBlog de este destino o de la ficha de hechos.',
       ],
     }
