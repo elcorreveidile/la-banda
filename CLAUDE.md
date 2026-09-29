@@ -534,6 +534,20 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   si Vercel tiene `MARKETING_DESTINOS`, añadir `tienda.wordnext.tech`. Fusionar DESPUÉS de pegar `scripts/escaparates/tienda.sql`
   en WordNext (si no, el envío da 404 y el tema queda «fallido»).
 
+- **2026-09-29, marketing: blogs de La Banda y de jblainez.es, solo en español (v0.19.0)**. Javier: «que La Banda escriba para
+  banda.wordnext.tech y jblainez.es» (las dos webs pasaron a negocio en wp-next-starter 1.93.0: precios + videollamada de La Banda y
+  el taller de poesía de 49 €/149 €). Dos destinos nuevos con perfil propio, **1 artículo por semana** y **solo en español**:
+  `PerfilDestino.idiomas` (sin valor = español e inglés, como hasta ahora; `idiomasDestino`). Con `['es']`, Estocolmo pasa sin
+  traducir, `revisarArticulos` no trae el inglés, Palermo no lo exige, `enviarArticulo` manda una sola pieza sin `translationKey` y
+  el tema queda publicado con esa pieza (`estadoPorPiezas(piezas, esperadas)`). `PerfilDestino.hechos`: datos propios del destino
+  (precios de La Banda, el taller) que Palermo comprueba como la ficha de WordNext. Categorías nuevas `agentes-ia` y `escritura`,
+  solo de sus destinos (el blog de WordNext no las propone). **banda.wordnext.tech**: público = pymes y despachos con procesos
+  repetitivos; cierre hacia /reservar-llamada o /precios; nunca clientes, ahorros ni porcentajes inventados (los casos reales son
+  las bandas en producción; el trading es SIMULADO). **javier.wordnext.tech** (también `www.jblainez.es`): público = quien escribe
+  poesía; cierre hacia /cursos-de-poesia; ni anécdotas ni alumnos inventados, ni poemas de Javier; poemas enteros solo de dominio
+  público, del resto ≤ 4 versos con autor y título. **Checklist para Javier**: (1) en Neon de WordNext, abrir las dos webs a La Banda
+  (`publish_banda`); (2) si Vercel de la-banda tiene `MARKETING_DESTINOS`, añadir `banda.wordnext.tech,javier.wordnext.tech`.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&

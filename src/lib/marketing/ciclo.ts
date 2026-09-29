@@ -19,7 +19,7 @@ import { normalizarPayload } from '@/engine/decision'
 import type { EstadoTema, Pieza, Tema } from '@/db/marketing'
 import { leerVeredicto, validarArticulo, validarTemas, type ArticuloValido } from './articulo'
 import { esDiaDePlan, esDiaDeRedaccion, esHoraDeResumen, haceDias, lunesSemanaSiguiente, madridAUtc, primerHuecoLibre } from './calendario'
-import { articulosPorSemana, destinos, MARKETING_SESION_MAX_MS, modelosDisponibles, perfilDestino, temasPorPlan } from './config'
+import { articulosPorSemana, destinos, idiomasDestino, MARKETING_SESION_MAX_MS, modelosDisponibles, perfilDestino, temasPorPlan } from './config'
 import { leerInforme, resultadoDeCierre, type InformeProfesor } from './informe'
 import type { MarketingStore, SesionAbierta } from './store'
 import { claveTraduccion, enviarPieza, refPieza, type EnvioPieza, type ResultadoEnvio, type VistaPieza } from './wordnext'
@@ -139,19 +139,20 @@ export async function enviarArticulo(tema: Tema, dossier: unknown[], deps: Pick<
     const r = validarArticulo(v)
     return r.ok ? r.articulo : null
   }
-  const es = ultimo(dossier, 'articuloEs', leer)
-  const en = ultimo(dossier, 'articuloEn', leer)
-  if (!es || !en) {
-    const errores = [
-      ...(es ? [] : ['ES: ' + erroresDe(dossier, 'articuloEs').join('; ')]),
-      ...(en ? [] : ['EN: ' + erroresDe(dossier, 'articuloEn').join('; ')]),
-    ]
+  // Un destino solo en español (La Banda, jblainez.es) no lleva versión inglesa.
+  const idiomas = idiomasDestino(tema.destino)
+  const versiones = idiomas.map((locale) => {
+    const campo = locale === 'es' ? 'articuloEs' : 'articuloEn'
+    return { locale, campo, art: ultimo(dossier, campo, leer) }
+  })
+  if (versiones.some((v) => !v.art)) {
+    const errores = versiones.filter((v) => !v.art).map((v) => `${v.locale.toUpperCase()}: ${erroresDe(dossier, v.campo).join('; ')}`)
     return { ok: false, error: 'el artículo no pasa la validación en código', errores }
   }
 
   const enviar = deps.enviar ?? ((p: EnvioPieza) => enviarPieza(p))
   const piezas: ResultadoEnvioArticulo['piezas'] = []
-  for (const [locale, art] of [['es', es], ['en', en]] as [string, ArticuloValido][]) {
+  for (const [locale, art] of versiones.map((v) => [v.locale, v.art]) as [string, ArticuloValido][]) {
     const externalRef = refPieza(tema.id, tema.version, locale)
     const r = await enviar({
       tenant: tema.destino,
@@ -164,10 +165,11 @@ export async function enviarArticulo(tema: Tema, dossier: unknown[], deps: Pick<
       scheduledAt: tema.programadoPara ? tema.programadoPara.toISOString() : null,
       externalRef,
       locale,
-      translationKey: claveTraduccion(tema.id),
+      // La clave enlaza las versiones de idioma; con una sola no hace falta.
+      ...(idiomas.length > 1 ? { translationKey: claveTraduccion(tema.id) } : {}),
     })
     if (!r.ok) {
-      // ES pudo salir y EN no: el reintento reenvía las dos (idempotente por externalRef).
+      // ES pudo salir y EN no: el reintento reenvía todas (idempotente por externalRef).
       return { ok: false, error: `envío ${locale.toUpperCase()} a WordNext: ${r.error}`, piezas }
     }
     const previa = await deps.store.pieza(externalRef)
@@ -215,12 +217,12 @@ export async function finalizarSesion(sessionId: string, deps: Pick<DepsCiclo, '
 // ─── Aviso de WordNext ─────────────────────────────────────────────────────────
 
 /** Estado del tema según sus piezas (versión actual). */
-export function estadoPorPiezas(piezas: Pick<Pieza, 'estado' | 'feedback' | 'locale'>[]): { estado: EstadoTema; motivo: string | null } {
+export function estadoPorPiezas(piezas: Pick<Pieza, 'estado' | 'feedback' | 'locale'>[], esperadas = 2): { estado: EstadoTema; motivo: string | null } {
   if (!piezas.length) return { estado: 'en_revision', motivo: null }
   const rechazada = piezas.find((p) => p.estado === 'rejected')
   if (rechazada) return { estado: 'rechazado', motivo: `${rechazada.locale.toUpperCase()}: ${rechazada.feedback ?? 'rechazado sin motivo'}` }
   if (piezas.some((p) => p.estado === 'cancelled')) return { estado: 'fallido', motivo: 'la entrada se borró o retiró en WordNext' }
-  if (piezas.length >= 2 && piezas.every((p) => p.estado === 'published')) return { estado: 'publicado', motivo: null }
+  if (piezas.length >= esperadas && piezas.every((p) => p.estado === 'published')) return { estado: 'publicado', motivo: null }
   return { estado: 'en_revision', motivo: null }
 }
 
@@ -241,7 +243,7 @@ export async function aplicarAviso(vista: VistaPieza, deps: Pick<DepsCiclo, 'sto
   // Un aviso de una versión anterior (reescrita) no cambia el tema.
   if (pieza.version !== tema.version || !['en_revision', 'publicado', 'rechazado'].includes(tema.estado)) return { ok: true, temaId: tema.id, estado: tema.estado }
   const piezas = await deps.store.piezasDeTema(tema.id, tema.version)
-  const { estado, motivo } = estadoPorPiezas(piezas)
+  const { estado, motivo } = estadoPorPiezas(piezas, idiomasDestino(tema.destino).length)
   if (estado !== tema.estado || motivo !== tema.motivo) await deps.store.actualizarTema(tema.id, { estado, motivo })
   return { ok: true, temaId: tema.id, estado }
 }

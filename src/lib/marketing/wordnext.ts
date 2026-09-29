@@ -51,7 +51,7 @@ export interface EnvioPieza {
   scheduledAt: string | null
   externalRef: string
   locale: string
-  translationKey: string
+  translationKey?: string
 }
 
 export interface VistaPieza {

@@ -11,7 +11,8 @@ import { anthropicActivo, hayClavePara, modeloEfectivo } from '@/engine/provider
 export const MARKETING_DOMAIN = 'marketing'
 
 /** Destinos por defecto: el blog de WordNext y los escaparates de la Fase 4 (restaurante, academia y fisioterapia). */
-export const DESTINOS_POR_DEFECTO = 'blog.wordnext.tech,restaurante.wordnext.tech,laclasedigital.wordnext.tech,servicios.wordnext.tech,tienda.wordnext.tech'
+export const DESTINOS_POR_DEFECTO =
+  'blog.wordnext.tech,restaurante.wordnext.tech,laclasedigital.wordnext.tech,servicios.wordnext.tech,tienda.wordnext.tech,banda.wordnext.tech,javier.wordnext.tech'
 export function destinos(env: Record<string, string | undefined> = process.env): string[] {
   const lista = (env.MARKETING_DESTINOS ?? DESTINOS_POR_DEFECTO)
     .split(',')
@@ -50,7 +51,15 @@ export interface PerfilDestino {
   cierre: { es: string; en: string }
   /** Reglas propias del destino. */
   notas: string[]
+  /** Idiomas en que se publica (sin valor: español e inglés enlazados). Una web solo en español: ['es']. */
+  idiomas?: Idioma[]
+  /** Datos propios del destino (precios, productos) que un artículo puede citar; Palermo los comprueba como la ficha. */
+  hechos?: string[]
 }
+
+export type Idioma = 'es' | 'en'
+/** Idiomas en que se publica un destino (por defecto, los dos). */
+export const idiomasDestino = (destino: string): Idioma[] => perfilDestino(destino).idiomas ?? ['es', 'en']
 
 export function perfilDestino(destino: string): PerfilDestino {
   if (destino === 'restaurante.wordnext.tech') {
@@ -106,6 +115,56 @@ export function perfilDestino(destino: string): PerfilDestino {
       ],
     }
   }
+  if (destino === 'banda.wordnext.tech') {
+    return {
+      nombre: 'Blog de La Banda: agentes de IA a medida para negocios (banda.wordnext.tech)',
+      publico: 'dueños y directivos de pymes, despachos y equipos de España con procesos repetitivos de revisar, redactar, clasificar o decidir (documentos, informes, contenidos, atención)',
+      categorias: ['agentes-ia'],
+      porSemana: 1,
+      idiomas: ['es'],
+      cierre: {
+        es: 'Cierra con una línea que invite a reservar la videollamada gratis de 30 minutos (/reservar-llamada) o a ver los precios (/precios), sin exagerar.',
+        en: '',
+      },
+      notas: [
+        'Escribe para quien tiene el proceso (qué tarea se puede delegar a un equipo de agentes, cómo se controla, cuánto cuesta, qué riesgos tiene), no para técnicos: nada de jerga sin explicar.',
+        'NUNCA inventes clientes, casos, ahorros ni porcentajes («redujimos un 70 %…»). Los únicos casos reales son las tres bandas de los hechos del perfil; si pones otro ejemplo, di que es un ejemplo.',
+        'Sin promesas de sustituir personas: la banda propone y una persona aprueba (veto y revisión humana).',
+        'Enlaces internos: solo a URLs de leerBlog de este destino, /precios, /reservar-llamada, /contacto o de la ficha de hechos.',
+      ],
+      hechos: [
+        'La Banda monta a medida un equipo de agentes de IA con papeles fijos que se pasan el trabajo por traspasos trazables, con veto y revisión humana antes de publicar o decidir nada.',
+        'Precios orientativos: Piloto desde 600 € (pago único: análisis del proceso, una banda configurada, un primer lote real e informe de trazabilidad); Operación desde 150 € al mes por banda (ejecución programada, panel, ajustes y soporte, coste de IA incluido hasta un volumen); A medida con presupuesto (varias bandas, integración por API, SLA, formación).',
+        'Primera videollamada de 30 minutos gratis y sin compromiso, con reserva en /reservar-llamada.',
+        'Trabaja con varios modelos de IA (Claude, GLM y otros) y cambia de uno a otro si uno falla o se encarece.',
+        'Bandas en producción: Corpus ELE (muestras de español graduadas por nivel para estudiantes, revisadas antes de publicarse), una mesa de trading SIMULADA (sin dinero real) y la redacción de la revista Olvidos de Granada; además, el firewall de IA de WordNext y el blog de WordNext.',
+      ],
+    }
+  }
+  if (destino === 'javier.wordnext.tech' || destino === 'www.jblainez.es' || destino === 'jblainez.es') {
+    return {
+      nombre: 'Blog de Javier Benítez Láinez, escritor y profesor (jblainez.es)',
+      publico: 'personas que escriben o quieren escribir poesía por su cuenta: principiantes y aficionados de habla hispana',
+      categorias: ['escritura'],
+      porSemana: 1,
+      idiomas: ['es'],
+      cierre: {
+        es: 'Cierra con una línea que invite al «Taller de poesía: cómo respira un poema» (/cursos-de-poesia), sin exagerar.',
+        en: '',
+      },
+      notas: [
+        'Temas de oficio: el verso y su corte, la métrica, las estrofas, la imagen y el símbolo, el tono, revisar un poema, leer poesía, publicar en revistas y premios. Útil para quien escribe, con ejercicios concretos.',
+        'Escribe en la voz de un profesor de escritura, pero NUNCA inventes anécdotas, alumnos ni resultados de Javier, ni publiques poemas suyos.',
+        'Derechos de autor: poemas enteros solo de autores en dominio público en España (fallecidos hace más de 80 años: Machado, Lorca, Bécquer, Miguel Hernández, los clásicos); de los demás, como mucho 4 versos con autor y título. Nunca inventes versos atribuidos a un autor.',
+        'Enlaces internos: solo a URLs de leerBlog de este destino, /cursos-de-poesia o de la ficha de hechos.',
+      ],
+      hechos: [
+        'Taller de poesía «Cómo respira un poema», de Javier Benítez Láinez: seis sesiones (cómo respira un poema, la sílaba, estrofas y formas, imagen y símbolo, tono y voz, taller de revisión y cierre).',
+        'A tu ritmo: 49 €, pago único; lecturas comentadas, ejercicios con entrega y comentario, tarea final corregida por Javier y certificado; la primera lección es gratis.',
+        'En directo: 149 € (el curso a tu ritmo + 6 sesiones por Zoom en grupo reducido); las fechas de la próxima edición se comunican por correo.',
+      ],
+    }
+  }
   if (destino === 'laclasedigital.wordnext.tech' || destino === 'academia.laclasedigital.com') {
     return {
       nombre: 'Blog de la academia de La Clase Digital (Javier Benítez Láinez), hecha con WordNext',
@@ -127,7 +186,8 @@ export function perfilDestino(destino: string): PerfilDestino {
   return {
     nombre: 'El Quirófano, el blog de WordNext',
     publico: 'dueños de pequeños negocios que tienen o necesitan web',
-    categorias: CATEGORIAS.map((c) => c.id),
+    // Las categorías de un solo destino (agentes de IA, escritura) no van al blog de WordNext.
+    categorias: CATEGORIAS.map((c) => c.id).filter((id) => !CATEGORIAS_PROPIAS.has(id)),
     cierre: {
       es: 'Termina con una sección breve de preguntas frecuentes y un cierre que mencione WordNext con un enlace de la ficha, sin exagerar.',
       en: 'End with a short FAQ section and a closing line mentioning WordNext with a link from the facts sheet, without overselling.',
@@ -184,7 +244,12 @@ export const CATEGORIAS = [
   { id: 'turismo', es: 'Turismo y alojamiento', en: 'Tourism & stays' },
   { id: 'firewall-ia', es: 'Firewall de IA y web agéntica (WordNext Guardian)', en: 'AI firewall & agentic web (WordNext Guardian)' },
   { id: 'migracion', es: 'Migrar de WordPress a Next.js', en: 'Migrating from WordPress to Next.js' },
+  { id: 'agentes-ia', es: 'Agentes de IA para negocios (La Banda)', en: 'AI agents for business (La Banda)' },
+  { id: 'escritura', es: 'Escritura y poesía', en: 'Writing & poetry' },
 ] as const
+
+/** Categorías de un solo destino (La Banda y jblainez.es): el blog de WordNext no las propone. */
+const CATEGORIAS_PROPIAS = new Set<string>(['agentes-ia', 'escritura'])
 
 export const IDS_CATEGORIA = new Set<string>(CATEGORIAS.map((c) => c.id))
 

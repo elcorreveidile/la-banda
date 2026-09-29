@@ -197,6 +197,37 @@ describe('ciclo: del tema aprobado al artículo publicado', () => {
     expect(ctx.envios).toHaveLength(2)
   })
 
+  it('destino solo en español (La Banda, jblainez.es): envía una pieza sin clave de traducción y se publica con ella', async () => {
+    const ctx = deps({ now: () => VIERNES.getTime() })
+    const r = await registrarTemas({ kind: 'plan', destino: 'banda.wordnext.tech', cuantos: 2 }, 'plan-banda', [{ categoria: 'agentes-ia', titulo: 'Qué tarea delegar primero a un equipo de agentes', angulo: 'Cómo elegir el primer proceso para un piloto con agentes de IA.' }], { store: ctx.mem.store })
+    expect(r).toMatchObject({ registrados: 1 })
+    const t0 = (await ctx.mem.store.temasEnEstado(['propuesto']))[0]
+    await decidirTema(t0.id, 'aprobar', '', { store: ctx.mem.store })
+    await abrirRedaccion((await ctx.mem.store.tema(t0.id))!, ctx.d)
+    const t = (await ctx.mem.store.tema(t0.id))!
+    // Sin articuloEn: basta el español.
+    const ok = await enviarArticulo(t, [{ veredictoPalermo: { aprueba: true, motivos: [] } }, { articuloEs: articulo('primer-proceso') }], ctx.d)
+    expect(ok.ok).toBe(true)
+    expect(ctx.envios.map((e) => [e.locale, e.translationKey])).toEqual([['es', undefined]])
+    const vista = { id: `wn-${refPieza(t.id, 1, 'es')}`, status: 'published' as const, externalRef: refPieza(t.id, 1, 'es'), url: 'https://banda.wordnext.tech/x', reviewUrl: null, scheduledAt: null, publishedAt: '2026-10-06T07:00:00.000Z', feedback: null }
+    expect(await aplicarAviso(vista, { store: ctx.mem.store })).toMatchObject({ estado: 'publicado' })
+  })
+
+  it('perfiles de La Banda y jblainez.es: solo español, su categoría y sus hechos; el blog de WordNext no toma sus categorías', async () => {
+    const { perfilDestino, idiomasDestino } = await import('@/lib/marketing/config')
+    expect(idiomasDestino('banda.wordnext.tech')).toEqual(['es'])
+    expect(idiomasDestino('www.jblainez.es')).toEqual(['es'])
+    expect(idiomasDestino('blog.wordnext.tech')).toEqual(['es', 'en'])
+    expect(perfilDestino('banda.wordnext.tech').categorias).toEqual(['agentes-ia'])
+    expect(perfilDestino('banda.wordnext.tech').hechos?.join(' ')).toContain('Piloto desde 600 €')
+    expect(perfilDestino('javier.wordnext.tech').categorias).toEqual(['escritura'])
+    expect(perfilDestino('javier.wordnext.tech').hechos?.join(' ')).toContain('49 €')
+    expect(perfilDestino('blog.wordnext.tech').categorias).not.toContain('escritura')
+    expect(perfilDestino('blog.wordnext.tech').categorias).not.toContain('agentes-ia')
+    expect(estadoPorPiezas([{ estado: 'published', feedback: null, locale: 'es' }])).toMatchObject({ estado: 'en_revision' })
+    expect(estadoPorPiezas([{ estado: 'published', feedback: null, locale: 'es' }], 1)).toMatchObject({ estado: 'publicado' })
+  })
+
   it('avisos de WordNext: aprobado → publicado; rechazado con motivo; reescribir sube la versión', async () => {
     const ctx = deps({ now: () => VIERNES.getTime() })
     const t0 = await temaAprobado(ctx)
@@ -268,12 +299,14 @@ describe('cron semanal', () => {
   it('jueves abre un plan; lunes no hace nada; el domingo manda el resumen', async () => {
     const jueves = deps({ now: () => JUEVES_10H.getTime() })
     const r = await cicloMarketing(jueves.d)
-    expect(r.planes).toHaveLength(5)
+    expect(r.planes).toHaveLength(7)
     expect(jueves.abiertas[0]).toMatchObject({ kind: 'plan', payload: { destino: DESTINO, cuantos: 4 } })
     expect(jueves.abiertas[1]).toMatchObject({ kind: 'plan', payload: { destino: 'restaurante.wordnext.tech', cuantos: 2 } })
     expect(jueves.abiertas[2]).toMatchObject({ kind: 'plan', payload: { destino: 'laclasedigital.wordnext.tech', cuantos: 2 } })
     expect(jueves.abiertas[3]).toMatchObject({ kind: 'plan', payload: { destino: 'servicios.wordnext.tech', cuantos: 2 } })
     expect(jueves.abiertas[4]).toMatchObject({ kind: 'plan', payload: { destino: 'tienda.wordnext.tech', cuantos: 2 } })
+    expect(jueves.abiertas[5]).toMatchObject({ kind: 'plan', payload: { destino: 'banda.wordnext.tech', cuantos: 2 } })
+    expect(jueves.abiertas[6]).toMatchObject({ kind: 'plan', payload: { destino: 'javier.wordnext.tech', cuantos: 2 } })
 
     const lunes = deps({ now: () => LUNES.getTime() })
     await temaAprobado(lunes)
@@ -411,7 +444,15 @@ describe('revisarArticulos', () => {
 describe('perfiles por destino (Fase 4)', () => {
   it('el escaparate de restauración: 1 por semana, solo restauración y cierre hacia /crear', async () => {
     const { perfilDestino, articulosPorSemana, destinos, temasPorPlan } = await import('@/lib/marketing/config')
-    expect(destinos({})).toEqual(['blog.wordnext.tech', 'restaurante.wordnext.tech', 'laclasedigital.wordnext.tech', 'servicios.wordnext.tech', 'tienda.wordnext.tech'])
+    expect(destinos({})).toEqual([
+      'blog.wordnext.tech',
+      'restaurante.wordnext.tech',
+      'laclasedigital.wordnext.tech',
+      'servicios.wordnext.tech',
+      'tienda.wordnext.tech',
+      'banda.wordnext.tech',
+      'javier.wordnext.tech',
+    ])
     expect(articulosPorSemana({}, 'restaurante.wordnext.tech')).toBe(1)
     expect(temasPorPlan({}, 'restaurante.wordnext.tech')).toBe(2)
     expect(articulosPorSemana({}, 'blog.wordnext.tech')).toBe(2)
