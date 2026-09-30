@@ -118,7 +118,10 @@ export function contarPalabras(html: string): number {
   return texto ? texto.split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length : 0
 }
 
-/** Problemas del HTML: etiquetas fuera de la lista, atributos no permitidos y enlaces no https. */
+/**
+ * Problemas del HTML: etiquetas fuera de la lista, atributos no permitidos y enlaces que no sean https ni una ruta interna
+ * del propio destino («/curso»: los perfiles piden cerrar así, y funciona en cualquier dominio de la web).
+ */
 export function problemasHtml(html: string): string[] {
   const problemas = new Set<string>()
   const re = /<\s*(\/?)\s*([a-zA-Z0-9]+)([^>]*)>/g
@@ -136,7 +139,7 @@ export function problemasHtml(html: string): string[] {
       const nombreAttr = a[1].toLowerCase()
       const valor = a[3] ?? a[4] ?? a[2]
       if (nombre === 'a' && nombreAttr === 'href') {
-        if (!/^https:\/\/[^\s"'<>]+$/.test(valor)) problemas.add(`enlace no https: ${valor.slice(0, 80)}`)
+        if (!/^https:\/\/[^\s"'<>]+$/.test(valor) && !/^\/(?!\/)[^\s"'<>]*$/.test(valor)) problemas.add(`enlace no https ni ruta interna: ${valor.slice(0, 80)}`)
       } else {
         problemas.add(`atributo no permitido ${nombreAttr} en <${nombre}>`)
       }

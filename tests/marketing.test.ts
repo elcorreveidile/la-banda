@@ -95,11 +95,17 @@ describe('validación en código', () => {
     expect(descartes).toHaveLength(3)
   })
 
+  it('artículo: las rutas internas del destino valen; «//», http y javascript no', () => {
+    expect(problemasHtml('<p><a href="/cursos-de-poesia">curso</a> y <a href="https://x.es/a">fuente</a></p>')).toEqual([])
+    const malos = problemasHtml('<p><a href="//evil.com">a</a><a href="http://x.es">b</a><a href="javascript:x">c</a><a href="cursos">d</a></p>')
+    expect(malos).toHaveLength(4)
+  })
+
   it('artículo: etiquetas permitidas, enlaces https, sin h1, dos h2 y longitud', () => {
     expect(contarPalabras(html)).toBeGreaterThan(600)
     expect(validarArticulo(articulo('llenar-mesas')).ok).toBe(true)
     expect(problemasHtml('<h1>x</h1><img src="a"><a href="javascript:alert(1)">x</a><p style="color:red">y</p>')).toEqual(
-      expect.arrayContaining(['etiqueta no permitida <h1>', 'etiqueta no permitida <img>', expect.stringContaining('enlace no https'), 'atributo no permitido style en <p>']),
+      expect.arrayContaining(['etiqueta no permitida <h1>', 'etiqueta no permitida <img>', expect.stringContaining('enlace no https ni ruta interna'), 'atributo no permitido style en <p>']),
     )
     const r = validarArticulo({ ...articulo('Slug Malo'), html: '<p>corto</p>' })
     expect(r.ok).toBe(false)

@@ -573,3 +573,13 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 6. Firewall agéntico de WordNext, carril profundo (Fase 2b) — **hecho** (v0.10.0).
 7. Red de webs agénticas, registro y negociación B2B (Fase 4a) — **hecho** (v0.12.0). Fase 4b en wp-next-starter.
 8. Marketing de WordNext (Fase 3 de la hoja de ruta de producto): dominio `marketing` — **hecho** (v0.13.0; Profesor en v0.13.1).
+
+- **2026-09-30, marketing: rutas internas en los enlaces (v0.19.1)**. El artículo «Cómo medir un verso» (blog de Javier,
+  `javier.wordnext.tech`) acabó «fallido»: el perfil del destino manda cerrar con un enlace al «Taller de poesía»
+  (`/cursos-de-poesia`, una ruta interna) y `problemasHtml` solo aceptaba `https://…`, así que la validación dura del envío
+  rechazaba lo que el propio perfil pedía; Helsinki solo puede llamar a `enviarArticulo` una vez y el arreglo que dejó en el
+  dossier no llegó a enviarse. Ahora `problemasHtml` acepta también **rutas internas** (`/ruta`, una sola barra; `//`, `http:`,
+  `javascript:` y rutas sin barra siguen rechazados) y se mandan tal cual a WordNext (valen en cualquier dominio de la web; su
+  conversor las admite). Los prompts de Río y Palermo lo recogen. Para recuperar un tema «fallido» por esto: «Reescribir» en el
+  panel (versión + 1) tras desplegar.
+
