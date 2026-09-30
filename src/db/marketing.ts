@@ -15,9 +15,9 @@ import { pgTable, text, timestamp, integer, jsonb, index, uniqueIndex } from 'dr
  * redactando → vetado (Palermo no lo aprobó) | fallido (la mesa o el envío fallaron)
  * rechazado | vetado | fallido → aprobado (Javier pide reescribirlo; versión + 1)
  */
-export type EstadoTema = 'propuesto' | 'aprobado' | 'descartado' | 'redactando' | 'en_revision' | 'publicado' | 'rechazado' | 'vetado' | 'fallido'
+export type EstadoTema = 'propuesto' | 'aprobado' | 'descartado' | 'redactando' | 'en_revision' | 'publicado' | 'rechazado' | 'vetado' | 'fallido' | 'archivado'
 
-export const ESTADOS_TEMA: EstadoTema[] = ['propuesto', 'aprobado', 'descartado', 'redactando', 'en_revision', 'publicado', 'rechazado', 'vetado', 'fallido']
+export const ESTADOS_TEMA: EstadoTema[] = ['propuesto', 'aprobado', 'descartado', 'redactando', 'en_revision', 'publicado', 'rechazado', 'vetado', 'fallido', 'archivado']
 
 export const marketingTemas = pgTable(
   'marketing_temas',

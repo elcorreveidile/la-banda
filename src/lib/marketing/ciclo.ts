@@ -250,7 +250,14 @@ export async function aplicarAviso(vista: VistaPieza, deps: Pick<DepsCiclo, 'sto
 
 // ─── Decisiones de Javier (panel) ──────────────────────────────────────────────
 
-export async function decidirTema(id: string, decision: 'aprobar' | 'descartar' | 'reescribir', nota: string | null, deps: Pick<DepsCiclo, 'store' | 'now'>): Promise<{ ok: boolean; error?: string }> {
+export type Decision = 'aprobar' | 'descartar' | 'reescribir' | 'archivar' | 'desarchivar' | 'borrar'
+
+/** Estados que se pueden archivar (los que ya no están en redacción ni en revisión). */
+const ARCHIVABLES: EstadoTema[] = ['propuesto', 'descartado', 'rechazado', 'vetado', 'fallido', 'publicado']
+/** Estados que se pueden borrar de verdad: nunca algo con artículos enviados a WordNext. */
+const BORRABLES: EstadoTema[] = ['propuesto', 'descartado', 'archivado']
+
+export async function decidirTema(id: string, decision: Decision, nota: string | null, deps: Pick<DepsCiclo, 'store' | 'now'>): Promise<{ ok: boolean; error?: string }> {
   const t = await deps.store.tema(id)
   if (!t) return { ok: false, error: 'tema no encontrado' }
   const now = new Date((deps.now ?? Date.now)())
@@ -266,10 +273,67 @@ export async function decidirTema(id: string, decision: 'aprobar' | 'descartar' 
     await deps.store.actualizarTema(id, { estado: 'descartado', nota: limpia ?? t.nota, decididoAt: now })
     return { ok: true }
   }
+  if (decision === 'archivar') {
+    if (!ARCHIVABLES.includes(t.estado)) return { ok: false, error: `no se archiva un tema «${t.estado}»` }
+    await deps.store.actualizarTema(id, { estado: 'archivado', decididoAt: now })
+    return { ok: true }
+  }
+  if (decision === 'desarchivar') {
+    if (t.estado !== 'archivado') return { ok: false, error: `el tema no está archivado (está «${t.estado}»)` }
+    // Con artículos en WordNext vuelve al estado que cuentan sus piezas (p. ej. «publicado»); si no, como «descartado».
+    const piezas = await deps.store.piezasDeTema(id, t.version)
+    const estado: EstadoTema = piezas.length ? estadoPorPiezas(piezas, idiomasDestino(t.destino).length).estado : 'descartado'
+    await deps.store.actualizarTema(id, { estado, decididoAt: now })
+    return { ok: true }
+  }
+  if (decision === 'borrar') {
+    if (!BORRABLES.includes(t.estado)) return { ok: false, error: `no se borra un tema «${t.estado}»: archívalo` }
+    if ((await deps.store.piezasDeTema(id)).length) return { ok: false, error: 'este tema ya tiene artículos enviados a WordNext: archívalo en vez de borrarlo' }
+    await deps.store.borrarTemas([id])
+    return { ok: true }
+  }
   if (!cerrable.includes(t.estado)) return { ok: false, error: `solo se reescribe un tema rechazado, vetado o fallido (está «${t.estado}»)` }
   // Versión nueva: externalRef distinto en WordNext; el hueco se vuelve a calcular.
   await deps.store.actualizarTema(id, { estado: 'aprobado', version: t.version + 1, nota: limpia ?? t.motivo, programadoPara: null, decididoAt: now })
   return { ok: true }
+}
+
+export type Lote = 'descartar-propuestos' | 'archivar-descartados' | 'borrar-archivados'
+
+/** Limpieza en bloque de UNA web: devuelve cuántos temas tocó. */
+export async function decidirLote(destino: string, que: Lote, deps: Pick<DepsCiclo, 'store' | 'now'>): Promise<{ ok: boolean; n: number; error?: string }> {
+  if (!destino) return { ok: false, n: 0, error: 'elige una web' }
+  const now = new Date((deps.now ?? Date.now)())
+  if (que === 'descartar-propuestos' || que === 'archivar-descartados') {
+    const origen: EstadoTema = que === 'descartar-propuestos' ? 'propuesto' : 'descartado'
+    const destinoEstado: EstadoTema = que === 'descartar-propuestos' ? 'descartado' : 'archivado'
+    const temas = await deps.store.temasEnEstado([origen], destino)
+    for (const t of temas) await deps.store.actualizarTema(t.id, { estado: destinoEstado, decididoAt: now })
+    return { ok: true, n: temas.length }
+  }
+  const archivados = await deps.store.temasEnEstado(['archivado'], destino)
+  const borrables: string[] = []
+  for (const t of archivados) if (!(await deps.store.piezasDeTema(t.id)).length) borrables.push(t.id)
+  await deps.store.borrarTemas(borrables)
+  return { ok: true, n: borrables.length }
+}
+
+/** «Redactar ESTE tema ahora»: abre la mesa de un tema aprobado concreto, sin esperar al calendario ni al orden. */
+export async function redactarTema(id: string, deps: DepsCiclo): Promise<{ ok: boolean; sessionId?: string; error?: string }> {
+  const t = await deps.store.tema(id)
+  if (!t) return { ok: false, error: 'tema no encontrado' }
+  if (t.estado !== 'aprobado') return { ok: false, error: `solo se redacta un tema aprobado (está «${t.estado}»)` }
+  const redactando = await deps.store.temasEnEstado(['redactando'], t.destino)
+  if (redactando.length) return { ok: false, error: `ya hay una redacción en curso en ${t.destino}: «${redactando[0].titulo}»` }
+  const r = await abrirRedaccion(t, deps)
+  if (r.tipo === 'abierta') return { ok: true, sessionId: r.sessionId }
+  const causa: Record<Exclude<ResultadoRedaccion['tipo'], 'abierta'>, string> = {
+    'sin-hueco': 'la semana siguiente de esa web ya tiene sus artículos programados (se podrá redactar la próxima)',
+    'no-aprobado': 'el tema no está aprobado',
+    'sin-modelos': 'faltan las claves de los modelos (ZAI_API_KEY)',
+    'en-curso': 'ya hay una redacción en curso',
+  }
+  return { ok: false, error: causa[r.tipo] }
 }
 
 // ─── Resumen del domingo ───────────────────────────────────────────────────────
@@ -364,10 +428,9 @@ export async function datosResumen(deps: Pick<DepsCiclo, 'store' | 'env' | 'leer
 /** Informes del Profesor de esas sesiones (las que no tengan, se omiten). */
 export async function informesDe(ids: (string | null)[], deps: Pick<DepsCiclo, 'leerSesion'>): Promise<Record<string, InformeProfesor>> {
   const out: Record<string, InformeProfesor> = {}
-  for (const id of new Set(ids.filter((x): x is string => !!x))) {
-    const inf = leerInforme((await deps.leerSesion(id))?.finalReport)
-    if (inf) out[id] = inf
-  }
+  const unicos = [...new Set(ids.filter((x): x is string => !!x))]
+  const leidos = await Promise.all(unicos.map(async (id) => [id, leerInforme((await deps.leerSesion(id))?.finalReport)] as const))
+  for (const [id, inf] of leidos) if (inf) out[id] = inf
   return out
 }
 
@@ -386,7 +449,7 @@ export interface ResultadoCiclo {
  * para la semana siguiente. Domingo 08:00: resumen por correo. `forzar` salta el calendario
  * (botones del panel).
  */
-export async function cicloMarketing(deps: DepsCiclo, opts: { forzar?: 'plan' | 'redaccion' } = {}): Promise<ResultadoCiclo> {
+export async function cicloMarketing(deps: DepsCiclo, opts: { forzar?: 'plan' | 'redaccion'; destino?: string } = {}): Promise<ResultadoCiclo> {
   const now = ahora(deps)
   const res: ResultadoCiclo = { finalizadas: 0, planes: [], redacciones: [], resumen: 'no-toca' }
 
@@ -403,7 +466,8 @@ export async function cicloMarketing(deps: DepsCiclo, opts: { forzar?: 'plan' | 
   }
 
   const abiertas = await deps.store.sesionesAbiertas()
-  for (const destino of destinos(deps.env)) {
+  // `destino`: solo esa web (el panel elige para cuál proponer; sin él, todas, como el cron).
+  for (const destino of destinos(deps.env).filter((d) => !opts.destino || d === opts.destino)) {
     const porSemana = articulosPorSemana(deps.env, destino)
     // 2. Plan: jueves, si esta semana aún no se propuso nada y no quedan propuestos sin decidir de sobra.
     if (opts.forzar === 'plan' || (!opts.forzar && esDiaDePlan(now))) {

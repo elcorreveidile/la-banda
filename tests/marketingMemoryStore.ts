@@ -51,8 +51,14 @@ export function createMarketingMemoryStore() {
     async programadosEntre(destino, desde, hasta) {
       return [...temas.values()].filter((t) => t.destino === destino && EN_MARCHA.includes(t.estado) && t.programadoPara && t.programadoPara >= desde && t.programadoPara < hasta)
     },
-    async recientes(limite) {
-      return [...temas.values()].slice(-limite).reverse()
+    async recientes(limite, conArchivados = false) {
+      return [...temas.values()].filter((t) => conArchivados || t.estado !== 'archivado').slice(-limite).reverse()
+    },
+    async borrarTemas(ids) {
+      for (const id of ids) {
+        temas.delete(id)
+        for (const [k, p] of piezas) if (p.temaId === id) piezas.delete(k)
+      }
     },
     async pieza(externalRef) {
       return [...piezas.values()].find((p) => p.externalRef === externalRef) ?? null

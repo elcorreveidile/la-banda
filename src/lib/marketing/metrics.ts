@@ -11,15 +11,16 @@ export interface MarketingMetrics {
   temas: (Tema & { piezas: Pieza[]; informe: InformeProfesor | null })[]
 }
 
-/** Lo que pinta la pestaña Marketing: los últimos 60 temas con sus piezas en WordNext. */
-export async function marketingMetrics(): Promise<MarketingMetrics> {
-  const temas = await marketingStoreDb.recientes(60)
+/** Lo que pinta la pestaña Marketing: los últimos 400 temas (los archivados solo si se piden) con sus piezas en WordNext. */
+export async function marketingMetrics(opts: { archivados?: boolean } = {}): Promise<MarketingMetrics> {
+  const temas = await marketingStoreDb.recientes(400, opts.archivados)
   // Informe del Profesor: el de su redacción si la hubo; si no, el del plan que lo propuso.
-  const informes = await informesDe(temas.flatMap((t) => [t.sessionId, t.planSessionId]), { leerSesion })
+  const informes = await informesDe(temas.filter((t) => t.estado !== 'archivado' && t.estado !== 'descartado').flatMap((t) => [t.sessionId, t.planSessionId]), { leerSesion })
   const conPiezas = await Promise.all(
     temas.map(async (t) => ({
       ...t,
-      piezas: await marketingStoreDb.piezasDeTema(t.id, t.version),
+      // Las piezas solo importan donde hay artículos enviados: evita una consulta por cada tema propuesto o archivado.
+      piezas: ['redactando', 'en_revision', 'publicado', 'rechazado', 'vetado', 'fallido'].includes(t.estado) ? await marketingStoreDb.piezasDeTema(t.id, t.version) : [],
       informe: (t.sessionId ? informes[t.sessionId] : undefined) ?? (t.planSessionId ? informes[t.planSessionId] : undefined) ?? null,
     })),
   )

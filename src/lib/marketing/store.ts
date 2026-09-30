@@ -3,7 +3,7 @@
  * neon-http, fila a fila, sin transacciones.
  */
 
-import { and, asc, desc, eq, gte, inArray, isNotNull, lt } from 'drizzle-orm'
+import { and, asc, desc, eq, gte, inArray, isNotNull, lt, ne } from 'drizzle-orm'
 import { db } from '@/db'
 import { handoffs, sessions, tasks } from '@/db/schema'
 import { marketingPiezas, marketingTemas, type EstadoTema, type NuevaPieza, type NuevoTema, type Pieza, type Tema } from '@/db/marketing'
@@ -28,8 +28,10 @@ export interface MarketingStore {
   titulosRecientes(destino: string, limite: number): Promise<string[]>
   /** Temas con fecha programada en [desde, hasta) y en marcha o ya enviados. */
   programadosEntre(destino: string, desde: Date, hasta: Date): Promise<Tema[]>
-  /** Los más recientes para el panel. */
-  recientes(limite: number): Promise<Tema[]>
+  /** Los más recientes para el panel; los archivados solo si se piden. */
+  recientes(limite: number, conArchivados?: boolean): Promise<Tema[]>
+  /** Borra un tema (y sus piezas locales: el llamador ya comprobó que no hay envíos a WordNext). */
+  borrarTemas(ids: string[]): Promise<void>
   pieza(externalRef: string): Promise<Pieza | null>
   piezaPorWordnext(wordnextId: string): Promise<Pieza | null>
   insertarPieza(p: NuevaPieza): Promise<Pieza>
@@ -72,7 +74,13 @@ export const marketingStoreDb: MarketingStore = {
       .from(T)
       .where(and(eq(T.destino, destino), inArray(T.estado, EN_MARCHA), isNotNull(T.programadoPara), gte(T.programadoPara, desde), lt(T.programadoPara, hasta)))
       .limit(50),
-  recientes: (limite) => db.select().from(T).orderBy(desc(T.updatedAt)).limit(limite),
+  recientes: (limite, conArchivados = false) =>
+    db.select().from(T).where(conArchivados ? undefined : ne(T.estado, 'archivado')).orderBy(desc(T.updatedAt)).limit(limite),
+  async borrarTemas(ids) {
+    if (!ids.length) return
+    await db.delete(P).where(inArray(P.temaId, ids))
+    await db.delete(T).where(inArray(T.id, ids))
+  },
   pieza: (externalRef) => uno(db.select().from(P).where(eq(P.externalRef, externalRef)).limit(1)),
   piezaPorWordnext: (wordnextId) => uno(db.select().from(P).where(eq(P.wordnextId, wordnextId)).limit(1)),
   async insertarPieza(p) {

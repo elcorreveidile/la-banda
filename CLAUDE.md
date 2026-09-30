@@ -573,3 +573,26 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
 6. Firewall agéntico de WordNext, carril profundo (Fase 2b) — **hecho** (v0.10.0).
 7. Red de webs agénticas, registro y negociación B2B (Fase 4a) — **hecho** (v0.12.0). Fase 4b en wp-next-starter.
 8. Marketing de WordNext (Fase 3 de la hoja de ruta de producto): dominio `marketing` — **hecho** (v0.13.0; Profesor en v0.13.1).
+
+- **2026-09-30, marketing: rutas internas en los enlaces (v0.19.1)**. El artículo «Cómo medir un verso» (blog de Javier,
+  `javier.wordnext.tech`) acabó «fallido»: el perfil del destino manda cerrar con un enlace al «Taller de poesía»
+  (`/cursos-de-poesia`, una ruta interna) y `problemasHtml` solo aceptaba `https://…`, así que la validación dura del envío
+  rechazaba lo que el propio perfil pedía; Helsinki solo puede llamar a `enviarArticulo` una vez y el arreglo que dejó en el
+  dossier no llegó a enviarse. Ahora `problemasHtml` acepta también **rutas internas** (`/ruta`, una sola barra; `//`, `http:`,
+  `javascript:` y rutas sin barra siguen rechazados) y se mandan tal cual a WordNext (valen en cualquier dominio de la web; su
+  conversor las admite). Los prompts de Río y Palermo lo recogen. Para recuperar un tema «fallido» por esto: «Reescribir» en el
+  panel (versión + 1) tras desplegar.
+
+- **2026-09-30, marketing: pestaña manejable con muchas webs (v0.19.2)**. «Proponer temas ahora» abría plan en TODAS las webs
+  suscritas y la lista crecía sin fin. Ahora: (1) **se elige la web** (`cicloMarketing(deps, { forzar: 'plan', destino })`;
+  el desplegable de la pestaña obliga a elegir y «Todas las webs» es una opción expresa); (2) **«Redactar ahora» por tema**
+  (`redactarTema`, solo aprobados; una redacción a la vez por web; el cron sigue cogiendo el aprobado más antiguo); (3) la
+  pestaña se organiza en **una sección plegable por web** (`agruparPorWeb`, `src/lib/marketing/vista.ts`, puro) con contadores,
+  filtro por web, buscador (sin tildes ni mayúsculas), «Ver más» (10 por bloque, +20) y filtro en la URL (`dest`, `q`, `arch`,
+  `n`) que las acciones conservan (`volver`); (4) **limpieza**: estado nuevo **`archivado`** (oculto por defecto, «con
+  archivados» los muestra; se archiva propuesto, descartado, rechazado, vetado, fallido y publicado; «Recuperar» vuelve a
+  `descartado` o, si tiene artículos, al estado de sus piezas), **borrar** definitivo (solo propuesto, descartado o archivado
+  SIN piezas enviadas a WordNext) y **acciones en bloque por web** (descartar propuestos, archivar descartados, borrar
+  archivados). `marketingMetrics` carga hasta 400 temas (antes 60) y solo consulta piezas donde hay artículos. Sin SQL:
+  `estado` ya era texto.
+
