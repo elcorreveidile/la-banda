@@ -23,6 +23,7 @@ import { firewallMetrics, type FirewallMetrics } from '@/lib/firewall/metrics'
 import { FirewallCard } from './FirewallCard'
 import { marketingMetrics, type MarketingMetrics } from '@/lib/marketing/metrics'
 import { MarketingCard } from './MarketingCard'
+import { filtroDeQuery } from '@/lib/marketing/vista'
 
 export const dynamic = 'force-dynamic'
 /** El orquestador corre en `after()` de la acción; le damos margen (plan Pro de Vercel). */
@@ -59,9 +60,10 @@ function tabDeDominio(domain: string | undefined): TabKey {
   return (TABS.find((t) => t.domain === domain)?.key ?? 'corpus') as TabKey
 }
 
-export default async function PanelPage({ searchParams }: { searchParams: Promise<{ s?: string; tab?: string; error?: string }> }) {
+export default async function PanelPage({ searchParams }: { searchParams: Promise<{ s?: string; tab?: string; error?: string; aviso?: string; dest?: string; q?: string; arch?: string; n?: string }> }) {
   const me = await auth()
-  const { s, tab, error } = await searchParams
+  const { s, tab, error, aviso, dest, q, arch, n } = await searchParams
+  const filtroMarketing = filtroDeQuery(new URLSearchParams(Object.entries({ dest, q, arch, n }).filter((e): e is [string, string] => typeof e[1] === 'string')).toString())
 
   // La sesión elegida puede ser de cualquier dominio (llega por ?s=).
   const selected = s ? (await db.select().from(sessions).where(eq(sessions.id, s)).limit(1))[0] : undefined
@@ -119,7 +121,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
   let marketing: MarketingMetrics | null = null
   if (activa === 'marketing') {
     try {
-      marketing = await marketingMetrics()
+      marketing = await marketingMetrics({ archivados: filtroMarketing.arch })
     } catch (err) {
       console.error('[la-banda] marketingMetrics', err)
     }
@@ -227,7 +229,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
           {activa === 'sitios' && sitios && <SitiosCard m={sitios} />}
 
           {activa === 'firewall' && firewall && <FirewallCard m={firewall} />}
-          {activa === 'marketing' && marketing && <MarketingCard m={marketing} error={error} />}
+          {activa === 'marketing' && marketing && <MarketingCard m={marketing} error={error} aviso={aviso} filtro={filtroMarketing} />}
 
           {view ? (
             <SessionLive key={view.session.id} initial={view} />

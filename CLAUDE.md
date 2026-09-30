@@ -583,3 +583,16 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   conversor las admite). Los prompts de Río y Palermo lo recogen. Para recuperar un tema «fallido» por esto: «Reescribir» en el
   panel (versión + 1) tras desplegar.
 
+- **2026-09-30, marketing: pestaña manejable con muchas webs (v0.19.2)**. «Proponer temas ahora» abría plan en TODAS las webs
+  suscritas y la lista crecía sin fin. Ahora: (1) **se elige la web** (`cicloMarketing(deps, { forzar: 'plan', destino })`;
+  el desplegable de la pestaña obliga a elegir y «Todas las webs» es una opción expresa); (2) **«Redactar ahora» por tema**
+  (`redactarTema`, solo aprobados; una redacción a la vez por web; el cron sigue cogiendo el aprobado más antiguo); (3) la
+  pestaña se organiza en **una sección plegable por web** (`agruparPorWeb`, `src/lib/marketing/vista.ts`, puro) con contadores,
+  filtro por web, buscador (sin tildes ni mayúsculas), «Ver más» (10 por bloque, +20) y filtro en la URL (`dest`, `q`, `arch`,
+  `n`) que las acciones conservan (`volver`); (4) **limpieza**: estado nuevo **`archivado`** (oculto por defecto, «con
+  archivados» los muestra; se archiva propuesto, descartado, rechazado, vetado, fallido y publicado; «Recuperar» vuelve a
+  `descartado` o, si tiene artículos, al estado de sus piezas), **borrar** definitivo (solo propuesto, descartado o archivado
+  SIN piezas enviadas a WordNext) y **acciones en bloque por web** (descartar propuestos, archivar descartados, borrar
+  archivados). `marketingMetrics` carga hasta 400 temas (antes 60) y solo consulta piezas donde hay artículos. Sin SQL:
+  `estado` ya era texto.
+

@@ -15,7 +15,8 @@ import { bombear } from '@/lib/bomba'
 import { NIVELES, type Nivel } from '@domains/corpus-ele/config'
 import { createPeticion, setPeticionSesion } from '@/lib/peticiones/peticiones'
 import { createSite, setSiteSesion } from '@/lib/sitios/sites'
-import { cicloMarketing, decidirTema, porQueNoRedacta } from '@/lib/marketing/ciclo'
+import { cicloMarketing, decidirLote, decidirTema, redactarTema, type Decision } from '@/lib/marketing/ciclo'
+import { filtroDeQuery, queryVista } from '@/lib/marketing/vista'
 import { depsMarketing } from '@/lib/marketing/deps'
 import { marketingStoreDb } from '@/lib/marketing/store'
 
@@ -210,15 +211,20 @@ export async function resumeStalledSessions(formData: FormData) {
   redirect(primera ? `/panel?s=${primera}` : '/panel')
 }
 
-/** Marketing: aprobar, descartar o pedir reescritura de un tema (Javier, en su revisión del domingo). */
-async function decidirTemaMarketing(decision: 'aprobar' | 'descartar' | 'reescribir', formData: FormData) {
+/** Adónde volver tras una acción de Marketing: la pestaña con el mismo filtro (web, búsqueda, archivados, «ver más»). */
+function volverMarketing(formData: FormData, extra: Record<string, string> = {}): string {
+  return `/panel?${queryVista(filtroDeQuery(String(formData.get('volver') ?? '')), extra)}`
+}
+
+/** Marketing: aprobar, descartar, archivar, borrar o pedir reescritura de un tema (Javier, en su revisión del domingo). */
+async function decidirTemaMarketing(decision: Decision, formData: FormData) {
   const session = await auth()
   if (!session?.user?.email) redirect('/login')
   const id = String(formData.get('id') ?? '')
   const nota = String(formData.get('nota') ?? '')
-  if (!id) redirect(`/panel?tab=marketing&error=${encodeURIComponent('falta el tema')}`)
+  if (!id) redirect(volverMarketing(formData, { error: 'falta el tema' }))
   const r = await decidirTema(id, decision, nota, { store: marketingStoreDb })
-  redirect(`/panel?tab=marketing${r.ok ? '' : `&error=${encodeURIComponent(r.error ?? 'error')}`}`)
+  redirect(volverMarketing(formData, r.ok ? {} : { error: r.error ?? 'error' }))
 }
 
 /**
@@ -235,18 +241,49 @@ export async function descartarTemaMarketing(formData: FormData) {
 export async function reescribirTemaMarketing(formData: FormData) {
   await decidirTemaMarketing('reescribir', formData)
 }
+export async function archivarTemaMarketing(formData: FormData) {
+  await decidirTemaMarketing('archivar', formData)
+}
+export async function desarchivarTemaMarketing(formData: FormData) {
+  await decidirTemaMarketing('desarchivar', formData)
+}
+export async function borrarTemaMarketing(formData: FormData) {
+  await decidirTemaMarketing('borrar', formData)
+}
 
-/** Marketing: proponer temas o redactar el siguiente tema aprobado ahora, sin esperar al calendario. */
-export async function lanzarMarketing(formData: FormData) {
+/** Marketing: limpieza en bloque de UNA web (descartar propuestos, archivar descartados, borrar archivados). */
+export async function loteMarketing(formData: FormData) {
   const session = await auth()
   if (!session?.user?.email) redirect('/login')
   const que = String(formData.get('que') ?? '')
-  if (que !== 'plan' && que !== 'redaccion') redirect('/panel?tab=marketing')
+  if (que !== 'descartar-propuestos' && que !== 'archivar-descartados' && que !== 'borrar-archivados') redirect(volverMarketing(formData))
+  const destino = String(formData.get('destino') ?? '').trim()
+  const r = await decidirLote(destino, que, { store: marketingStoreDb })
+  redirect(volverMarketing(formData, r.ok ? { aviso: `${r.n} tema(s) ${que === 'descartar-propuestos' ? 'descartados' : que === 'archivar-descartados' ? 'archivados' : 'borrados'} en ${destino}` } : { error: r.error ?? 'error' }))
+}
+
+/** Marketing: redactar ESTE tema aprobado ahora (elige tú cuál, sin esperar al calendario). */
+export async function redactarTemaMarketing(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+  const id = String(formData.get('id') ?? '')
   const h = await headers()
   const origin = process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('x-forwarded-host') ?? h.get('host')}`
-  const r = await cicloMarketing(depsMarketing(origin), { forzar: que })
-  const abierta = r.planes[0] ?? r.redacciones[0]
-  if (abierta) redirect(`/panel?tab=marketing&s=${abierta}`)
-  const motivo = que === 'plan' ? 'ya hay un plan en curso o faltan las claves de los modelos' : await porQueNoRedacta(depsMarketing(origin))
-  redirect(`/panel?tab=marketing&error=${encodeURIComponent(motivo)}`)
+  const r = id ? await redactarTema(id, depsMarketing(origin)) : { ok: false, error: 'falta el tema' }
+  if (r.ok && r.sessionId) redirect(volverMarketing(formData, { s: r.sessionId }))
+  redirect(volverMarketing(formData, { error: r.error ?? 'error' }))
+}
+
+/** Marketing: proponer temas de UNA web (o de todas, si se elige así expresamente) ahora, sin esperar al calendario. */
+export async function lanzarMarketing(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+  const destino = String(formData.get('destino') ?? '').trim()
+  if (!destino) redirect(volverMarketing(formData, { error: 'elige para qué web quieres proponer temas' }))
+  const h = await headers()
+  const origin = process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('x-forwarded-host') ?? h.get('host')}`
+  const r = await cicloMarketing(depsMarketing(origin), { forzar: 'plan', destino: destino === '*' ? undefined : destino })
+  const abierta = r.planes[0]
+  if (abierta) redirect(volverMarketing(formData, { s: abierta, aviso: `${r.planes.length} plan(es) abierto(s)${destino === '*' ? ' (todas las webs)' : ` para ${destino}`}` }))
+  redirect(volverMarketing(formData, { error: 'ya hay un plan en curso o faltan las claves de los modelos' }))
 }
