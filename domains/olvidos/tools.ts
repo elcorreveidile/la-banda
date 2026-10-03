@@ -6,7 +6,7 @@ import { codenameOf } from '@/engine/store'
 import { manuscriptForTask, setVersionDecision, writeObjections, type NewObjection } from '@/lib/olvidos/manuscripts'
 import { webSearch } from '@/lib/webSearch'
 import { HOJA_DE_ESTILO } from './hojaDeEstilo'
-import { SECCIONES, measureAgainstSection } from './secciones'
+import { SECCIONES, claveDeSeccion, measureAgainstSection } from './secciones'
 
 const MAX_CHARS = 60_000
 
@@ -25,7 +25,7 @@ export const olvidosTools: Record<string, ToolDef> = {
       return {
         title: manuscript.title,
         byline: manuscript.byline,
-        section: manuscript.section,
+        section: claveDeSeccion(manuscript.section),
         version: version.number,
         wordCount: version.wordCount,
         paragraphs: paragraphs.length,

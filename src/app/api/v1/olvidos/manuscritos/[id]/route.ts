@@ -5,6 +5,7 @@ import { sessions } from '@/db/schema'
 import { versions } from '@/db/olvidos'
 import { apiUnauthorized } from '@/lib/apiAuth'
 import { getManuscript, objectionsForSession } from '@/lib/olvidos/manuscripts'
+import { claveDeSeccion } from '@domains/olvidos/secciones'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,5 +31,5 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       objections: objs.map((o) => ({ number: o.number, agent: o.agent, severity: o.severity, location: o.location, text: o.text })),
     })
   }
-  return NextResponse.json({ id: manuscript.id, title: manuscript.title, byline: manuscript.byline, section: manuscript.section, sourceName: manuscript.sourceName, createdAt: manuscript.createdAt, versions: out })
+  return NextResponse.json({ id: manuscript.id, title: manuscript.title, byline: manuscript.byline, section: claveDeSeccion(manuscript.section), sourceName: manuscript.sourceName, createdAt: manuscript.createdAt, versions: out })
 }

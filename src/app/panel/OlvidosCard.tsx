@@ -2,7 +2,7 @@ import Link from 'next/link'
 import clsx from 'clsx'
 import type { Objection } from '@/db/olvidos'
 import type { OlvidosMetrics } from '@/lib/olvidos/metrics'
-import { SECCIONES } from '@domains/olvidos/secciones'
+import { SECCIONES, getSection } from '@domains/olvidos/secciones'
 import { Codename } from '@/components/Codename'
 import { submitManuscript } from './actions'
 
@@ -52,7 +52,7 @@ export function OlvidosCard({ m }: { m: OlvidosMetrics }) {
             <li key={manuscript.id} className="flex flex-wrap items-center gap-x-3 border-t border-stone-100 py-1">
               <b>{manuscript.title}</b>
               {manuscript.byline && <span className="text-stone-500">{manuscript.byline}</span>}
-              <span>{SECCIONES.find((s) => s.key === manuscript.section)?.name ?? manuscript.section}</span>
+              <span>{getSection(manuscript.section)?.name ?? manuscript.section}</span>
               <span>
                 v{version.number} · {version.wordCount} palabras
               </span>

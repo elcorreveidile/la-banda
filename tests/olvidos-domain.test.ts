@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { olvidosDomain } from '@domains/olvidos/config'
 import { validateDomain } from '@domains/types'
-import { SECCIONES, countLines, countWords, getSection, measureAgainstSection } from '@domains/olvidos/secciones'
+import { SECCIONES, claveDeSeccion, countLines, countWords, getSection, measureAgainstSection } from '@domains/olvidos/secciones'
 import { HOJA_DE_ESTILO } from '@domains/olvidos/hojaDeEstilo'
 import { createEngine } from '@/engine/orchestrator'
 import { createMemoryStore } from './memoryStore'
@@ -78,5 +78,26 @@ describe('secciones', () => {
     expect(new Set(SECCIONES.map((s) => s.key)).size).toBe(SECCIONES.length)
     for (const s of SECCIONES) expect(s.maxWords != null || s.maxLines != null).toBe(true)
     expect(getSection('soneto500')?.maxLines).toBe(14)
+  })
+
+  it('«Palabras» es una sola sección (la web no separa narrativa y poesía)', () => {
+    expect(SECCIONES.some((s) => s.key.startsWith('palabras-'))).toBe(false)
+    expect(getSection('palabras')?.name).toBe('Palabras')
+    // Prosa: hasta 3.000 palabras, sin mínimo.
+    expect(measureAgainstSection('palabra '.repeat(100), 'palabras')).toMatchObject({ fits: true })
+    expect(measureAgainstSection('palabra '.repeat(3500), 'palabras')).toMatchObject({ fits: false })
+    // Poema corto: no falla por pocas palabras.
+    const poema = Array.from({ length: 14 }, (_, i) => `verso ${i + 1}`).join('\n')
+    expect(measureAgainstSection(poema, 'palabras')).toMatchObject({ fits: true, lines: 14 })
+  })
+
+  it('las claves antiguas siguen valiendo y se resuelven a «palabras»', () => {
+    expect(claveDeSeccion('palabras-narrativa')).toBe('palabras')
+    expect(claveDeSeccion('palabras-poesia')).toBe('palabras')
+    expect(claveDeSeccion('editorial')).toBe('editorial')
+    expect(claveDeSeccion('inexistente')).toBe('inexistente')
+    expect(getSection('palabras-narrativa')?.key).toBe('palabras')
+    // Un manuscrito guardado con la clave vieja se mide como «Palabras».
+    expect(measureAgainstSection('palabra '.repeat(100), 'palabras-narrativa')).toMatchObject({ fits: true })
   })
 })

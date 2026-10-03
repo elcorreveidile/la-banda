@@ -1,7 +1,7 @@
 ---
 title: "El rapero que nunca existió"
 byline: "Javier Benítez"
-section: palabras-narrativa
+section: palabras
 url: https://olvidosdegranada.es/index.php/2026/03/14/el-rapero-que-nunca-existio/
 published: 2026-03-14
 categories: "Palabras"
