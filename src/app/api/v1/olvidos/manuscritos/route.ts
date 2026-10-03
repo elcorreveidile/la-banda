@@ -4,7 +4,7 @@ import { apiUnauthorized } from '@/lib/apiAuth'
 import { engine } from '@/engine'
 import { kickTick, selfOrigin } from '@/engine/tick'
 import { getDomain } from '@domains/index'
-import { SECCIONES, getSection } from '@domains/olvidos/secciones'
+import { SECCIONES, claveDeSeccion, getSection } from '@domains/olvidos/secciones'
 import { createManuscript, listManuscripts, setVersionSession } from '@/lib/olvidos/manuscripts'
 
 export const dynamic = 'force-dynamic'
@@ -20,7 +20,7 @@ export async function GET(req: Request) {
       id: manuscript.id,
       title: manuscript.title,
       byline: manuscript.byline,
-      section: manuscript.section,
+      section: claveDeSeccion(manuscript.section),
       sourceName: manuscript.sourceName,
       createdAt: manuscript.createdAt,
       version: { id: version.id, number: version.number, wordCount: version.wordCount, sessionId: version.sessionId, decision: version.decision },

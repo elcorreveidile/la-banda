@@ -21,8 +21,7 @@ export interface SectionLimits {
 
 export const SECCIONES: SectionLimits[] = [
   { key: 'editorial', name: 'Editoriales', description: 'Opinión de la revista; firma «Editorial».', minWords: 350, maxWords: 900, notes: 'Una idea, una postura. Sin firma personal.' },
-  { key: 'palabras-narrativa', name: 'Palabras · narrativa', description: 'Relato, prosa de creación.', minWords: 500, maxWords: 3000, notes: 'Extensión de una entrega; si supera el máximo, proponer serie.' },
-  { key: 'palabras-poesia', name: 'Palabras · poesía', description: 'Poemas o series de poemas.', minWords: null, maxWords: null, minLines: 4, maxLines: 80, notes: 'Se mide en versos, no en palabras.' },
+  { key: 'palabras', name: 'Palabras', description: 'Narrativa y poesía: relato, prosa de creación, poemas o series de poemas.', minWords: null, maxWords: 3000, notes: 'En prosa, hasta 3.000 palabras por entrega; si supera el máximo, proponer serie. Los poemas se miden en versos (de 4 a 80), no en palabras. La web no separa narrativa y poesía: es una sola sección.' },
   { key: 'piezas-y-procesos', name: 'Piezas y Procesos', description: 'Procesos creativos, obras en desarrollo, crónica de trabajo.', minWords: 600, maxWords: 2500, notes: 'Puede llevar imágenes con pie y crédito.' },
   { key: 'soneto500', name: 'Soneto500', description: 'Sección especial de sonetos.', minWords: null, maxWords: null, minLines: 14, maxLines: 14, notes: 'Catorce versos; forma de soneto (dos cuartetos y dos tercetos, o variante reconocible).' },
   { key: 'ensayo', name: 'Ensayo (secciones de la impresa: Mitológicas, La fábrica de sueños…)', description: 'Ensayo largo con secciones numeradas, epígrafes y citas.', minWords: 1200, maxWords: 6500, notes: 'Por encima de 4.000 palabras, avisar: solo cabe como pieza central del número.' },
@@ -32,8 +31,25 @@ export const SECCIONES: SectionLimits[] = [
   { key: 'resena', name: 'Reseña / crónica breve', description: 'Reseña de libro, exposición, encuentro.', minWords: 400, maxWords: 1200, notes: 'Datos completos de la obra reseñada (título, autor, editorial, año).' },
 ]
 
+/**
+ * Claves que existieron antes y ya no son secciones: «Palabras» se partió en
+ * narrativa y poesía en la propuesta del 2026-09-12, pero la web de Olvidos tiene
+ * una sola sección «Palabras». Los manuscritos ya guardados con la clave vieja
+ * siguen valiendo.
+ */
+export const SECCIONES_ANTIGUAS: Record<string, string> = {
+  'palabras-narrativa': 'palabras',
+  'palabras-poesia': 'palabras',
+}
+
+/** La clave vigente de una sección (resuelve las antiguas; las desconocidas se devuelven tal cual). */
+export function claveDeSeccion(key: string): string {
+  return SECCIONES_ANTIGUAS[key] ?? key
+}
+
 export function getSection(key: string): SectionLimits | undefined {
-  return SECCIONES.find((s) => s.key === key)
+  const vigente = claveDeSeccion(key)
+  return SECCIONES.find((s) => s.key === vigente)
 }
 
 /** Cuenta palabras de un texto plano/Markdown (sin marcas). */

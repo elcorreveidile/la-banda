@@ -548,6 +548,15 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   público, del resto ≤ 4 versos con autor y título. **Checklist para Javier**: (1) en Neon de WordNext, abrir las dos webs a La Banda
   (`publish_banda`); (2) si Vercel de la-banda tiene `MARKETING_DESTINOS`, añadir `banda.wordnext.tech,javier.wordnext.tech`.
 
+- **2026-10-03, «Palabras» ya no se parte en narrativa y poesía**. Javier, al ver «Palabras · narrativa» en el informe de
+  «Antonio, lazarillo»: en Olvidos no se distingue entre palabras de poesía y de narrativa («no sé de dónde ha sacado eso»).
+  Salía de la propuesta de `SECCIONES` del 2026-09-12, que nunca se corrigió (el repo `olvidos` y su menú solo tienen
+  «Palabras»). Ahora hay **una sola sección `palabras`**: máximo 3.000 palabras, sin mínimo (un poema no puede fallar por
+  corto); los poemas se miden en versos a mano (4-80) y así lo dice la nota. **Alias**: `SECCIONES_ANTIGUAS` /
+  `claveDeSeccion` resuelven `palabras-narrativa` y `palabras-poesia` a `palabras`, así que los manuscritos ya guardados
+  (p. ej. «Antonio, lazarillo») se miden y se muestran como «Palabras» sin tocar la BD; la API v1 devuelve la clave vigente.
+  También se corrige la hoja de estilo («Palabras (narrativa y poesía)» → «Palabras») y el texto de prueba. Sin SQL.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
