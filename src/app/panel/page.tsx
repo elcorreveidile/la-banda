@@ -23,6 +23,8 @@ import { firewallMetrics, type FirewallMetrics } from '@/lib/firewall/metrics'
 import { FirewallCard } from './FirewallCard'
 import { marketingMetrics, type MarketingMetrics } from '@/lib/marketing/metrics'
 import { MarketingCard } from './MarketingCard'
+import { politicaMetrics, type PoliticaMetrics } from '@/lib/politica/metrics'
+import { PoliticaCard } from './PoliticaCard'
 import { filtroDeQuery } from '@/lib/marketing/vista'
 
 export const dynamic = 'force-dynamic'
@@ -51,6 +53,7 @@ const TABS = [
   { key: 'peticiones', label: 'Peticiones', domain: 'peticiones', activa: 'bg-violet-600 text-white shadow-sm', punto: 'bg-violet-500', chip: 'bg-violet-50 text-violet-800', borde: 'border-l-2 border-violet-500 bg-violet-50' },
   { key: 'sitios', label: 'Sitios', domain: 'sitios', activa: 'bg-orange-600 text-white shadow-sm', punto: 'bg-orange-500', chip: 'bg-orange-50 text-orange-800', borde: 'border-l-2 border-orange-500 bg-orange-50' },
   { key: 'marketing', label: 'Marketing', domain: 'marketing', activa: 'bg-fuchsia-600 text-white shadow-sm', punto: 'bg-fuchsia-500', chip: 'bg-fuchsia-50 text-fuchsia-800', borde: 'border-l-2 border-fuchsia-500 bg-fuchsia-50' },
+  { key: 'politica', label: 'Política', domain: 'politica', activa: 'bg-teal-600 text-white shadow-sm', punto: 'bg-teal-500', chip: 'bg-teal-50 text-teal-800', borde: 'border-l-2 border-teal-500 bg-teal-50' },
   { key: 'firewall', label: 'Firewall', domain: 'firewall', activa: 'bg-rose-600 text-white shadow-sm', punto: 'bg-rose-500', chip: 'bg-rose-50 text-rose-800', borde: 'border-l-2 border-rose-500 bg-rose-50' },
 ] as const
 type TabKey = (typeof TABS)[number]['key']
@@ -124,6 +127,14 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
       marketing = await marketingMetrics({ archivados: filtroMarketing.arch })
     } catch (err) {
       console.error('[la-banda] marketingMetrics', err)
+    }
+  }
+  let politica: PoliticaMetrics | null = null
+  if (activa === 'politica') {
+    try {
+      politica = await politicaMetrics()
+    } catch (err) {
+      console.error('[la-banda] politicaMetrics', err)
     }
   }
   const objections = activa === 'olvidos' && elegida?.domain === 'olvidos' ? await objectionsForSession(elegida.id).catch(() => []) : []
@@ -229,6 +240,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
           {activa === 'sitios' && sitios && <SitiosCard m={sitios} />}
 
           {activa === 'firewall' && firewall && <FirewallCard m={firewall} />}
+          {activa === 'politica' && politica && <PoliticaCard m={politica} error={error} aviso={aviso} />}
           {activa === 'marketing' && marketing && <MarketingCard m={marketing} error={error} aviso={aviso} filtro={filtroMarketing} />}
 
           {view ? (

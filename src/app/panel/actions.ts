@@ -19,6 +19,10 @@ import { cicloMarketing, decidirLote, decidirTema, redactarTema, type Decision }
 import { filtroDeQuery, queryVista } from '@/lib/marketing/vista'
 import { depsMarketing } from '@/lib/marketing/deps'
 import { marketingStoreDb } from '@/lib/marketing/store'
+import { abrirBulo, abrirExtra, abrirVigiaManual, cicloPolitica, reescribir } from '@/lib/politica/ciclo'
+import { depsPolitica } from '@/lib/politica/deps'
+import { politicaStoreDb } from '@/lib/politica/store'
+import { diaMadrid, EDICIONES, type EdicionId } from '@/lib/politica/calendario'
 
 /** Lanza un ciclo de trading a mano (mismo camino que el cron) y arranca la cadena de ticks. */
 export async function startTradingCycle() {
@@ -286,4 +290,72 @@ export async function lanzarMarketing(formData: FormData) {
   const abierta = r.planes[0]
   if (abierta) redirect(volverMarketing(formData, { s: abierta, aviso: `${r.planes.length} plan(es) abierto(s)${destino === '*' ? ' (todas las webs)' : ` para ${destino}`}` }))
   redirect(volverMarketing(formData, { error: 'ya hay un plan en curso o faltan las claves de los modelos' }))
+}
+
+// ─── Política (Con-textos 29N) ─────────────────────────────────────────────────
+
+const volverPolitica = (extra: Record<string, string> = {}) => `/panel?${new URLSearchParams({ tab: 'politica', ...extra })}`
+
+async function origenPolitica() {
+  const h = await headers()
+  return process.env.APP_URL?.trim() || `${h.get('x-forwarded-proto') ?? 'https'}://${h.get('x-forwarded-host') ?? h.get('host')}`
+}
+
+async function soloUsuario() {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+}
+
+/** Política: abrir AHORA la edición de hoy que elijas (sin esperar al cron). */
+export async function abrirEdicionPolitica(formData: FormData) {
+  await soloUsuario()
+  const id = String(formData.get('edicion') ?? '') as EdicionId
+  if (!EDICIONES.some((e) => e.id === id)) redirect(volverPolitica({ error: 'elige una edición' }))
+  const r = await cicloPolitica(depsPolitica(await origenPolitica()), { forzarEdicion: id })
+  const hecho = r.ediciones.find((e) => e.edicion === id)
+  if (hecho?.resultado === 'abierta') redirect(volverPolitica({ aviso: `edición de la ${EDICIONES.find((e) => e.id === id)!.label.toLowerCase()} abierta` }))
+  redirect(volverPolitica({ error: hecho?.resultado === 'sin-modelos' ? 'faltan las claves de los modelos' : 'esa edición ya está abierta' }))
+}
+
+/** Política: un extra (madrugada o algo que ocurre) con la instrucción de Javier. */
+export async function abrirExtraPolitica(formData: FormData) {
+  await soloUsuario()
+  const encargo = String(formData.get('encargo') ?? '').trim()
+  const edicion = formData.get('edicion') === 'madrugada' ? 'madrugada' : 'extra'
+  if (encargo.length < 10) redirect(volverPolitica({ error: 'cuenta en una o dos frases qué ha pasado o qué hay que cubrir' }))
+  const r = await abrirExtra({ edicion, encargo }, depsPolitica(await origenPolitica()))
+  redirect(volverPolitica(r.tipo === 'abierta' ? { s: r.sessionId, aviso: 'extra abierto' } : { error: r.tipo === 'sin-modelos' ? 'faltan las claves de los modelos' : 'ya existe' }))
+}
+
+/** Política: una ronda del vigía ahora mismo (sin esperar a la hora en punto ni a POLITICA_VIGIA). */
+export async function abrirVigiaPolitica() {
+  await soloUsuario()
+  const now = new Date()
+  const dia = diaMadrid(now)
+  // Clave propia para no chocar con la ronda horaria: día + hora + minuto.
+  const r = await abrirVigiaManual(dia, now, depsPolitica(await origenPolitica()))
+  redirect(volverPolitica(r.tipo === 'abierta' ? { s: r.sessionId, aviso: 'ronda del vigía abierta' } : { error: r.tipo === 'sin-modelos' ? 'faltan las claves de los modelos' : 'ya hay una ronda abierta' }))
+}
+
+/** Política: comprobar un bulo (la afirmación tal cual circula). */
+export async function abrirBuloPolitica(formData: FormData) {
+  await soloUsuario()
+  const afirmacion = String(formData.get('afirmacion') ?? '').trim()
+  if (afirmacion.length < 10) redirect(volverPolitica({ error: 'escribe la afirmación tal cual circula (mínimo 10 caracteres)' }))
+  const r = await abrirBulo(afirmacion, depsPolitica(await origenPolitica()))
+  redirect(volverPolitica(r.tipo === 'abierta' ? { s: r.sessionId, aviso: 'comprobación abierta' } : { error: r.tipo === 'sin-modelos' ? 'faltan las claves de los modelos' : 'ya existe' }))
+}
+
+export async function reescribirPiezaPolitica(formData: FormData) {
+  await soloUsuario()
+  const r = await reescribir(String(formData.get('id') ?? ''), String(formData.get('nota') ?? '') || null, depsPolitica(await origenPolitica()))
+  redirect(volverPolitica(r.ok && r.sessionId ? { s: r.sessionId, aviso: 'reescritura abierta' } : { error: r.error ?? 'error' }))
+}
+
+export async function archivarPiezaPolitica(formData: FormData) {
+  await soloUsuario()
+  const id = String(formData.get('id') ?? '')
+  const p = await politicaStoreDb.pieza(id)
+  if (p && ['rechazada', 'vetada', 'fallida', 'publicada'].includes(p.estado)) await politicaStoreDb.actualizar(id, { estado: 'archivada' })
+  redirect(volverPolitica())
 }

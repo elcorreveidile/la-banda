@@ -8,8 +8,9 @@ import * as sitios from './sitios'
 import * as firewall from './firewall'
 import * as negociacion from './negociacion'
 import * as marketing from './marketing'
+import * as politica from './politica'
 
-const schema = { ...core, ...trading, ...olvidos, ...peticiones, ...sitios, ...firewall, ...negociacion, ...marketing }
+const schema = { ...core, ...trading, ...olvidos, ...peticiones, ...sitios, ...firewall, ...negociacion, ...marketing, ...politica }
 
 /**
  * Conexión a Neon por HTTP: sin transacciones (cada consulta va sola).
