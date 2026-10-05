@@ -53,6 +53,7 @@ export const LINEA_EDITORIAL = {
     'Un hecho se da por verificado con la fuente primaria o con al menos dos fuentes independientes entre sí (no dos medios que copian la misma agencia). Si no hay ninguna de las dos, NO entra como hecho: o se descarta o se cuenta como «circula, sin confirmar» con ese veredicto.',
     'Nunca se afirma nada de personas privadas. De personajes públicos, solo lo documentado y relacionado con su cargo.',
     'Sin recomendaciones de voto, sin pronósticos de escaños ni de resultados, sin proyecciones propias.',
+    'Nombres de partidos: se usa el que ellos mismos usan hoy. La candidatura que en 2023 concurrió como Sumar se presenta ahora como Frente Amplio: se escribe «Frente Amplio (Sumar)» la primera vez y «Frente Amplio» después; al hablar de las elecciones de 2023 se dice Sumar. Podemos es un partido distinto (en 2023 iba dentro de Sumar).',
     'Encuestas: solo de empresas con ficha técnica (quién la encarga, trabajo de campo, muestra, margen), con su fecha, y NUNCA como pronóstico. Durante la veda (del 24-nov a las 00:00 al cierre de urnas del 29-nov) no se citan encuestas ni sondeos, ni los de esta web: se explica el contexto sin cifras de sondeos.',
     'El sondeo ciudadano de esta web NO es una encuesta científica: no se usa para afirmar nada sobre la opinión de los españoles.',
     'Imágenes, audios y capturas sin origen comprobable son «sin pruebas»: se explica qué se sabe de su procedencia y qué no.',
@@ -68,7 +69,7 @@ export const LINEA_EDITORIAL = {
  */
 export const FUENTES_VIGIA = [
   { nivel: 1, tipo: 'oficial', nombres: ['BOE', 'Congreso de los Diputados', 'Senado', 'La Moncloa', 'Junta Electoral Central', 'Ministerio del Interior (resultados)', 'INE', 'CIS (barómetros y metodología)', 'Junta de Andalucía y BOJA'] },
-  { nivel: 2, tipo: 'partidos (solo lo que dicen de sí mismos)', nombres: ['PP', 'PSOE', 'Vox', 'Sumar / Frente Amplio', 'Podemos', 'ERC', 'Junts', 'PNV', 'EH Bildu', 'BNG', 'Coalición Canaria', 'UPN', 'Adelante Andalucía', 'SALF'] },
+  { nivel: 2, tipo: 'partidos (solo lo que dicen de sí mismos)', nombres: ['PP', 'PSOE', 'Vox', 'Frente Amplio (Sumar)', 'Podemos', 'ERC', 'Junts', 'PNV', 'EH Bildu', 'BNG', 'Coalición Canaria', 'UPN', 'Adelante Andalucía', 'SALF'] },
   { nivel: 3, tipo: 'agencias, prensa y verificadores', nombres: ['EFE', 'Europa Press', 'RTVE', 'El País', 'El Mundo', 'ABC', 'La Vanguardia', 'elDiario.es', 'El Confidencial', 'Público', 'Deia', 'El Español', 'Newtral', 'Maldita'] },
   { nivel: 3, tipo: 'encuestas (siempre con ficha técnica y fecha)', nombres: ['CIS', '40dB', 'GAD3', 'Sigma Dos', 'SocioMétrica', 'NC Report', 'DYM', 'GESOP', 'Simple Lógica', 'Opina360', 'Key Data (Público)'] },
   { nivel: 4, tipo: 'pseudomedios y redes: SOLO rumor a comprobar, nunca fuente de un hecho', nombres: ['cuentas de partidos y dirigentes en X y Telegram', 'medios de línea editorial extrema', 'cadenas de mensajes virales'] },
