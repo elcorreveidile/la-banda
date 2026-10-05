@@ -4,7 +4,7 @@ import { politicaDomain } from '@domains/politica/config'
 import { validateDomain } from '@domains/types'
 import { madridAUtc } from '@/lib/marketing/calendario'
 import { edicionesDebidas, publicaEn, diaMadrid, abreEn, vigiaDebida, horaDeVigia } from '@/lib/politica/calendario'
-import { rangoEdiciones, enVeda } from '@/lib/politica/config'
+import { rangoEdiciones, enVeda, LINEA_EDITORIAL, FUENTES_VIGIA } from '@/lib/politica/config'
 import { contarPalabras, esFuentePrimaria, piezaDelDossier, problemasMarkdown, validarPieza, validarVerificacion } from '@/lib/politica/pieza'
 import { mencionaCifrasDeSondeos } from '@/lib/politica/veda'
 import { avisoFirmado, enviarAlSondeo, enviarVerificacion, traerEnvios, urlSondeo } from '@/lib/politica/cliente'
@@ -52,6 +52,16 @@ describe('dominio política', () => {
       expect(ag.systemPrompt).toContain('saleEnVeda')
     }
     expect(politicaDomain.agents.find((x) => x.codename === 'Palermo')!.systemPrompt).toContain('mismo rasero')
+  })
+})
+
+describe('nombres de partidos', () => {
+  it('Sumar se llama Frente Amplio (Sumar) y Podemos va aparte', () => {
+    expect(LINEA_EDITORIAL.principios.join(' ')).toContain('Frente Amplio (Sumar)')
+    const partidos = FUENTES_VIGIA.find((f) => f.nivel === 2)!.nombres
+    expect(partidos).toContain('Frente Amplio (Sumar)')
+    expect(partidos).toContain('Podemos')
+    expect(partidos).not.toContain('Sumar / Frente Amplio')
   })
 })
 
