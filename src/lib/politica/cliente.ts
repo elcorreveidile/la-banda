@@ -21,7 +21,7 @@ export function urlSondeo(env: Env = process.env): string | null {
   if (!v) return null
   try {
     const u = new URL(v)
-    return u.protocol === 'https:' || u.hostname === 'localhost' ? u.origin : null
+    return u.protocol === 'https:' || u.hostname === 'localhost' ? (u.origin + u.pathname).replace(/\/+$/, '') : null
   } catch {
     return null
   }
@@ -56,10 +56,12 @@ async function llamar<T>(metodo: 'GET' | 'POST', ruta: string, cuerpo: unknown, 
   if (!base || !secreto) return { ok: false, error: 'sondeo no configurado (POLITICA_URL y POLITICA_SECRET)' }
   const raw = cuerpo === undefined ? '' : JSON.stringify(cuerpo)
   const ts = String(Math.floor((deps.now ?? Date.now)() / 1000))
-  const pathname = new URL(ruta, base).pathname
+  // La URL del sondeo puede llevar prefijo (https://olvidos.es/contexto): se conserva, y la firma cubre la ruta completa.
+  const destino = new URL(base.replace(/\/+$/, '') + ruta)
+  const pathname = destino.pathname
   try {
     // fetchLimpio: el sondeo también está en Vercel y su borde da 508 si llega la traza de la cadena de ticks.
-    const res = await (deps.pedir ?? fetchLimpio)(new URL(ruta, base).toString(), {
+    const res = await (deps.pedir ?? fetchLimpio)(destino.toString(), {
       method: metodo,
       headers: { 'content-type': 'application/json', accept: 'application/json', 'x-banda-timestamp': ts, 'x-banda-signature': firmaPlataforma(secreto, ts, metodo, pathname, raw) },
       body: raw || undefined,
