@@ -19,10 +19,10 @@ import { cicloMarketing, decidirLote, decidirTema, redactarTema, type Decision }
 import { filtroDeQuery, queryVista } from '@/lib/marketing/vista'
 import { depsMarketing } from '@/lib/marketing/deps'
 import { marketingStoreDb } from '@/lib/marketing/store'
-import { abrirBulo, abrirExtra, cicloPolitica, reescribir } from '@/lib/politica/ciclo'
+import { abrirBulo, abrirExtra, abrirVigiaManual, cicloPolitica, reescribir } from '@/lib/politica/ciclo'
 import { depsPolitica } from '@/lib/politica/deps'
 import { politicaStoreDb } from '@/lib/politica/store'
-import { EDICIONES, type EdicionId } from '@/lib/politica/calendario'
+import { diaMadrid, EDICIONES, type EdicionId } from '@/lib/politica/calendario'
 
 /** Lanza un ciclo de trading a mano (mismo camino que el cron) y arranca la cadena de ticks. */
 export async function startTradingCycle() {
@@ -325,6 +325,16 @@ export async function abrirExtraPolitica(formData: FormData) {
   if (encargo.length < 10) redirect(volverPolitica({ error: 'cuenta en una o dos frases qué ha pasado o qué hay que cubrir' }))
   const r = await abrirExtra({ edicion, encargo }, depsPolitica(await origenPolitica()))
   redirect(volverPolitica(r.tipo === 'abierta' ? { s: r.sessionId, aviso: 'extra abierto' } : { error: r.tipo === 'sin-modelos' ? 'faltan las claves de los modelos' : 'ya existe' }))
+}
+
+/** Política: una ronda del vigía ahora mismo (sin esperar a la hora en punto ni a POLITICA_VIGIA). */
+export async function abrirVigiaPolitica() {
+  await soloUsuario()
+  const now = new Date()
+  const dia = diaMadrid(now)
+  // Clave propia para no chocar con la ronda horaria: día + hora + minuto.
+  const r = await abrirVigiaManual(dia, now, depsPolitica(await origenPolitica()))
+  redirect(volverPolitica(r.tipo === 'abierta' ? { s: r.sessionId, aviso: 'ronda del vigía abierta' } : { error: r.tipo === 'sin-modelos' ? 'faltan las claves de los modelos' : 'ya hay una ronda abierta' }))
 }
 
 /** Política: comprobar un bulo (la afirmación tal cual circula). */

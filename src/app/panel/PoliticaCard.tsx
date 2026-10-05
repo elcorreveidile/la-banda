@@ -2,7 +2,7 @@ import clsx from 'clsx'
 import type { PoliticaMetrics } from '@/lib/politica/metrics'
 import type { EstadoPoliticaPieza } from '@/db/politica'
 import { etiquetaEdicion } from '@/lib/politica/calendario'
-import { abrirBuloPolitica, abrirEdicionPolitica, abrirExtraPolitica, archivarPiezaPolitica, reescribirPiezaPolitica } from './actions'
+import { abrirBuloPolitica, abrirEdicionPolitica, abrirExtraPolitica, abrirVigiaPolitica, archivarPiezaPolitica, reescribirPiezaPolitica } from './actions'
 import { BotonTema } from './BotonTema'
 
 const ESTADO_STYLE: Record<EstadoPoliticaPieza, string> = {
@@ -19,7 +19,7 @@ const ESTADO_TEXTO: Record<EstadoPoliticaPieza, string> = {
   en_curso: 'en curso', enviada: 'por revisar en el sondeo', aprobada: 'aprobada', publicada: 'publicada',
   rechazada: 'rechazada', vetada: 'vetada por Palermo', fallida: 'fallida', archivada: 'archivada',
 }
-const TIPO_TEXTO = { edicion: 'Edición', extra: 'Extra', bulo: 'Bulo', envio: 'Envío de visitante' } as const
+const TIPO_TEXTO = { edicion: 'Edición', extra: 'Extra', bulo: 'Bulo', envio: 'Envío de visitante', vigia: 'Vigía' } as const
 
 const fecha = (d: Date | null) => (d ? d.toLocaleString('es-ES', { timeZone: 'Europe/Madrid', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—')
 const INPUT = 'w-full rounded border border-stone-300 px-2 py-1.5 text-sm'
@@ -75,6 +75,11 @@ export function PoliticaCard({ m, error, aviso }: { m: PoliticaMetrics; error?: 
           <h3 className="text-sm font-semibold">Comprobar un bulo</h3>
           <textarea name="afirmacion" rows={3} required minLength={10} maxLength={2000} placeholder="La afirmación tal cual circula (y dónde la has visto, si lo sabes)." className={INPUT} />
           <button className={BTN}>Comprobar</button>
+        </form>
+        <form action={abrirVigiaPolitica} className="flex flex-col gap-2 rounded-lg border border-stone-200 p-3 sm:col-span-2">
+          <h3 className="text-sm font-semibold">Vigía de noticias</h3>
+          <p className="text-xs text-stone-500">Cada hora (07:00-23:59) y dos veces de madrugada revisa las fuentes aprobadas; si hay novedad prepara un extra pendiente, si no, no hace nada. Se activa con POLITICA_VIGIA=1 cuando apruebes la lista de fuentes. Aquí puedes lanzar una ronda ahora.</p>
+          <button className={BTN}>Revisar las fuentes ahora</button>
         </form>
       </div>
 

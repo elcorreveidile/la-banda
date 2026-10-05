@@ -128,7 +128,7 @@ export function validarPieza(v: unknown, o: OpcionesPieza): { ok: true; pieza: P
 
   const ver = validarVerificacion(e.verificacion)
   if (!ver.ok) errores.push(...ver.errores.map((x) => `verificacion: ${x}`))
-  else if ((o.tipo === 'edicion' || o.tipo === 'extra') && (ver.verificacion.veredicto === 'falso' || ver.verificacion.veredicto === 'enganoso')) {
+  else if ((o.tipo === 'edicion' || o.tipo === 'extra' || o.tipo === 'vigia') && (ver.verificacion.veredicto === 'falso' || ver.verificacion.veredicto === 'enganoso')) {
     errores.push('verificacion: un parte o un extra cuenta hechos verificados; lo falso o engañoso va en una pieza de tipo bulo (o como desmentido dentro de un parte verificado)')
   }
 

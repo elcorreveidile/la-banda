@@ -60,3 +60,18 @@ export const LINEA_EDITORIAL = {
   cierre:
     'Cierra con una línea breve «Qué vigilar» (lo que puede cambiar la historia en las próximas horas) cuando proceda, sin adivinar el resultado. Sin llamadas a votar.',
 }
+
+/**
+ * Vigía horario: PROPUESTA de fuentes para que Javier la apruebe. Mientras `POLITICA_VIGIA` no valga 1 el
+ * cron no abre rondas. Por niveles: 1 = hechos oficiales; 2 = lo que dice cada partido de sí mismo; 3 = contraste
+ * (agencias, prensa, encuestas con ficha técnica); 4 = pseudomedios y redes, SOLO como rumor a comprobar.
+ */
+export const FUENTES_VIGIA = [
+  { nivel: 1, tipo: 'oficial', nombres: ['BOE', 'Congreso de los Diputados', 'Senado', 'La Moncloa', 'Junta Electoral Central', 'Ministerio del Interior (resultados)', 'INE', 'CIS (barómetros y metodología)', 'Junta de Andalucía y BOJA'] },
+  { nivel: 2, tipo: 'partidos (solo lo que dicen de sí mismos)', nombres: ['PP', 'PSOE', 'Vox', 'Sumar / Frente Amplio', 'Podemos', 'ERC', 'Junts', 'PNV', 'EH Bildu', 'BNG', 'Coalición Canaria', 'UPN', 'Adelante Andalucía', 'SALF'] },
+  { nivel: 3, tipo: 'agencias, prensa y verificadores', nombres: ['EFE', 'Europa Press', 'RTVE', 'El País', 'El Mundo', 'ABC', 'La Vanguardia', 'elDiario.es', 'El Confidencial', 'Público', 'Deia', 'El Español', 'Newtral', 'Maldita'] },
+  { nivel: 3, tipo: 'encuestas (siempre con ficha técnica y fecha)', nombres: ['CIS', '40dB', 'GAD3', 'Sigma Dos', 'SocioMétrica', 'NC Report', 'DYM', 'GESOP', 'Simple Lógica', 'Opina360', 'Key Data (Público)'] },
+  { nivel: 4, tipo: 'pseudomedios y redes: SOLO rumor a comprobar, nunca fuente de un hecho', nombres: ['cuentas de partidos y dirigentes en X y Telegram', 'medios de línea editorial extrema', 'cadenas de mensajes virales'] },
+] as const
+
+export const vigiaActivo = (env: Record<string, string | undefined> = process.env): boolean => env.POLITICA_VIGIA?.trim() === '1'

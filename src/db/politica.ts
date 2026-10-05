@@ -14,8 +14,9 @@ import { pgTable, text, timestamp, integer, index, uniqueIndex } from 'drizzle-o
  * - extra: encargo manual (madrugada, algo que ocurre).
  * - bulo: comprobación de una afirmación que circula.
  * - envio: verificación de una noticia enviada por un visitante registrado (ya existe en el sondeo).
+ * - vigia: revisión horaria de las fuentes aprobadas; si hay novedad acaba como un extra pendiente, si no, se archiva.
  */
-export type TipoPoliticaPieza = 'edicion' | 'extra' | 'bulo' | 'envio'
+export type TipoPoliticaPieza = 'edicion' | 'extra' | 'bulo' | 'envio' | 'vigia'
 
 /**
  * Estados: en_curso (mesa trabajando) → enviada (pendiente de revisión en el sondeo) → aprobada

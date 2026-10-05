@@ -16,8 +16,8 @@ import type { EstadoPoliticaPieza, PiezaPolitica, TipoPoliticaPieza } from '@/db
 import { leerVeredicto } from '@/lib/marketing/articulo'
 import { resultadoDeCierre } from '@/lib/marketing/informe'
 import type { VistaPieza } from '@/lib/marketing/wordnext'
-import { diaMadrid, edicionesDebidas, publicaEn, type EdicionId } from './calendario'
-import { rangoEdiciones, modelosDisponibles } from './config'
+import { diaMadrid, edicionesDebidas, publicaEn, vigiaDebida, type EdicionId } from './calendario'
+import { rangoEdiciones, modelosDisponibles, vigiaActivo } from './config'
 import {
   enviarAlSondeo,
   enviarVerificacion,
@@ -31,7 +31,7 @@ import { ultimoDelDossier, validarPieza, validarVerificacion, type Verificacion 
 import type { PoliticaStore } from './store'
 
 export type TipoSesion = TipoSesionPolitica
-type TipoSesionPolitica = 'edicion' | 'extra' | 'bulo' | 'envio'
+type TipoSesionPolitica = 'edicion' | 'extra' | 'bulo' | 'envio' | 'vigia'
 
 export interface DepsPolitica {
   store: PoliticaStore
@@ -80,6 +80,38 @@ export function abrirExtra(input: { edicion: 'madrugada' | 'extra'; encargo: str
   const dia = diaMadrid(now)
   return abrir(
     { tipo: 'extra', edicion: input.edicion, dia, externalRef: `29n:${dia}:${input.edicion}:${corto(nuevoId(deps))}`, encargo: input.encargo.trim().slice(0, 2000), programadoPara: null },
+    deps,
+  )
+}
+
+/** Una ronda del vigía: revisa las fuentes aprobadas desde la ronda anterior. Sin novedad, se archiva sola. */
+export function abrirVigia(dia: string, hora: number, deps: DepsPolitica) {
+  const hh = String(hora).padStart(2, '0')
+  return abrir(
+    {
+      tipo: 'vigia',
+      edicion: 'extra',
+      dia,
+      externalRef: `29n:vigia:${dia}:${hh}`,
+      encargo: `Ronda de vigilancia de las ${hh}:00 (hora de Madrid) del ${dia}: busca en las fuentes aprobadas lo que haya cambiado desde la ronda anterior.`,
+      programadoPara: null,
+    },
+    deps,
+  )
+}
+
+/** Ronda del vigía lanzada a mano desde el panel: clave propia (día, hora y minuto) para no chocar con la horaria. */
+export function abrirVigiaManual(dia: string, now: Date, deps: DepsPolitica) {
+  const hhmm = now.toISOString().slice(11, 16).replace(':', '')
+  return abrir(
+    {
+      tipo: 'vigia',
+      edicion: 'extra',
+      dia,
+      externalRef: `29n:vigia:${dia}:m${hhmm}`,
+      encargo: `Ronda de vigilancia lanzada a mano por Javier el ${dia}: busca en las fuentes aprobadas lo que haya cambiado en las últimas horas.`,
+      programadoPara: null,
+    },
     deps,
   )
 }
@@ -228,6 +260,11 @@ export async function finalizarSesion(sessionId: string, deps: Pick<DepsPolitica
   const s = await deps.leerSesion(sessionId)
   if (!s || s.status === 'open') return null
   const cierre = resultadoDeCierre(s.finalReport)
+  // Una ronda del vigía sin novedad no es un fallo: se archiva con su motivo y no ensucia el panel.
+  if (p.tipo === 'vigia' && s.status !== 'failed' && s.status !== 'vetoed' && cierre.resultado === 'sin_novedad') {
+    await deps.store.actualizar(p.id, { estado: 'archivada', motivo: (cierre.motivo || 'sin novedad en las fuentes').slice(0, 1000) })
+    return 'archivada'
+  }
   const estado: EstadoPoliticaPieza = s.status === 'vetoed' || cierre.resultado === 'vetado' ? 'vetada' : 'fallida'
   const motivo = (cierre.motivo || (s.status === 'failed' ? 'la mesa falló (proveedor o tiempo agotado)' : 'la mesa terminó sin enviar la pieza')).slice(0, 1000)
   await deps.store.actualizar(p.id, { estado, motivo })
@@ -266,6 +303,7 @@ export async function aplicarAviso(vista: VistaPieza, deps: Pick<DepsPolitica, '
 
 export interface ResultadoCiclo {
   ediciones: { dia: string; edicion: string; resultado: string }[]
+  vigia: { hora: number; resultado: string } | null
   envios: { abiertos: number; error?: string }
   sondeoConfigurado: boolean
 }
@@ -292,6 +330,22 @@ export async function cicloPolitica(deps: DepsPolitica, opts: { forzarEdicion?: 
     }
   }
 
+  // Vigía horario: solo con POLITICA_VIGIA=1 (Javier aprueba antes la lista de fuentes).
+  let vigia: ResultadoCiclo['vigia'] = null
+  if (vigiaActivo(deps.env)) {
+    const ocupadasVigia = new Set(existentes.filter((p) => p.tipo === 'vigia').map((p) => p.externalRef.replace(/^29n:vigia:/, '').replace(/:0?(\d+)$/, ':$1')))
+    const v = vigiaDebida(now, ocupadasVigia, rangoEdiciones(deps.env))
+    if (v) {
+      try {
+        const r = await abrirVigia(v.dia, v.hora, deps)
+        vigia = { hora: v.hora, resultado: r.tipo }
+      } catch (err) {
+        console.error('[la-banda] politica abrirVigia', v.dia, v.hora, err)
+        vigia = { hora: v.hora, resultado: 'error' }
+      }
+    }
+  }
+
   const envios: ResultadoCiclo['envios'] = { abiertos: 0 }
   const traer = deps.envios ?? (() => traerEnvios({ env: deps.env }))
   const lista = await traer()
@@ -308,5 +362,5 @@ export async function cicloPolitica(deps: DepsPolitica, opts: { forzarEdicion?: 
       }
     }
   }
-  return { ediciones, envios, sondeoConfigurado: !(!lista.ok && lista.error.startsWith('sondeo no configurado')) }
+  return { ediciones, vigia, envios, sondeoConfigurado: !(!lista.ok && lista.error.startsWith('sondeo no configurado')) }
 }

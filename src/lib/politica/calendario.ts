@@ -53,3 +53,24 @@ export function edicionesDebidas(now: Date, ocupadas: Set<string>, rango: { desd
     return now >= abre && now.getTime() < publica.getTime() + GRACIA_MS && !ocupadas.has(`${dia}:${e.id}`)
   }).map((e) => ({ dia, edicion: e.id, programadoPara: publicaEn(dia, e.id) }))
 }
+
+/**
+ * Vigía horario (hora de Madrid): de 07:00 a 23:59 cada hora y de madrugada solo a las 02:00 y las 05:00.
+ * El cron corre al minuto 35, así que la «hora» de cada ronda es la hora en punto en que cae.
+ */
+const HORAS_MADRUGADA = new Set([2, 5])
+export const horaDeVigia = (h: number): boolean => h >= 7 || HORAS_MADRUGADA.has(h)
+
+export interface VigiaDebida {
+  dia: string
+  hora: number
+}
+
+/** La ronda de esta hora, si toca y no está ya abierta (`ocupadas` = claves `día:hora`). */
+export function vigiaDebida(now: Date, ocupadas: Set<string>, rango: { desde: string; hasta: string }): VigiaDebida | null {
+  const dia = diaMadrid(now)
+  if (dia < rango.desde || dia > rango.hasta) return null
+  const hora = partesMadrid(now).h
+  if (!horaDeVigia(hora) || ocupadas.has(`${dia}:${hora}`)) return null
+  return { dia, hora }
+}

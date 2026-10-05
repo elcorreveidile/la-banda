@@ -585,6 +585,17 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
     `BANDA_CALLBACK_URL=https://<la-banda>/api/v1/politica/publicaciones`, `BANDA_API_KEY` = `LA_BANDA_API_KEY`; (4) abrir el sondeo
     solo cuando la junta de la asociación apruebe.
 
+- **2026-10-05, política: vigía horario (v0.21.0)**. Javier: «previsiones cada hora; tú propones la lista de fuentes y yo apruebo».
+  Nuevo tipo de sesión **`vigia`** (sin SQL: `tipo` y `estado` ya eran texto): el cron `/api/cron/politica` abre una ronda por hora
+  (07:00-23:59 Madrid; de madrugada solo a las 02:00 y las 05:00; cerrojo `29n:vigia:<día>:<hora>`) **solo con `POLITICA_VIGIA=1`**, que se
+  enciende cuando Javier apruebe `FUENTES_VIGIA` (`src/lib/politica/config.ts`, por niveles: oficiales, partidos, agencias/prensa/verificadores,
+  encuestas con ficha, y redes/pseudomedios SOLO como rumor). Tokio decide qué buscar, Denver busca solo en esas fuentes, y Lisboa añade
+  `vigia.hayNovedad`: sin novedad pasa directo al Profesor (nueva transición `Lisboa → Profesor`), que cierra con `sin_novedad` y la ronda se
+  **archiva sola** (`finalizarSesion`; un fallo del proveedor NO se disfraza de «sin novedad»). Con novedad sigue como un **extra** (Estocolmo →
+  Río → Palermo → Helsinki) con las mismas reglas duras, veda incluida, y siempre pendiente de aprobación humana en el sondeo. Panel: botón
+  «Revisar las fuentes ahora» (`abrirVigiaManual`). **Pendiente**: el «tablón de hechos» (candidaturas, plazos, quién lidera cada lista) y que un
+  rumor detectado abra solo una sesión `bulo`; hoy el rumor va como «circula, sin confirmar» dentro del extra.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&

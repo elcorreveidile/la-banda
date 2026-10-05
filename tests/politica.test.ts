@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { politicaDomain } from '@domains/politica/config'
 import { validateDomain } from '@domains/types'
 import { madridAUtc } from '@/lib/marketing/calendario'
-import { edicionesDebidas, publicaEn, diaMadrid, abreEn } from '@/lib/politica/calendario'
+import { edicionesDebidas, publicaEn, diaMadrid, abreEn, vigiaDebida, horaDeVigia } from '@/lib/politica/calendario'
 import { rangoEdiciones, enVeda } from '@/lib/politica/config'
 import { contarPalabras, esFuentePrimaria, piezaDelDossier, problemasMarkdown, validarPieza, validarVerificacion } from '@/lib/politica/pieza'
 import { mencionaCifrasDeSondeos } from '@/lib/politica/veda'
 import { avisoFirmado, enviarAlSondeo, enviarVerificacion, traerEnvios, urlSondeo } from '@/lib/politica/cliente'
-import { abrirBulo, abrirEdicion, abrirEnvio, abrirExtra, aplicarAviso, cicloPolitica, enviarPieza, finalizarSesion, reescribir, type DepsPolitica } from '@/lib/politica/ciclo'
+import { abrirBulo, abrirEdicion, abrirEnvio, abrirExtra, abrirVigia, aplicarAviso, cicloPolitica, enviarPieza, finalizarSesion, reescribir, type DepsPolitica } from '@/lib/politica/ciclo'
 import { firmaPlataforma } from '@/lib/marketing/wordnext'
 import { createPoliticaMemoryStore } from './politicaMemoryStore'
 
@@ -37,7 +37,7 @@ describe('dominio política', () => {
     expect(politicaDomain.closer).toBe('Profesor')
     expect(politicaDomain.transitions.Palermo).toEqual(['Helsinki'])
     expect(politicaDomain.returns.Palermo).toContain('Lisboa')
-    expect(politicaDomain.taskKinds).toEqual(['edicion', 'extra', 'bulo', 'envio'])
+    expect(politicaDomain.taskKinds).toEqual(['edicion', 'extra', 'bulo', 'envio', 'vigia'])
   })
   it('solo Palermo veta; solo Helsinki envía; Río no envía', () => {
     const a = (c: string) => politicaDomain.agents.find((x) => x.codename === c)!
@@ -91,6 +91,20 @@ describe('calendario de ediciones', () => {
     expect(enVeda(new Date('2026-11-23T22:59:59Z'))).toBe(false)
     expect(enVeda(new Date('2026-11-23T23:00:00Z'))).toBe(true)
     expect(enVeda(new Date('2026-11-29T19:00:00Z'))).toBe(false)
+  })
+})
+
+describe('vigía horario', () => {
+  const en = (h: number, min = 35, dia = 6, mes = 10) => madridAUtc(2026, mes, dia, h, min)
+  it('toca cada hora de 07:00 a 23:59 y de madrugada solo a las 02:00 y las 05:00', () => {
+    expect([0, 1, 2, 3, 4, 5, 6, 7, 12, 23].map(horaDeVigia)).toEqual([false, false, true, false, false, true, false, true, true, true])
+    expect(vigiaDebida(en(9), new Set(), RANGO)).toEqual({ dia: '2026-10-06', hora: 9 })
+    expect(vigiaDebida(en(3), new Set(), RANGO)).toBeNull()
+  })
+  it('no repite la ronda de una hora ni sale del rango de días', () => {
+    expect(vigiaDebida(en(9), new Set(['2026-10-06:9']), RANGO)).toBeNull()
+    expect(vigiaDebida(en(9, 35, 5), new Set(), RANGO)).toBeNull()
+    expect(vigiaDebida(en(9, 35, 30, 11), new Set(), RANGO)).toBeNull()
   })
 })
 
@@ -252,6 +266,69 @@ function entorno(sobre: Partial<DepsPolitica> = {}) {
   return { deps, store, enviados, verificados, sesiones }
 }
 const APRUEBA = { veredictoPalermo: { aprueba: true, motivos: [] } }
+
+describe('ciclo del vigía', () => {
+  const nueve = { now: () => madridAUtc(2026, 10, 6, 9, 35).getTime() }
+  it('apagado por defecto: sin POLITICA_VIGIA=1 no abre ninguna ronda', async () => {
+    const { deps, sesiones } = entorno(nueve)
+    const r = await cicloPolitica(deps)
+    expect(r.vigia).toBeNull()
+    expect(sesiones.some((s) => s.kind === 'vigia')).toBe(false)
+  })
+  it('con POLITICA_VIGIA=1 abre la ronda de esa hora, una sola vez aunque coincidan dos cron', async () => {
+    const { deps, store, sesiones } = entorno({ ...nueve, env: { POLITICA_VIGIA: '1' } })
+    const [a, b] = await Promise.all([cicloPolitica(deps), cicloPolitica(deps)])
+    expect([a.vigia?.resultado, b.vigia?.resultado].sort()).toEqual(['abierta', 'ya-abierta'])
+    expect(sesiones.filter((s) => s.kind === 'vigia')).toHaveLength(1)
+    expect(store.filas.find((f) => f.tipo === 'vigia')).toMatchObject({ externalRef: '29n:vigia:2026-10-06:09', estado: 'en_curso', edicion: 'extra' })
+    const otra = await cicloPolitica(deps)
+    expect(otra.vigia).toBeNull()
+  })
+  it('una ronda sin novedad se archiva sola; un fallo del proveedor no se disfraza de «sin novedad»', async () => {
+    const { deps, store } = entorno({ ...nueve, env: { POLITICA_VIGIA: '1' } })
+    await cicloPolitica(deps)
+    const fila = store.filas.find((f) => f.tipo === 'vigia')!
+    const sinNovedad = await finalizarSesion(fila.sessionId!, { store, leerSesion: async () => ({ status: 'closed', finalReport: { resultado: 'sin_novedad', motivo: 'Nada nuevo en BOE ni Congreso.' } }) })
+    expect(sinNovedad).toBe('archivada')
+    expect(store.filas.find((f) => f.id === fila.id)).toMatchObject({ estado: 'archivada', motivo: 'Nada nuevo en BOE ni Congreso.' })
+
+    const otro = entorno({ now: () => madridAUtc(2026, 10, 6, 10, 35).getTime(), env: { POLITICA_VIGIA: '1' } })
+    await cicloPolitica(otro.deps)
+    const f2 = otro.store.filas.find((f) => f.tipo === 'vigia')!
+    const caido = await finalizarSesion(f2.sessionId!, { store: otro.store, leerSesion: async () => ({ status: 'failed', finalReport: { resultado: 'sin_novedad' } }) })
+    expect(caido).toBe('fallida')
+  })
+  it('un «sin_novedad» solo cuenta en el vigía: una edición que lo dice sigue siendo un fallo', async () => {
+    const { deps, store } = entorno()
+    await abrirEdicion('2026-10-06', 'manana', deps)
+    const fila = store.filas[0]
+    const r = await finalizarSesion(fila.sessionId!, { store, leerSesion: async () => ({ status: 'closed', finalReport: { resultado: 'sin_novedad' } }) })
+    expect(r).toBe('fallida')
+  })
+  it('la novedad del vigía sale como un extra pendiente con la validación de siempre (también en veda)', async () => {
+    const { deps, store, enviados } = entorno({ ...nueve, env: { POLITICA_VIGIA: '1' } })
+    await cicloPolitica(deps)
+    const fila = store.filas.find((f) => f.tipo === 'vigia')!
+    const r = await enviarPieza(fila, [{ ...APRUEBA, pieza: pieza() }], deps)
+    expect(r.ok).toBe(true)
+    expect(enviados).toHaveLength(1)
+    // Con la hora de ahora dentro de la veda, una cifra de encuesta lo tumba.
+    const enVedaDeps = entorno({ now: () => new Date('2026-11-25T10:00:00Z').getTime(), env: { POLITICA_VIGIA: '1' } })
+    const fila2 = (await abrirVigiaPara(enVedaDeps.deps))
+    const malo = await enviarPieza(fila2, [{ ...APRUEBA, pieza: pieza({ markdown: `## Qué ha pasado\n\nUna encuesta da al PP el 33,2 % de los votos.\n\n${palabras(150)}` }) }], enVedaDeps.deps)
+    expect(malo.ok).toBe(false)
+  })
+  it('el dominio sigue siendo válido con la rama de vigía', () => {
+    expect(() => validateDomain(politicaDomain)).not.toThrow()
+    expect(politicaDomain.taskKinds).toContain('vigia')
+    expect(politicaDomain.transitions.Lisboa).toContain('Profesor')
+  })
+})
+
+async function abrirVigiaPara(deps: DepsPolitica) {
+  await abrirVigia('2026-11-25', 11, deps)
+  return (deps.store as ReturnType<typeof createPoliticaMemoryStore>).filas.find((f) => f.tipo === 'vigia')!
+}
 
 describe('ciclo política', () => {
   it('abre la edición de la mañana a las 06:35 con su externalRef y la hora de publicación, y no la repite', async () => {
