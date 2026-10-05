@@ -548,6 +548,43 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   público, del resto ≤ 4 versos con autor y título. **Checklist para Javier**: (1) en Neon de WordNext, abrir las dos webs a La Banda
   (`publish_banda`); (2) si Vercel de la-banda tiene `MARKETING_DESTINOS`, añadir `banda.wordnext.tech,javier.wordnext.tech`.
 
+- **2026-10-05, política — Con-textos 29N (v0.20.0)**. Javier: la banda prepara las entregas diarias de **Con-textos 29N** (sección de
+  Olvidos de Granada sobre las elecciones del 29-nov-2026; app `elcorreveidile/sondeo-29n`, contrato en su `docs/LA-BANDA.md`) y debe
+  **verificar cada noticia que se vea en la web, como detector anti bulos**. Decidido con Javier: tres entregas al día (**mañana 09:00,
+  tarde 15:00, noche 21:00**, Madrid) más **extras** (madrugada, algo que ocurre); las noticias salen de La Banda, de él y de
+  **visitantes registrados** (sus envíos se verifican igual); **una persona aprueba todo** en el sondeo. **Requiere SQL en Neon de LA BANDA
+  ANTES de desplegar** (`scripts/politica.sql`, idempotente; o `drizzle/0009_politica.sql`): tabla `politica_piezas`.
+  - **Dominio** (`domains/politica/`), un solo grafo y cuatro tipos de sesión (`payload.kind`): `edicion`, `extra`, `bulo` (comprobar una
+    afirmación que circula) y `envio` (verificar la noticia de un visitante; solo se manda el veredicto, la entrada ya existe). Tokio (qué)
+    → Denver (evidencia, `buscarWeb` ≤ 5) → Lisboa (verifica; devuelve a Denver) → Estocolmo (contexto de politólogo, sin opinión) → Río
+    (redacta Markdown + veredicto) → Palermo (rúbrica: aprueba, devuelve o **veta**) → Helsinki (`enviarPieza`) → Profesor (informe).
+    Modelos `POLITICA_MODELO_*` (mismo patrón que marketing; con `ANTHROPIC_ACTIVO` sin activar todo va a z.ai).
+  - **Línea editorial** (`LINEA_EDITORIAL`, la lee todo agente en `leerEncargo`): hecho e interpretación separados, mismo rasero para todos
+    los partidos, nada de pronósticos, escaños ni recomendaciones de voto, fuente primaria primero, nada sobre personas privadas.
+  - **Lo que impone el CÓDIGO, no el prompt** (`src/lib/politica/pieza.ts`, probado a mutaciones): (1) un veredicto exige **fuente primaria**
+    (BOE, Congreso, Moncloa, `.gob.es`…) **o dos fuentes de dominios distintos**; salvo «sin pruebas», que no la necesita; (2) un parte o extra
+    no puede ser «falso» ni «engañoso» (eso va en una pieza `bulo`); (3) Markdown sin HTML, sin imágenes, enlaces https o `/ruta`, 100-1.600
+    palabras; (4) **veda** (24-nov 00:00 Madrid a las 19:00 UTC del 29): una pieza que sale en veda no puede citar cifras de encuestas ni
+    sondeos; **un extra o un bulo no tiene hora fija y se juzga con la hora de ahora** (agujero visto y cerrado al escribir los tests);
+    (5) `enviarPieza` **exige la aprobación de Palermo**. El texto de extra, bulo y envío es DATO NO FIABLE: no viaja en el payload de la
+    sesión (solo `piezaId`), se lee con `leerEncargo` entre marcas.
+  - **Calendario** (`src/lib/politica/calendario.ts`, puro): el cron `/api/cron/politica` (`35 * * * *`) abre cada edición **tres horas
+    antes** (06:30, 12:30, 18:30) y hasta tres horas después de su hora; rango `POLITICA_DESDE`/`POLITICA_HASTA` (6-oct a 29-nov). **El
+    cerrojo es el índice único de `politica_piezas.external_ref`** (`29n:<día>:<edición>:v<n>`): sin transacciones, el segundo cron no abre.
+  - **Sondeo** (`src/lib/politica/cliente.ts`): `POLITICA_URL` (https) + `POLITICA_SECRET` (= `BANDA_SECRET` allí); misma firma de plataforma
+    que WordNext (`firmaPlataforma`, `fetchLimpio`). `POST /api/v1/publicaciones` (pieza pendiente), `…/<ref>/verificacion` (veredicto de un
+    envío) y `GET /api/v1/envios` (visitantes pendientes; el cron abre hasta 3 por ciclo). **Aviso de vuelta**
+    `POST /api/v1/politica/publicaciones` (Bearer `LA_BANDA_API_KEY` + `X-Banda-Signature` HMAC de `POLITICA_SECRET`): aprobada, publicada o
+    rechazada con motivo.
+  - **Estados**: en_curso → enviada → aprobada → publicada; enviada → rechazada; en_curso → vetada | fallida (hook `finalizarSesion` del
+    tick + `recoverOpen` del cron); rechazada/vetada/fallida → «Reescribir» (versión + 1, con nota) o archivar.
+  - **Panel**: pestaña **Política**: las tres ediciones de hoy («Abrir ahora»), extra, comprobar un bulo y lista de piezas con su estado.
+  - Tests `tests/politica.test.ts` (52) con almacén en memoria. **Sin probar aquí**: los agentes con modelos reales y el envío contra el
+    sondeo desplegado. **Checklist para Javier**: (1) pegar `scripts/politica.sql` en Neon de La Banda; (2) variables en Vercel de
+    la-banda: `POLITICA_URL`, `POLITICA_SECRET` (= `BANDA_SECRET` del sondeo) y las de modelos si no hay z.ai; (3) en el sondeo,
+    `BANDA_CALLBACK_URL=https://<la-banda>/api/v1/politica/publicaciones`, `BANDA_API_KEY` = `LA_BANDA_API_KEY`; (4) abrir el sondeo
+    solo cuando la junta de la asociación apruebe.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&

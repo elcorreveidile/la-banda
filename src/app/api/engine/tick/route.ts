@@ -11,6 +11,9 @@ import { redStoreDb } from '@/lib/negociacion/store'
 import { MARKETING_DOMAIN } from '@/lib/marketing/config'
 import { finalizarSesion as finalizarMarketing } from '@/lib/marketing/ciclo'
 import { leerSesion as leerSesionMarketing, marketingStoreDb } from '@/lib/marketing/store'
+import { POLITICA_DOMAIN } from '@/lib/politica/config'
+import { finalizarSesion as finalizarPolitica } from '@/lib/politica/ciclo'
+import { leerSesion as leerSesionPolitica, politicaStoreDb } from '@/lib/politica/store'
 
 export const dynamic = 'force-dynamic'
 /** Una invocación de agente (GLM/Claude con herramientas) puede tardar más de un minuto. */
@@ -57,6 +60,14 @@ export async function POST(req: Request) {
         await finalizarMarketing(sessionId, { store: marketingStoreDb, leerSesion: leerSesionMarketing })
       } catch (err) {
         console.error('[la-banda] marketing cierre', sessionId, err)
+      }
+    }
+    // Política: si la mesa terminó sin enviar la pieza, pasa a vetada o fallida con su motivo.
+    if (domain.name === POLITICA_DOMAIN) {
+      try {
+        await finalizarPolitica(sessionId, { store: politicaStoreDb, leerSesion: leerSesionPolitica })
+      } catch (err) {
+        console.error('[la-banda] politica cierre', sessionId, err)
       }
     }
   })
