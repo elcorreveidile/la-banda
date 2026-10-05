@@ -186,7 +186,7 @@ describe('cliente del sondeo', () => {
     expect(urlSondeo({ POLITICA_URL: 'https://29n.olvidos.es/' })).toBe('https://29n.olvidos.es')
     expect(urlSondeo({ POLITICA_URL: 'http://29n.olvidos.es' })).toBeNull()
     expect(urlSondeo({ POLITICA_URL: 'http://localhost:3100' })).toBe('http://localhost:3100')
-    expect(urlSondeo({ POLITICA_URL: 'https://olvidos.es/contexto/' })).toBe('https://olvidos.es/contexto')
+    expect(urlSondeo({ POLITICA_URL: 'https://olvidos.es/contexto/sondeo/' })).toBe('https://olvidos.es/contexto/sondeo')
     expect(urlSondeo({})).toBeNull()
   })
   it('firma como el sondeo la verifica y manda el cuerpo exacto', async () => {
@@ -206,12 +206,12 @@ describe('cliente del sondeo', () => {
     // Es la misma fórmula que verifica el sondeo (sondeo-29n/src/lib/bandaAuth.ts) y usa el cliente de marketing.
     expect(firmaPlataforma(SECRETO, '1790000000', 'POST', '/api/v1/publicaciones', v.opciones.body!)).toBe(esperado)
   })
-  it('con prefijo (olvidos.es/contexto) conserva la ruta y la firma cubre la ruta completa', async () => {
+  it('con prefijo (olvidos.es/contexto/sondeo) conserva la ruta y la firma cubre la ruta completa', async () => {
     let visto: { url: string; opciones: { body?: string; headers?: Record<string, string> } } | null = null
     const pedir = (async (url: string, opciones: never) => { visto = { url, opciones }; return { ok: true, status: 200, statusText: 'OK', json: async () => ({ envios: [] }), text: async () => '' } }) as never
-    await enviarAlSondeo({} as never, { env: { ...ENV, POLITICA_URL: 'https://olvidos.es/contexto' }, now: () => 1_790_000_000_000, pedir })
-    expect(visto!.url).toBe('https://olvidos.es/contexto/api/v1/publicaciones')
-    expect(visto!.opciones.headers!['x-banda-signature']).toBe(firmaPlataforma(SECRETO, '1790000000', 'POST', '/contexto/api/v1/publicaciones', visto!.opciones.body ?? ''))
+    await enviarAlSondeo({} as never, { env: { ...ENV, POLITICA_URL: 'https://olvidos.es/contexto/sondeo' }, now: () => 1_790_000_000_000, pedir })
+    expect(visto!.url).toBe('https://olvidos.es/contexto/sondeo/api/v1/publicaciones')
+    expect(visto!.opciones.headers!['x-banda-signature']).toBe(firmaPlataforma(SECRETO, '1790000000', 'POST', '/contexto/sondeo/api/v1/publicaciones', visto!.opciones.body ?? ''))
   })
   it('el veredicto de un envío va a la ruta de verificación de esa pieza', async () => {
     let url = ''

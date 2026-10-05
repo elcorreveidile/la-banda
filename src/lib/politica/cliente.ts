@@ -56,7 +56,7 @@ async function llamar<T>(metodo: 'GET' | 'POST', ruta: string, cuerpo: unknown, 
   if (!base || !secreto) return { ok: false, error: 'sondeo no configurado (POLITICA_URL y POLITICA_SECRET)' }
   const raw = cuerpo === undefined ? '' : JSON.stringify(cuerpo)
   const ts = String(Math.floor((deps.now ?? Date.now)() / 1000))
-  // La URL del sondeo puede llevar prefijo (https://olvidos.es/contexto): se conserva, y la firma cubre la ruta completa.
+  // La URL del sondeo puede llevar prefijo (https://olvidos.es/contexto/sondeo): se conserva, y la firma cubre la ruta completa.
   const destino = new URL(base.replace(/\/+$/, '') + ruta)
   const pathname = destino.pathname
   try {
