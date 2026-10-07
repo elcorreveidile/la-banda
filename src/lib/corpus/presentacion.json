@@ -26,7 +26,8 @@
       "voz": { "es": ["es-ES-AlvaroNeural", "-5Hz", "-3%"], "en": ["en-GB-ThomasNeural", "+0Hz", "+0%"] },
       "es": {
         "rol": "Documenta Granada",
-        "guion": "Soy Denver. Mi trabajo es que Granada sea Granada. Busco en la web los datos reales que va a usar la muestra: un bar, un horario, un trámite. Si no puedo verificar algo, lo marco como «sin verificar». Aquí nadie se inventa la ciudad."
+        "guion": "Soy Denver. Mi trabajo es que Granada sea Granada. Busco en la web los datos reales que va a usar la muestra. Un bar, un horario, un trámite. Si no puedo verificar algo, lo marco como «sin verificar». Aquí nadie se inventa la ciudad.",
+        "locucion": "Soy Denver. Mi trabajo es que Granada sea Granada. Busco en la web los datos reales que va a usar la muestra. // Un bar, un horario, un trámite. Si no puedo verificar algo, lo marco como «sin verificar». Aquí nadie se inventa la ciudad."
       },
       "en": {
         "rol": "Documents Granada",
