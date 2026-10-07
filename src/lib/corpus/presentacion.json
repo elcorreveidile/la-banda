@@ -14,8 +14,8 @@
       "voz": { "es": ["es-ES-AlvaroNeural", "+0Hz", "+0%"], "en": ["en-GB-RyanNeural", "+0Hz", "+0%"] },
       "es": {
         "rol": "Fija la tarea",
-        "guion": "Hola, soy Tokio. Abro la cadena. Antes de que nadie escriba una línea, decido qué buscamos. La situación, el nivel y las funciones del plan curricular que debe practicar la muestra. También miro qué hay ya en el corpus para no repetirlo. Después, paso el relevo a Denver.",
-        "locucion": "Hola, soy Tokio. Abro la cadena. Antes de que nadie escriba una línea, decido qué buscamos. // La situación, el nivel y las funciones del plan curricular que debe practicar la muestra. También miro *qué* /- hay ya en el corpus para no repetirlo. Después, paso el relevo a Denver."
+        "guion": "Hola, soy Tokio. Abro la cadena. Antes de que nadie escriba una línea, decido qué buscamos. La situación, y el nivel y las funciones del plan curricular que debe practicar la muestra. También miro qué hay ya en el corpus para no repetirlo. Después, paso el relevo a Denver.",
+        "locucion": "Hola, soy Tokio. Abro la cadena. Antes de que nadie escriba una línea, decido qué buscamos. // La situación, y el nivel y las funciones del plan curricular que debe practicar la muestra. También miro qué hay ya en el corpus para no repetirlo. Después, paso el relevo a Denver."
       },
       "en": {
         "rol": "Sets the task",
