@@ -26,6 +26,10 @@ describe('presentación de los agentes del corpus', () => {
     }
   })
 
+  it('el audio no dice la sigla PCIC (se locuta como «plan curricular»)', () => {
+    for (const nombre of ORDEN_CADENA) for (const l of idiomas) expect(presentacionDe(nombre, l)!.guion, `${nombre} ${l}`).not.toMatch(/PCIC/)
+  })
+
   it('el guion se presenta con su propio nombre y tiene introducción en los dos idiomas', () => {
     for (const l of idiomas) {
       expect(INTRO_CORPUS[l].texto.length).toBeGreaterThan(80)

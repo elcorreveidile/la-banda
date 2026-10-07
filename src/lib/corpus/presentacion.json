@@ -14,11 +14,11 @@
       "voz": { "es": ["es-ES-AlvaroNeural", "+0Hz", "+0%"], "en": ["en-GB-RyanNeural", "+0Hz", "+0%"] },
       "es": {
         "rol": "Fija la tarea",
-        "guion": "Hola, soy Tokio. Abro la cadena. Antes de que nadie escriba una línea, decido qué buscamos: la situación, el nivel y las funciones del PCIC que debe practicar la muestra. También miro qué hay ya en el corpus para no repetirlo. Después, paso el relevo a Denver."
+        "guion": "Hola, soy Tokio. Abro la cadena. Antes de que nadie escriba una línea, decido qué buscamos: la situación, el nivel y las funciones del plan curricular que debe practicar la muestra. También miro qué hay ya en el corpus para no repetirlo. Después, paso el relevo a Denver."
       },
       "en": {
         "rol": "Sets the task",
-        "guion": "Hi, I'm Tokyo. I open the chain. Before anyone writes a line, I decide what we are looking for: the situation, the level, and the PCIC functions the sample should practise. I also check what the corpus already holds, so we don't repeat it. Then I hand over to Denver."
+        "guion": "Hi, I'm Tokyo. I open the chain. Before anyone writes a line, I decide what we are looking for: the situation, the level, and the curriculum plan functions the sample should practise. I also check what the corpus already holds, so we don't repeat it. Then I hand over to Denver."
       }
     },
     "Denver": {
@@ -36,11 +36,11 @@
       "voz": { "es": ["es-ES-ElviraNeural", "+0Hz", "+0%"], "en": ["en-GB-SoniaNeural", "+0Hz", "+0%"] },
       "es": {
         "rol": "Gradúa por nivel",
-        "guion": "Soy Estocolmo. Pongo número y nivel a las cosas. Defino cuántas palabras debe tener el texto, qué gramática del PCIC puede aparecer y cuál queda prohibida por ser de un nivel superior. Con la redacción de un alumno, mido su longitud y sus marcas de nivel: solo pistas, nunca un veredicto."
+        "guion": "Soy Estocolmo. Pongo número y nivel a las cosas. Defino cuántas palabras debe tener el texto, qué gramática del plan curricular puede aparecer y cuál queda prohibida por ser de un nivel superior. Con la redacción de un alumno, mido su longitud y sus marcas de nivel: solo pistas, nunca un veredicto."
       },
       "en": {
         "rol": "Grades by level",
-        "guion": "I'm Stockholm. I put numbers and levels on things. I set how many words the text should have, which PCIC grammar may appear, and which is off limits because it belongs to a higher level. With a student's essay, I measure its length and level markers: clues only, never a verdict."
+        "guion": "I'm Stockholm. I put numbers and levels on things. I set how many words the text should have, which curriculum plan grammar may appear, and which is off limits because it belongs to a higher level. With a student's essay, I measure its length and level markers: clues only, never a verdict."
       }
     },
     "Río": {
