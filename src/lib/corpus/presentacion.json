@@ -109,7 +109,8 @@
       "voz": { "es": ["es-ES-ElviraNeural", "+4Hz", "+0%"], "en": ["en-US-AriaNeural", "+0Hz", "+0%"] },
       "es": {
         "rol": "Registra en la Clínica",
-        "guion": "Soy Helsinki. Registro en la Clínica y no opino. Tomo la ficha, fundo las anotaciones, descarto los códigos que no existen y guardo la pieza: validada, si Palermo no la vetó, o borrador, si la vetó."
+        "guion": "Soy Helsinki. Registro en la Clínica y no opino. Tomo la ficha. Fundo las anotaciones, descarto los códigos que no existen y guardo la pieza. Validada, si Palermo no la vetó, o borrador, si la vetó.",
+        "locucion": "Soy Helsinki. Registro en la Clínica y no opino. Tomo la ficha. Fundo las anotaciones, descarto los códigos que no existen y guardo la pieza. Validada, si Palermo no la vetó, o borrador, si la vetó."
       },
       "en": {
         "rol": "Files it in the Clinic",
