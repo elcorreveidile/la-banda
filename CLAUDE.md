@@ -237,7 +237,16 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   y no debe vivir aquí para siempre. Nada de nombres ni correos en payloads: la
   Clínica manda seudónimo (`p-…`) y referencia.
 
-- **2026-09-18, portada pública (v0.9.0)**: `kupeku.com` mostraba solo el login (la
+- **2026-10-07, dominio de producción + TTL del enlace mágico (v0.22.2)**: el dominio de
+  producción de La Banda es **la-banda.es** (`kupeku.com` queda como alias que resuelve al mismo
+  despliegue). Y, tras un enlace de acceso que **llegó tarde** (retraso de entrega de Brevo /
+  greylisting del receptor; en producción las variables de Brevo y `ALLOWED_EMAILS` están todas
+  presentes, el envío funciona), se sube el **TTL del enlace mágico de 15 a 60 minutos**
+  (`maxAge` en `brevoMagicLink`, `src/lib/auth.ts`, y el texto del correo) para que un correo que
+  llega con retraso no caduque antes de abrirse. El token sigue siendo de un solo uso y hasheado.
+  Sin cambios de esquema ni de entorno.
+
+- **2026-09-18, portada pública (v0.9.0)**: **la-banda.es** (alias `kupeku.com`) mostraba solo el login (la
   home `/` redirigía a `/panel` → `/login`). Ahora `/` es una **landing bilingüe** (ES/EN
   por `?lang=en`; el panel y el login siguen en español) que explica qué es La Banda, sus
   seis principios (§2 del brief), presenta a los diez agentes, muestra los **tres dominios en
