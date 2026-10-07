@@ -49,6 +49,28 @@ const GALA = {
   },
 }
 
+const CLINICA = {
+  es: {
+    voz: GALA.es.voz,
+    escenas: [
+      { tipo: 'clinica', texto: 'Presentamos la Clínica Cultural y Lingüística de Español en Granada, un lugar donde el español se aprende como se cuida la salud, con diagnóstico, tratamiento y seguimiento.', t: 'Clínica Cultural y Lingüística', k: 'de Español en Granada', k2: 'diagnóstico · tratamiento · seguimiento' },
+      { tipo: 'herramienta', texto: 'Tiene muchas herramientas. Una de ellas es la banda: la encargada de construir el Corpus Granada, un corpus lingüístico para estudiantes de español.', t: 'La banda', k: 'construye el Corpus Granada' },
+    ],
+  },
+  en: {
+    voz: GALA.en.voz,
+    escenas: [
+      { tipo: 'clinica', texto: 'We present the Clínica Cultural y Lingüística of Spanish in Granada, a place where Spanish is learned the way health is cared for, with diagnosis, treatment and follow-up.', t: 'Clínica Cultural y Lingüística', k: 'of Spanish in Granada', k2: 'diagnosis · treatment · follow-up' },
+      { tipo: 'herramienta', texto: 'It has many tools. One of them is the band: the one in charge of building the Granada Corpus, a linguistic corpus for students of Spanish.', t: 'The band', k: 'builds the Granada Corpus' },
+    ],
+  },
+}
+const CIERRE = {
+  es: { voz: GALA.es.voz, escenas: [{ tipo: 'cierre', texto: 'Visita la Clínica Cultural y Lingüística de Español en Granada.', t: 'Clínica Cultural y Lingüística', k: 'de Español en Granada', web: 'www.clinicacultural.com' }] },
+  en: { voz: GALA.en.voz, escenas: [{ tipo: 'cierre', texto: 'Visit the Clínica Cultural y Lingüística of Spanish in Granada.', t: 'Clínica Cultural y Lingüística', k: 'of Spanish in Granada', web: 'www.clinicacultural.com' }] },
+}
+const CONJUNTOS = { gala: GALA, clinica: CLINICA, cierre: CIERRE }
+
 const dur = (f) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString())
 function trozo(texto, voz, p, r) {
   const clave = createHash('sha1').update([texto, voz, p, r].join('|')).digest('hex').slice(0, 16)
@@ -67,18 +89,21 @@ function silencio(ms) {
 }
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-function escena(e, lang, i) {
+function escena(e, lang, i, set) {
   const base = `html{background:#0b0b0e}body{margin:0;width:1920px;height:1080px;background:radial-gradient(ellipse at 50% 20%,#2a2410 0%,#0b0b0e 60%);font-family:'Inter','DejaVu Sans',sans-serif;color:#fafaf9;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden}
 .o{color:${ORO}}.k{font-size:44px;letter-spacing:.18em;text-transform:uppercase;color:#a8a29e;margin-top:30px}.h{font-size:150px;font-weight:800;line-height:1.05}
 .l{position:absolute;top:0;width:5px;height:300px;background:linear-gradient(${ORO}aa,transparent)}`
   let cuerpo = ''
+  if (e.tipo === 'cierre') cuerpo = `<div style="font-size:90px;color:${ORO}">✚</div><div class="h" style="font-size:112px;margin-top:10px">${esc(e.t)}</div><div class="k" style="color:#fafaf9">${esc(e.k)}</div><div style="margin-top:70px;font-size:96px;font-weight:700;color:${ORO};border:4px solid ${ORO};border-radius:24px;padding:20px 60px">${esc(e.web)}</div>`
+  if (e.tipo === 'clinica') cuerpo = `<div style="font-size:90px;color:${ORO}">✚</div><div class="h" style="font-size:112px;margin-top:10px">${esc(e.t)}</div><div class="k" style="color:#fafaf9">${esc(e.k)}</div><div class="k" style="font-size:38px;color:${ORO}">${esc(e.k2)}</div>`
+  if (e.tipo === 'herramienta') cuerpo = `<div style="display:flex;gap:14px;margin-bottom:60px">${AGENTES.map((n, j) => `<div style="width:128px;height:128px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;border:5px solid ${COLORES[j]}"><svg viewBox="0 0 120 120" style="width:98px;height:98px;color:${COLORES[j]}">${avatares[n].inner}</svg></div>`).join('')}</div><div class="h o">${esc(e.t)}</div><div class="k" style="color:#fafaf9">${esc(e.k)}</div>`
   if (e.tipo === 'bienvenida') cuerpo = `<div style="font-size:90px;color:${ORO};letter-spacing:.4em">★ ★ ★</div><div class="h" style="margin-top:20px">LA BANDA</div><div class="k">${esc(e.k)}</div>`
   if (e.tipo === 'lugares') cuerpo = `<div style="display:flex;gap:50px">${e.chips.map((c) => `<div style="font-size:84px;font-weight:700;padding:34px 60px;border:4px solid ${ORO};border-radius:28px;color:${ORO}">${esc(c)}</div>`).join('')}</div>`
   if (e.tipo === 'banda') cuerpo = `<div style="display:flex;gap:14px;margin-bottom:60px">${AGENTES.map((n, j) => `<div style="width:128px;height:128px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;border:5px solid ${COLORES[j]}"><svg viewBox="0 0 120 120" style="width:98px;height:98px;color:${COLORES[j]}">${avatares[n].inner}</svg></div>`).join('')}</div><div class="h" style="font-size:120px">${esc(e.t)}</div><div class="k" style="font-size:40px">${esc(e.k)}</div>`
   if (e.tipo === 'corpus') cuerpo = `<div class="h o">${esc(e.t)}</div><div class="k" style="color:#fafaf9">${esc(e.k)}</div>`
   if (e.tipo === 'nominados') cuerpo = `<div class="l" style="left:25%;transform:rotate(12deg)"></div><div class="l" style="left:75%;transform:rotate(-12deg)"></div><div class="h o" style="font-size:190px;letter-spacing:.08em;text-transform:uppercase">${esc(e.t)}</div><div style="font-size:90px;color:${ORO};margin-top:30px">★</div>`
-  const f = join(tmp, `e${i}-${lang}.html`)
-  const png = join(tmp, `e${i}-${lang}.png`)
+  const f = join(tmp, `${set}-e${i}-${lang}.html`)
+  const png = join(tmp, `${set}-e${i}-${lang}.png`)
   writeFileSync(f, `<!doctype html><meta charset="utf-8"><style>${base}</style><body>${cuerpo}</body>`)
   execFileSync(chromium, ['--headless=new', '--no-sandbox', '--disable-gpu', '--window-size=1920,1200', `--screenshot=${png}`, '--hide-scrollbars', `file://${f}`], { stdio: 'ignore' })
   return png
@@ -86,8 +111,8 @@ function escena(e, lang, i) {
 
 const t2 = (s) => { const m = Math.floor(s / 60), x = s % 60; return `0:${String(m).padStart(2, '0')}:${x.toFixed(2).padStart(5, '0')}` }
 mkdirSync(salida, { recursive: true }); mkdirSync(tmp, { recursive: true }); mkdirSync(cache, { recursive: true })
-for (const lang of ['es', 'en']) {
-  const g = GALA[lang]
+for (const [set, CONJ] of Object.entries(CONJUNTOS)) for (const lang of ['es', 'en']) {
+  const g = CONJ[lang]
   const [voz, p, r] = g.voz
   const segmentos = []
   const cues = []
@@ -101,24 +126,24 @@ for (const lang of ['es', 'en']) {
       if (f !== frases[frases.length - 1]) { partes.push(silencio(250)); acc += 0.25 }
     }
     partes.push(silencio(i === g.escenas.length - 1 ? 700 : 900)); acc += i === g.escenas.length - 1 ? 0.7 : 0.9
-    const lista = join(tmp, `e${i}-${lang}.txt`)
+    const lista = join(tmp, `${set}-e${i}-${lang}.txt`)
     writeFileSync(lista, partes.map((x) => `file '${x}'`).join('\n'))
-    const wav = join(tmp, `e${i}-${lang}.wav`)
+    const wav = join(tmp, `${set}-e${i}-${lang}.wav`)
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista, '-c', 'copy', wav])
     for (const x of tr) cues.push({ ini: t0 + x.ini, fin: t0 + x.ini + x.dur, texto: x.f })
-    const png = escena(e, lang, i)
-    const seg = join(tmp, `s${i}-${lang}.mp4`)
+    const png = escena(e, lang, i, set)
+    const seg = join(tmp, `${set}-s${i}-${lang}.mp4`)
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-loop', '1', '-framerate', '25', '-i', png, '-i', wav, '-vf', `crop=1920:1080:0:0,zoompan=z='min(1+0.0006*on,1.07)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=960x540:fps=25,format=yuv420p`, '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26', '-c:a', 'aac', '-b:a', '96k', '-ar', '24000', '-ac', '1', '-shortest', seg])
     segmentos.push(seg); t0 += dur(wav)
   })
-  const lista = join(tmp, `all-${lang}.txt`)
+  const lista = join(tmp, `${set}-all-${lang}.txt`)
   writeFileSync(lista, segmentos.map((s) => `file '${s}'`).join('\n'))
-  const crudo = join(tmp, `crudo-${lang}.mp4`)
+  const crudo = join(tmp, `${set}-crudo-${lang}.mp4`)
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista, '-c', 'copy', crudo])
-  const ass = join(tmp, `${lang}.ass`)
+  const ass = join(tmp, `${set}-${lang}.ass`)
   const lineas = cues.map((c) => `Dialogue: 0,${t2(c.ini)},${t2(c.fin + 0.15)},S,,0,0,0,,${c.texto}`)
   writeFileSync(ass, `[Script Info]\nScriptType: v4.00+\nPlayResX: 960\nPlayResY: 540\n\n[V4+ Styles]\nFormat: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding\nStyle: S,Inter,24,&HFFFFFF,&HFFFFFF,&H000000,&H80000000,1,0,0,0,100,100,0,0,1,2,0,2,60,60,28,1\n\n[Events]\nFormat: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text\n${lineas.join('\n')}\n`)
-  const out = join(salida, `intro-gala-${lang}.mp4`)
+  const out = join(salida, `intro-${set}-${lang}.mp4`)
   execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', crudo, '-vf', `subtitles=${ass.replace(/:/g, '\\:')}`, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '28', '-pix_fmt', 'yuv420p', '-c:a', 'copy', '-movflags', '+faststart', out])
   console.log('✓', out, dur(out).toFixed(1), 's')
 }
