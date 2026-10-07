@@ -121,8 +121,8 @@
       "voz": { "es": ["es-ES-AlvaroNeural", "-2Hz", "-4%"], "en": ["en-US-AndrewNeural", "+0Hz", "-3%"] },
       "es": {
         "rol": "Cierra e informa",
-        "guion": "Soy el Profesor. Leo la cadena completa y cierro la sesión con un informe. Qué se ha producido. Cuántas anotaciones hay. Qué devoluciones hubo y qué conviene revisar a mano. No decido nada por el camino. Mi trabajo es que puedas entender: qué ha pasado.",
-        "locucion": "Soy el Profesor. Leo la cadena completa y cierro la sesión con un informe. Qué se ha producido. Cuántas anotaciones hay. Qué devoluciones hubo y qué conviene revisar a mano. No decido nada por el camino. Mi trabajo es que puedas entender: qué ha pasado."
+        "guion": "Soy el Profesor. Leo la cadena completa y cierro la sesión con un informe. Qué se ha producido. Cuántas anotaciones hay. Qué devoluciones hubo y qué conviene revisar a mano. No decido nada por el camino. Mi trabajo es que puedas entender, qué ha pasado.",
+        "locucion": "Soy el Profesor. Leo la cadena completa y cierro la sesión con un informe. Qué se ha producido. Cuántas anotaciones hay. Qué devoluciones hubo y qué conviene revisar a mano. No decido nada por el camino. Mi trabajo es que puedas entender, // qué ha pasado."
       },
       "en": {
         "rol": "Closes and reports",
