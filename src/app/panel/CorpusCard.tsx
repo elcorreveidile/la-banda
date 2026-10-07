@@ -2,6 +2,7 @@ import { NIVELES } from '@domains/corpus-ele/config'
 import { hasClinica } from '@/lib/clinica'
 import { resumeStalledSessions, startCorpusMuestra } from './actions'
 import { CORPUS_DOMAIN } from '@/lib/corpus/cycle'
+import { PresentacionAgentes } from './PresentacionAgentes'
 
 /** Tarjeta del dominio corpus-ele: encargar una muestra de habla situada en Granada. Servidor. */
 export function CorpusCard() {
@@ -9,6 +10,7 @@ export function CorpusCard() {
   return (
     <section className="flex flex-col gap-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
       <p className="flex items-center gap-1.5 font-bold"><span className="h-2 w-2 rounded-full bg-emerald-500" />Corpus ELE · un semestre en Granada</p>
+      <PresentacionAgentes />
       <form action={startCorpusMuestra} className="grid gap-2 sm:grid-cols-3">
         <input name="situacion" required minLength={2} maxLength={120} placeholder="Situación (bar, farmacia, piso…)" className="rounded border border-stone-300 px-2 py-1.5 sm:py-1" />
         <select name="nivel" required className="rounded border border-stone-300 px-2 py-1.5 sm:py-1" defaultValue="A2">

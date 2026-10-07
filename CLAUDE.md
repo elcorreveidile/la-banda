@@ -596,6 +596,18 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   «Revisar las fuentes ahora» (`abrirVigiaManual`). **Pendiente**: el «tablón de hechos» (candidaturas, plazos, quién lidera cada lista) y que un
   rumor detectado abra solo una sesión `bulo`; hoy el rumor va como «circula, sin confirmar» dentro del extra.
 
+- **2026-10-07, «Conoce a la banda» en el corpus (v0.22.0)**. Javier: el corpus debe explicar qué hace cada agente, con un
+  vídeo de cada uno presentándose (decidido por AskUserQuestion: en el panel de La Banda **y** en la Clínica, voz sintética +
+  subtítulos, español e inglés). Guiones y voces en `src/lib/corpus/presentacion.json` (fuente única; el texto describe lo que
+  hace el prompt de cada agente en `domains/corpus-ele/config.ts`: si cambia el rol, cambia el guion). Los 20 vídeos
+  (`public/agentes/<codename sin tildes>-<es|en>.mp4` + `.jpg`, 960×540, 14-25 s, ~16 MB) los genera
+  `node scripts/videos-agentes.mjs [Agente…] [--lang es|en]` con **edge-tts** (voz neuronal de Microsoft Edge, sin clave),
+  ffmpeg y Chromium: avatar (el de `avatares.json`) + onda del audio + subtítulos quemados. Para regenerar uno tras editar su
+  guion: `pip install edge-tts` y `node scripts/videos-agentes.mjs Tokio --lang es`. Panel: sección plegable con selector
+  ES/EN en la tarjeta Corpus ELE (`PresentacionAgentes.tsx`). Test `tests/presentacion.test.ts` (cubre a los agentes del
+  dominio, guiones y ficheros). Los ficheros de `public/` son públicos (el middleware solo protege `/panel`), así que la Clínica
+  los incrusta por URL. Sin BD ni variables.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&

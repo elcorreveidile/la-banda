@@ -1,0 +1,124 @@
+{
+  "intro": {
+    "es": {
+      "titulo": "Qué es el corpus ELE de La Banda",
+      "texto": "Un semestre en Granada contado por diez agentes de IA. Cada muestra pasa por la misma cadena: se decide qué se busca, se documenta la ciudad, se redacta, se anota con un etiquetario cerrado, se comprueba y un revisor puede vetarla. Solo entra en el corpus lo que supera ese visto bueno, y toda pieza declara su procedencia."
+    },
+    "en": {
+      "titulo": "What the La Banda ELE corpus is",
+      "texto": "A semester in Granada told by ten AI agents. Every sample goes through the same chain: what to look for is decided, the city is documented, the text is written, annotated with a closed tag set, checked, and a reviewer can veto it. Only what passes that approval enters the corpus, and every piece declares where it comes from."
+    }
+  },
+  "agentes": {
+    "Tokio": {
+      "voz": { "es": ["es-ES-AlvaroNeural", "+0Hz", "+0%"], "en": ["en-GB-RyanNeural", "+0Hz", "+0%"] },
+      "es": {
+        "rol": "Fija la tarea",
+        "guion": "Hola, soy Tokio. Abro la cadena. Antes de que nadie escriba una línea, decido qué buscamos: la situación, el nivel y las funciones del PCIC que debe practicar la muestra. También miro qué hay ya en el corpus para no repetirlo. Después, paso el relevo a Denver."
+      },
+      "en": {
+        "rol": "Sets the task",
+        "guion": "Hi, I'm Tokyo. I open the chain. Before anyone writes a line, I decide what we are looking for: the situation, the level, and the PCIC functions the sample should practise. I also check what the corpus already holds, so we don't repeat it. Then I hand over to Denver."
+      }
+    },
+    "Denver": {
+      "voz": { "es": ["es-ES-AlvaroNeural", "-5Hz", "-3%"], "en": ["en-GB-ThomasNeural", "+0Hz", "+0%"] },
+      "es": {
+        "rol": "Documenta Granada",
+        "guion": "Soy Denver. Mi trabajo es que Granada sea Granada. Busco en la web los datos reales que va a usar la muestra: un bar, un horario, un trámite. Si no puedo verificar algo, lo marco como «sin verificar». Aquí nadie se inventa la ciudad."
+      },
+      "en": {
+        "rol": "Documents Granada",
+        "guion": "I'm Denver. My job is to make sure Granada is really Granada. I search the web for the real facts the sample will use: a bar, an opening time, a procedure. If I can't verify something, I mark it as unverified. Nobody here invents the city."
+      }
+    },
+    "Estocolmo": {
+      "voz": { "es": ["es-ES-ElviraNeural", "+0Hz", "+0%"], "en": ["en-GB-SoniaNeural", "+0Hz", "+0%"] },
+      "es": {
+        "rol": "Gradúa por nivel",
+        "guion": "Soy Estocolmo. Pongo número y nivel a las cosas. Defino cuántas palabras debe tener el texto, qué gramática del PCIC puede aparecer y cuál queda prohibida por ser de un nivel superior. Con la redacción de un alumno, mido su longitud y sus marcas de nivel: solo pistas, nunca un veredicto."
+      },
+      "en": {
+        "rol": "Grades by level",
+        "guion": "I'm Stockholm. I put numbers and levels on things. I set how many words the text should have, which PCIC grammar may appear, and which is off limits because it belongs to a higher level. With a student's essay, I measure its length and level markers: clues only, never a verdict."
+      }
+    },
+    "Río": {
+      "voz": { "es": ["es-ES-XimenaNeural", "+0Hz", "+0%"], "en": ["en-GB-LibbyNeural", "+0Hz", "+0%"] },
+      "es": {
+        "rol": "Redacta la muestra",
+        "guion": "Soy Río, el único de la banda que escribe. Redacto la muestra: un diálogo o un texto natural, situado en Granada, con color oral y al nivel justo. Cuido que el trato, los saludos y los datos sean coherentes. Y si se trata de la redacción de un alumno, no la reescribo: solo señalo dónde hay un problema de gramática y por qué."
+      },
+      "en": {
+        "rol": "Writes the sample",
+        "guion": "I'm Rio, the only one in the band who writes. I draft the sample: a dialogue or a natural text, set in Granada, with spoken colour and at exactly the right level. I make sure the form of address, the greetings and the facts all agree. And with a student's essay I never rewrite it: I only point out where the grammar goes wrong, and why."
+      }
+    },
+    "Berlín": {
+      "voz": { "es": ["es-ES-AlvaroNeural", "+4Hz", "+5%"], "en": ["en-US-GuyNeural", "+0Hz", "+0%"] },
+      "es": {
+        "rol": "Anota funciones y gramática",
+        "guion": "Soy Berlín. Anoto con precisión de etiquetario. Marco en el texto las funciones comunicativas, la gramática y el nivel; y en la redacción de un alumno, el léxico y la cohesión. Cada nota lleva el fragmento exacto y un código del etiquetario cerrado. Sin códigos inventados."
+      },
+      "en": {
+        "rol": "Tags functions and grammar",
+        "guion": "I'm Berlin. I annotate with the precision of a tag set. In the text I mark communicative functions, grammar and level; and in a student's essay, vocabulary and cohesion. Every note carries the exact fragment and a code from the closed tag set. No invented codes."
+      }
+    },
+    "Lisboa": {
+      "voz": { "es": ["es-ES-ElviraNeural", "-3Hz", "+0%"], "en": ["en-GB-MaisieNeural", "+0Hz", "+0%"] },
+      "es": {
+        "rol": "Anota cultura y comprueba",
+        "guion": "Soy Lisboa. Anoto la cultura, la pragmática y la fonética, y compruebo lo que hacen los demás. Soy la única que puede devolver el trabajo: si hay un dato sin documentar, algo fuera de nivel o una contradicción, vuelve a Río o a Berlín para corregirlo."
+      },
+      "en": {
+        "rol": "Tags culture and checks",
+        "guion": "I'm Lisbon. I annotate culture, pragmatics and phonetics, and I check what everyone else does. I'm the only one who can send work back: if a fact is undocumented, something is above the level, or the text contradicts itself, it goes back to Rio or Berlin to be fixed."
+      }
+    },
+    "Nairobi": {
+      "voz": { "es": ["es-ES-XimenaNeural", "-4Hz", "-3%"], "en": ["en-US-JennyNeural", "+0Hz", "+0%"] },
+      "es": {
+        "rol": "Compone la ficha",
+        "guion": "Soy Nairobi. Resumo en una página. Reúno todas las anotaciones en una ficha, con el título, el texto, el nivel y la procedencia. Con la redacción de un alumno, preparo una lista ordenada de objeciones. No añado nada nuevo: solo pongo en orden lo que ya hay."
+      },
+      "en": {
+        "rol": "Builds the record",
+        "guion": "I'm Nairobi. I summarise on one page. I gather every annotation into a single record, with the title, the text, the level and where it comes from. With a student's essay, I prepare an ordered list of objections. I add nothing new: I just put in order what is already there."
+      }
+    },
+    "Palermo": {
+      "voz": { "es": ["es-ES-AlvaroNeural", "-9Hz", "-6%"], "en": ["en-US-ChristopherNeural", "+0Hz", "-3%"] },
+      "es": {
+        "rol": "Veta o da el visto bueno",
+        "guion": "Soy Palermo. No propongo ni corrijo: vedo, o no vedo. Sin mi visto bueno, nada entra en el corpus como pieza validada. Reviso si el texto suena natural, si el trato encaja con la situación, si los datos están documentados y si los códigos existen. Si algo falla, la pieza se queda en borrador."
+      },
+      "en": {
+        "rol": "Vetoes or approves",
+        "guion": "I'm Palermo. I don't propose and I don't correct: I veto, or I don't. Without my approval, nothing enters the corpus as a validated piece. I check whether the text sounds natural, whether the form of address fits the situation, whether the facts are documented and whether the codes exist. If something fails, the piece stays a draft."
+      }
+    },
+    "Helsinki": {
+      "voz": { "es": ["es-ES-ElviraNeural", "+4Hz", "+0%"], "en": ["en-US-AriaNeural", "+0Hz", "+0%"] },
+      "es": {
+        "rol": "Registra en la Clínica",
+        "guion": "Soy Helsinki. Registro en la Clínica y no opino. Tomo la ficha, fundo las anotaciones, descarto los códigos que no existen y guardo la pieza: validada, si Palermo no la vetó, o borrador, si la vetó."
+      },
+      "en": {
+        "rol": "Files it in the Clinic",
+        "guion": "I'm Helsinki. I file in the Clinic and I give no opinions. I take the record, merge the annotations, discard any codes that don't exist, and save the piece: validated if it passed Palermo, or draft if it was vetoed."
+      }
+    },
+    "Profesor": {
+      "voz": { "es": ["es-ES-AlvaroNeural", "-2Hz", "-4%"], "en": ["en-US-AndrewNeural", "+0Hz", "-3%"] },
+      "es": {
+        "rol": "Cierra e informa",
+        "guion": "Soy el Profesor. Leo la cadena completa y cierro la sesión con un informe: qué se ha producido, cuántas anotaciones hay, qué devoluciones hubo y qué conviene revisar a mano. No decido nada por el camino. Mi trabajo es que puedas entender qué ha pasado."
+      },
+      "en": {
+        "rol": "Closes and reports",
+        "guion": "I'm the Professor. I read the whole chain and close the session with a report: what was produced, how many annotations there are, what was sent back, and what is worth checking by hand. I decide nothing along the way. My job is to help you understand what happened."
+      }
+    }
+  }
+}
