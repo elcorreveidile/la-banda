@@ -603,10 +603,21 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   (`public/agentes/<codename sin tildes>-<es|en>.mp4` + `.jpg`, 960×540, 14-25 s, ~16 MB) los genera
   `node scripts/videos-agentes.mjs [Agente…] [--lang es|en]` con **edge-tts** (voz neuronal de Microsoft Edge, sin clave),
   ffmpeg y Chromium: avatar (el de `avatares.json`) + onda del audio + subtítulos quemados. Para regenerar uno tras editar su
-  guion: `pip install edge-tts` y `node scripts/videos-agentes.mjs Tokio --lang es`. Panel: sección plegable con selector
+  guion: `pip install edge-tts` y `node scripts/videos-agentes.mjs Tokio --lang es` (con edge-tts en el PATH). Panel: sección plegable con selector
   ES/EN en la tarjeta Corpus ELE (`PresentacionAgentes.tsx`). Test `tests/presentacion.test.ts` (cubre a los agentes del
   dominio, guiones y ficheros). Los ficheros de `public/` son públicos (el middleware solo protege `/panel`), así que la Clínica
   los incrusta por URL. Sin BD ni variables.
+  **Revisión de los audios (v0.22.1, 2026-10-07)**: Javier revisó los 19 textos uno a uno (es + en, Nairobi en no cambió) y
+  ajustó puntuación y pausas; los vídeos se regeneraron con ese texto. **Voz**: se descartó robotizar y grabar a mano; se
+  queda la voz sintética de edge-tts. **edge-tts no admite SSML** (rechaza `<break>`, `<emphasis>`, `<prosody>` interno…), así
+  que las pausas se montan por trozos: un agente puede llevar `locucion` (junto a `guion`, que es lo que se ve) con marcas
+  ` // ` (pausa de 1 s, la que la voz hace sola tras un punto), ` / ` (250 ms), ` /- ` (120 ms) y `*palabra*` (énfasis
+  suave: +15 Hz, −8 % de ritmo, +6 % de volumen; el énfasis fuerte de la primera prueba se descartó porque se notaba el corte).
+  `scripts/locucion.mjs` interpreta las marcas, `scripts/videos-agentes.mjs` sintetiza cada trozo, le quita el silencio de los
+  extremos, pone los silencios con ffmpeg y reparte los subtítulos por frases; sin `locucion` se habla el `guion` entero (como
+  antes). El test exige que la locución sin marcas sea igual al guion. Pausas explícitas hoy: Tokio, Denver, Río y Profesor
+  (es y en). Las voces inglesas hacen sólo ~0,45 s tras un punto (las españolas ~1 s). Pendiente menor de puntuación (se
+  dejó como la escribió Javier): «¿qué…?.» en Estocolmo es y «?.» en Estocolmo en.
 
 ## Convenciones
 

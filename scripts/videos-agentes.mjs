@@ -3,11 +3,14 @@
 // Requiere: ffmpeg, Chromium (CHROMIUM=/ruta, por defecto el de Playwright) y `edge-tts`
 // (pip install edge-tts; EDGE_TTS=/ruta/al/binario si no está en el PATH).
 // Voz: sintetizador de Microsoft Edge (edge-tts), sin clave. Los guiones están en
-// src/lib/corpus/presentacion.json y los avatares en src/lib/panel/avatares.json.
+// src/lib/corpus/presentacion.json (`guion` = lo que se lee en pantalla; `locucion` = lo que se dice, con pausas
+// y énfasis: ver scripts/locucion.mjs) y los avatares en src/lib/panel/avatares.json.
 import { execFileSync } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync, rmSync, existsSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createHash } from 'node:crypto'
+import { ENFASIS, MINIPAUSA_MS, conSigno, numero, parseLocucion } from './locucion.mjs'
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), '..')
 const salida = join(raiz, 'public', 'agentes')
@@ -55,11 +58,76 @@ svg{width:230px;height:230px;color:${color}}
   return png
 }
 
-function srtAAss(srt, color) {
-  // SRT → ASS (con estilo propio y fuente instalada); evita depender de force_style.
-  const t = (s) => { const [h, m, r] = s.split(':'); const [sec, ms] = r.split(','); return `${+h}:${m}:${sec}.${ms.slice(0, 2)}` }
-  const lineas = srt.trim().split(/\n\n+/).map((b) => b.split('\n')).filter((p) => p.length >= 3)
-    .map((p) => { const [a, b] = p[1].split(' --> '); return `Dialogue: 0,${t(a)},${t(b)},S,,0,0,0,,${p.slice(2).join(' ').replace(/\s+/g, ' ')}` })
+const cache = join(process.env.TMPDIR || '/tmp', 'videos-agentes-cache')
+const HUECO_MS = 20 // entre trozos pegados (p. ej. antes y después de una palabra enfatizada)
+const SR = 24000
+
+function ffprobeDur(f) {
+  return Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString())
+}
+
+/** Sintetiza un trozo con edge-tts, le quita el silencio de los extremos y lo deja en WAV mono (con caché). */
+function trozoWav(texto, voz, pitchHz, ratePct, volPct) {
+  const clave = createHash('sha1').update([texto, voz, pitchHz, ratePct, volPct].join('|')).digest('hex').slice(0, 16)
+  const wav = join(cache, `${clave}.wav`)
+  if (existsSync(wav)) return wav
+  const mp3 = join(cache, `${clave}.mp3`)
+  execFileSync(edge, ['--voice', voz, `--pitch=${conSigno(pitchHz, 'Hz')}`, `--rate=${conSigno(ratePct, '%')}`, `--volume=${conSigno(volPct, '%')}`, '--text', texto, '--write-media', mp3], { stdio: 'inherit' })
+  const recorta = 'silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.02,areverse,silenceremove=start_periods=1:start_threshold=-50dB:start_silence=0.02,areverse'
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', mp3, '-af', recorta, '-ar', String(SR), '-ac', '1', '-c:a', 'pcm_s16le', wav])
+  return wav
+}
+
+function silencioWav(ms) {
+  const wav = join(cache, `silencio-${ms}.wav`)
+  if (!existsSync(wav)) execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'lavfi', '-i', `anullsrc=r=${SR}:cl=mono`, '-t', String(ms / 1000), '-c:a', 'pcm_s16le', wav])
+  return wav
+}
+
+/** Monta el audio de una locución y devuelve { wav, cues: [{ ini, fin, texto }] } (tiempos en segundos). */
+function locutar(locucion, [voz, pitch, rate], base) {
+  const items = parseLocucion(locucion)
+  const partes = []
+  const cues = []
+  let t = 0
+  let grupo = null // trozos seguidos sin pausa (o solo con minipausa): sus subtítulos van por frases
+  const anade = (wav) => { partes.push(wav); t += ffprobeDur(wav) }
+  const cierra = () => {
+    if (!grupo) return
+    const frases = grupo.texto.split(/(?<=[.!?…])\s+/).filter(Boolean)
+    const total = frases.reduce((n, f) => n + f.length, 0)
+    let ini = grupo.ini
+    for (const f of frases) {
+      const fin = ini + ((t - grupo.ini) * f.length) / total
+      cues.push({ ini, fin, texto: f })
+      ini = fin
+    }
+    grupo = null
+  }
+  for (const it of items) {
+    if (it.tipo === 'pausa') {
+      if (it.ms > MINIPAUSA_MS) cierra()
+      anade(silencioWav(it.ms))
+      continue
+    }
+    const e = it.enfasis ? ENFASIS : { pitchHz: 0, ratePct: 0, volumePct: 0 }
+    const wav = trozoWav(it.texto, voz, numero(pitch) + e.pitchHz, numero(rate) + e.ratePct, e.volumePct)
+    if (!grupo) grupo = { ini: t, texto: '' }
+    grupo.texto = `${grupo.texto} ${it.texto}`.trim()
+    anade(wav)
+  }
+  cierra()
+  anade(silencioWav(400)) // cola final
+  const lista = join(tmp, `${base}.txt`)
+  writeFileSync(lista, partes.map((f) => `file '${f}'`).join('\n'))
+  const wav = join(tmp, `${base}.wav`)
+  execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', lista, '-c', 'copy', wav])
+  return { wav, cues }
+}
+
+function cuesAAss(cues) {
+  const t = (s) => { const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), x = s % 60; return `${h}:${String(m).padStart(2, '0')}:${x.toFixed(2).padStart(5, '0')}` }
+  const lineas = cues.map((c) => `Dialogue: 0,${t(c.ini)},${t(c.fin + 0.12)},S,,0,0,0,,${c.texto.replace(/\s+/g, ' ')}`)
   return `[Script Info]\nScriptType: v4.00+\nPlayResX: ${W}\nPlayResY: ${H}\n\n[V4+ Styles]\nFormat: Name,Fontname,Fontsize,PrimaryColour,SecondaryColour,OutlineColour,BackColour,Bold,Italic,Underline,StrikeOut,ScaleX,ScaleY,Spacing,Angle,BorderStyle,Outline,Shadow,Alignment,MarginL,MarginR,MarginV,Encoding\nStyle: S,Inter,26,&H0A0A0A,&H0A0A0A,&HFFFFFF,&H00000000,0,0,0,0,100,100,0,0,1,0,0,2,60,60,40,1\n\n[Events]\nFormat: Layer,Start,End,Style,Name,MarginL,MarginR,MarginV,Effect,Text\n${lineas.join('\n')}\n`
 }
 
@@ -70,15 +138,15 @@ for (const lang of langs) {
     const a = pres.agentes[nombre]
     if (!a) throw new Error(`Agente desconocido: ${nombre}`)
     const base = `${slug(nombre)}-${lang}`
-    const [voz, pitch, rate] = a.voz[lang]
-    const mp3 = join(tmp, `${base}.mp3`), srt = join(tmp, `${base}.srt`), ass = join(tmp, `${base}.ass`)
-    execFileSync(edge, ['--voice', voz, `--pitch=${pitch}`, `--rate=${rate}`, '--text', a[lang].guion, '--write-media', mp3, '--write-subtitles', srt], { stdio: 'inherit' })
-    writeFileSync(ass, srtAAss(readFileSync(srt, 'utf8'), COLOR[nombre]))
+    const ass = join(tmp, `${base}.ass`)
+    mkdirSync(cache, { recursive: true })
+    const { wav, cues } = locutar(a[lang].locucion || a[lang].guion, a.voz[lang], base)
+    writeFileSync(ass, cuesAAss(cues))
     const png = fotograma(nombre, lang)
     const color = COLOR[nombre].slice(1)
     // Imagen fija + onda del audio (se mueve al hablar) + subtítulos quemados.
     const filtro = `[1:a]showwaves=s=480x100:mode=cline:scale=sqrt:draw=full:colors=0x${color}:rate=25,format=yuva420p[w];[0:v][w]overlay=420:260:format=auto,subtitles=${ass.replace(/:/g, '\\:')}[v]`
-    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-loop', '1', '-framerate', '25', '-i', png, '-i', mp3, '-filter_complex', filtro, '-map', '[v]', '-map', '1:a', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '30', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '80k', '-ac', '1', '-shortest', '-movflags', '+faststart', join(salida, `${base}.mp4`)])
+    execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-loop', '1', '-framerate', '25', '-i', png, '-i', wav, '-filter_complex', filtro, '-map', '[v]', '-map', '1:a', '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '30', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '80k', '-ac', '1', '-shortest', '-movflags', '+faststart', join(salida, `${base}.mp4`)])
     execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', png, '-q:v', '5', join(salida, `${base}.jpg`)])
     console.log('✓', base)
   }
