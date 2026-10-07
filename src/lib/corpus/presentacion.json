@@ -97,7 +97,8 @@
       "voz": { "es": ["es-ES-AlvaroNeural", "-9Hz", "-6%"], "en": ["en-US-ChristopherNeural", "+0Hz", "-3%"] },
       "es": {
         "rol": "Veta o da el visto bueno",
-        "guion": "Soy Palermo. No propongo ni corrijo: vedo, o no vedo. Sin mi visto bueno, nada entra en el corpus como pieza validada. Reviso si el texto suena natural, si el trato encaja con la situación, si los datos están documentados y si los códigos existen. Si algo falla, la pieza se queda en borrador."
+        "guion": "Soy Palermo. No propongo ni corrijo. Vedo, o no vedo. Sin mi visto bueno, nada entra en el corpus como pieza validada. Reviso si el texto suena natural. Si el trato encaja con la situación. Si los datos están documentados y si los códigos existen. Si algo falla, la pieza se queda en borrador.",
+        "locucion": "Soy Palermo. No propongo ni corrijo. Vedo, o no vedo. Sin mi visto bueno, nada entra en el corpus como pieza validada. Reviso si el texto suena natural. Si el trato encaja con la situación. Si los datos están documentados y si los códigos existen. Si algo falla, la pieza se queda en borrador."
       },
       "en": {
         "rol": "Vetoes or approves",
