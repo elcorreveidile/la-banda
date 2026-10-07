@@ -38,8 +38,8 @@
       "voz": { "es": ["es-ES-ElviraNeural", "+0Hz", "+0%"], "en": ["en-GB-SoniaNeural", "+0Hz", "+0%"] },
       "es": {
         "rol": "Gradúa por nivel",
-        "guion": "Soy Estocolmo. Pongo número y nivel a las cosas. Defino cuántas palabras debe tener el texto. ¿qué gramática del plan curricular puede aparecer? y ¿cuál queda prohibida por ser de un nivel superior?. Con la redacción de un alumno, mido su longitud y sus marcas de nivel. Solo pistas; nunca un veredicto.",
-        "locucion": "Soy Estocolmo. Pongo número y nivel a las cosas. Defino cuántas palabras debe tener el texto. ¿qué gramática del plan curricular puede aparecer? y ¿cuál queda prohibida por ser de un nivel superior?. Con la redacción de un alumno, mido su longitud y sus marcas de nivel. Solo pistas; nunca un veredicto."
+        "guion": "Soy Estocolmo. Pongo número y nivel a las cosas. Defino cuántas palabras debe tener el texto. ¿qué gramática del plan curricular puede aparecer y cuál queda prohibida por ser de un nivel superior?. Con la redacción de un alumno, mido su longitud y sus marcas de nivel. Solo pistas; nunca un veredicto.",
+        "locucion": "Soy Estocolmo. Pongo número y nivel a las cosas. Defino cuántas palabras debe tener el texto. ¿qué gramática del plan curricular puede aparecer y cuál queda prohibida por ser de un nivel superior?. Con la redacción de un alumno, mido su longitud y sus marcas de nivel. Solo pistas; nunca un veredicto."
       },
       "en": {
         "rol": "Grades by level",
