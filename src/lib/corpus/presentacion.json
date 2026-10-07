@@ -74,7 +74,8 @@
       "voz": { "es": ["es-ES-ElviraNeural", "-3Hz", "+0%"], "en": ["en-GB-MaisieNeural", "+0Hz", "+0%"] },
       "es": {
         "rol": "Anota cultura y comprueba",
-        "guion": "Soy Lisboa. Anoto la cultura, la pragmática y la fonética, y compruebo lo que hacen los demás. Soy la única que puede devolver el trabajo: si hay un dato sin documentar, algo fuera de nivel o una contradicción, vuelve a Río o a Berlín para corregirlo."
+        "guion": "Soy Lisboa. Anoto la cultura, la pragmática y la fonética, y compruebo lo que hacen los demás. Soy la única que puede devolver el trabajo. Si hay un dato sin documentar, algo fuera de nivel o una contradicción, vuelve a Río o a Berlín para corregirlo.",
+        "locucion": "Soy Lisboa. Anoto la cultura, la pragmática y la fonética, y compruebo lo que hacen los demás. Soy la única que puede devolver el trabajo. Si hay un dato sin documentar, algo fuera de nivel o una contradicción, vuelve a Río o a Berlín para corregirlo."
       },
       "en": {
         "rol": "Tags culture and checks",
