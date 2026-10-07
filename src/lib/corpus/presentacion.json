@@ -62,7 +62,8 @@
       "voz": { "es": ["es-ES-AlvaroNeural", "+4Hz", "+5%"], "en": ["en-US-GuyNeural", "+0Hz", "+0%"] },
       "es": {
         "rol": "Anota funciones y gramática",
-        "guion": "Soy Berlín. Anoto con precisión de etiquetario. Marco en el texto las funciones comunicativas, la gramática y el nivel; y en la redacción de un alumno, el léxico y la cohesión. Cada nota lleva el fragmento exacto y un código del etiquetario cerrado. Sin códigos inventados."
+        "guion": "Soy Berlín. Anoto con precisión de etiquetario. Marco en el texto las funciones comunicativas, la gramática y el nivel. Y en la redacción de un alumno, el léxico y la cohesión. Cada nota lleva el fragmento exacto y un código del etiquetario cerrado. Sin códigos inventados.",
+        "locucion": "Soy Berlín. Anoto con precisión de etiquetario. Marco en el texto las funciones comunicativas, la gramática y el nivel. Y en la redacción de un alumno, el léxico y la cohesión. Cada nota lleva el fragmento exacto y un código del etiquetario cerrado. Sin códigos inventados."
       },
       "en": {
         "rol": "Tags functions and grammar",
