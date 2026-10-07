@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 import { corpusEleDomain as corpus } from '@domains/corpus-ele/config'
 import avatares from '@/lib/panel/avatares.json'
 import { INTRO_CORPUS, ORDEN_CADENA, presentacionDe } from '@/lib/corpus/presentacion'
+import data from '@/lib/corpus/presentacion.json'
+import { normalizarGuion, parseLocucion, textoPlano } from '../scripts/locucion.mjs'
 
 const idiomas = ['es', 'en'] as const
 
@@ -35,5 +37,23 @@ describe('presentación de los agentes del corpus', () => {
       expect(INTRO_CORPUS[l].texto.length).toBeGreaterThan(80)
       expect(presentacionDe('Profesor', l)!.guion).toMatch(/Profesor|Professor/)
     }
+  })
+
+  it('la locución (con pausas) dice exactamente lo que se lee en el guion', () => {
+    let con = 0
+    const agentes = data.agentes as unknown as Record<string, Record<'es' | 'en', { guion: string; locucion?: string }>>
+    for (const [nombre, a] of Object.entries(agentes)) {
+      for (const l of idiomas) {
+        const loc = a[l].locucion
+        if (!loc) continue
+        con++
+        expect(textoPlano(loc), `${nombre} ${l}`).toBe(normalizarGuion(a[l].guion))
+      }
+    }
+    expect(con).toBeGreaterThan(0)
+  })
+
+  it('las marcas de pausa de la locución se leen bien', () => {
+    expect(parseLocucion('Hola. // Adiós. / Fin /- ya.').map((i) => (i.tipo === 'pausa' ? i.ms : i.texto))).toEqual(['Hola.', 1000, 'Adiós.', 250, 'Fin', 120, 'ya.'])
   })
 })
