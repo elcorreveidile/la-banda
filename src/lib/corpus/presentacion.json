@@ -19,7 +19,8 @@
       },
       "en": {
         "rol": "Sets the task",
-        "guion": "Hi, I'm Tokyo. I open the chain. Before anyone writes a line, I decide what we are looking for: the situation, the level, and the curriculum plan functions the sample should practise. I also check what the corpus already holds, so we don't repeat it. Then I hand over to Denver."
+        "guion": "Hi, I'm Tokyo. I open the chain. Before anyone writes a line, I decide what we are looking for. The situation, and the level and the functions of the curriculum plan that the sample should practise. I also check what the corpus already holds, so we don't repeat it. Then I hand over to Denver.",
+        "locucion": "Hi, I'm Tokyo. I open the chain. Before anyone writes a line, I decide what we are looking for. // The situation, and the level and the functions of the curriculum plan that the sample should practise. I also check what the corpus already holds, so we don't repeat it. Then I hand over to Denver."
       }
     },
     "Denver": {
@@ -31,7 +32,8 @@
       },
       "en": {
         "rol": "Documents Granada",
-        "guion": "I'm Denver. My job is to make sure Granada is really Granada. I search the web for the real facts the sample will use: a bar, an opening time, a procedure. If I can't verify something, I mark it as unverified. Nobody here invents the city."
+        "guion": "I'm Denver. My job is to make sure Granada is really Granada. I search the web for the real facts the sample will use. A bar, an opening time, a procedure. If I can't verify something, I mark it as “unverified”. Nobody here invents the city.",
+        "locucion": "I'm Denver. My job is to make sure Granada is really Granada. I search the web for the real facts the sample will use. // A bar, an opening time, a procedure. If I can't verify something, I mark it as “unverified”. Nobody here invents the city."
       }
     },
     "Estocolmo": {
@@ -43,7 +45,8 @@
       },
       "en": {
         "rol": "Grades by level",
-        "guion": "I'm Stockholm. I put numbers and levels on things. I set how many words the text should have, which curriculum plan grammar may appear, and which is off limits because it belongs to a higher level. With a student's essay, I measure its length and level markers: clues only, never a verdict."
+        "guion": "I'm Stockholm. I put numbers and levels on things. I set how many words the text should have. Which grammar from the curriculum plan may appear and which is off limits because it belongs to a higher level?. With a student's essay, I measure its length and level markers. Clues only; never a verdict.",
+        "locucion": "I'm Stockholm. I put numbers and levels on things. I set how many words the text should have. Which grammar from the curriculum plan may appear and which is off limits because it belongs to a higher level?. With a student's essay, I measure its length and level markers. Clues only; never a verdict."
       }
     },
     "Río": {
@@ -55,7 +58,8 @@
       },
       "en": {
         "rol": "Writes the sample",
-        "guion": "I'm Rio, the only one in the band who writes. I draft the sample: a dialogue or a natural text, set in Granada, with spoken colour and at exactly the right level. I make sure the form of address, the greetings and the facts all agree. And with a student's essay I never rewrite it: I only point out where the grammar goes wrong, and why."
+        "guion": "I'm Rio, the only one in the band who writes. I draft the sample. A dialogue or a natural text, set in Granada, with spoken colour and at exactly the right level. I make sure the form of address, the greetings and the facts all agree. And with a student's essay I never rewrite it: I only point out where the grammar goes wrong, and why.",
+        "locucion": "I'm Rio, the only one in the band who writes. I draft the sample. // A dialogue or a natural text, set in Granada, with spoken colour and at exactly the right level. I make sure the form of address, the greetings and the facts all agree. And with a student's essay I never rewrite it: I only point out where the grammar goes wrong, and why."
       }
     },
     "Berlín": {
@@ -67,7 +71,8 @@
       },
       "en": {
         "rol": "Tags functions and grammar",
-        "guion": "I'm Berlin. I annotate with the precision of a tag set. In the text I mark communicative functions, grammar and level; and in a student's essay, vocabulary and cohesion. Every note carries the exact fragment and a code from the closed tag set. No invented codes."
+        "guion": "I'm Berlin. I annotate with the precision of a tag set. In the text I mark communicative functions, grammar and level. And in a student's essay, vocabulary and cohesion. Every note carries the exact fragment and a code from the closed tag set. No invented codes.",
+        "locucion": "I'm Berlin. I annotate with the precision of a tag set. In the text I mark communicative functions, grammar and level. And in a student's essay, vocabulary and cohesion. Every note carries the exact fragment and a code from the closed tag set. No invented codes."
       }
     },
     "Lisboa": {
@@ -79,7 +84,8 @@
       },
       "en": {
         "rol": "Tags culture and checks",
-        "guion": "I'm Lisbon. I annotate culture, pragmatics and phonetics, and I check what everyone else does. I'm the only one who can send work back: if a fact is undocumented, something is above the level, or the text contradicts itself, it goes back to Rio or Berlin to be fixed."
+        "guion": "I'm Lisbon. I annotate culture, pragmatics and phonetics, and I check what everyone else does. I'm the only one who can send work back. If a fact is undocumented, something is above the level, or the text contradicts itself, it goes back to Rio or Berlin to be fixed.",
+        "locucion": "I'm Lisbon. I annotate culture, pragmatics and phonetics, and I check what everyone else does. I'm the only one who can send work back. If a fact is undocumented, something is above the level, or the text contradicts itself, it goes back to Rio or Berlin to be fixed."
       }
     },
     "Nairobi": {
@@ -102,7 +108,8 @@
       },
       "en": {
         "rol": "Vetoes or approves",
-        "guion": "I'm Palermo. I don't propose and I don't correct: I veto, or I don't. Without my approval, nothing enters the corpus as a validated piece. I check whether the text sounds natural, whether the form of address fits the situation, whether the facts are documented and whether the codes exist. If something fails, the piece stays a draft."
+        "guion": "I'm Palermo. I don't propose and I don't correct. I veto, or I don't. Without my approval, nothing enters the corpus as a validated piece. I check whether the text sounds natural. Whether the form of address fits the situation. Whether the facts are documented and whether the codes exist. If something fails, the piece stays a draft.",
+        "locucion": "I'm Palermo. I don't propose and I don't correct. I veto, or I don't. Without my approval, nothing enters the corpus as a validated piece. I check whether the text sounds natural. Whether the form of address fits the situation. Whether the facts are documented and whether the codes exist. If something fails, the piece stays a draft."
       }
     },
     "Helsinki": {
@@ -114,7 +121,8 @@
       },
       "en": {
         "rol": "Files it in the Clinic",
-        "guion": "I'm Helsinki. I file in the Clinic and I give no opinions. I take the record, merge the annotations, discard any codes that don't exist, and save the piece: validated if it passed Palermo, or draft if it was vetoed."
+        "guion": "I'm Helsinki. I file in the Clinic and I give no opinions. I take the record. I merge the annotations, discard any codes that don't exist, and save the piece. Validated, if it passed Palermo, or draft, if it was vetoed.",
+        "locucion": "I'm Helsinki. I file in the Clinic and I give no opinions. I take the record. I merge the annotations, discard any codes that don't exist, and save the piece. Validated, if it passed Palermo, or draft, if it was vetoed."
       }
     },
     "Profesor": {
@@ -126,7 +134,8 @@
       },
       "en": {
         "rol": "Closes and reports",
-        "guion": "I'm the Professor. I read the whole chain and close the session with a report: what was produced, how many annotations there are, what was sent back, and what is worth checking by hand. I decide nothing along the way. My job is to help you understand what happened."
+        "guion": "I'm the Professor. I read the whole chain and close the session with a report. What was produced. How many annotations there are. What was sent back and what is worth checking by hand. I decide nothing along the way. My job is to help you understand, what happened.",
+        "locucion": "I'm the Professor. I read the whole chain and close the session with a report. What was produced. How many annotations there are. What was sent back and what is worth checking by hand. I decide nothing along the way. My job is to help you understand, // what happened."
       }
     }
   }
