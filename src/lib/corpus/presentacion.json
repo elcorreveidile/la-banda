@@ -50,7 +50,8 @@
       "voz": { "es": ["es-ES-XimenaNeural", "+0Hz", "+0%"], "en": ["en-GB-LibbyNeural", "+0Hz", "+0%"] },
       "es": {
         "rol": "Redacta la muestra",
-        "guion": "Soy Río, el único de la banda que escribe. Redacto la muestra: un diálogo o un texto natural, situado en Granada, con color oral y al nivel justo. Cuido que el trato, los saludos y los datos sean coherentes. Y si se trata de la redacción de un alumno, no la reescribo: solo señalo dónde hay un problema de gramática y por qué."
+        "guion": "Soy Río, el único de la banda que escribe. Redacto la muestra. Un diálogo o un texto natural, situado en Granada, con color oral y al nivel justo. Cuido que el trato, los saludos y los datos sean coherentes. Y si se trata de la redacción de un alumno, no la reescribo: solo señalo dónde hay un problema de gramática y por qué.",
+        "locucion": "Soy Río, el único de la banda que escribe. Redacto la muestra. // Un diálogo o un texto natural, situado en Granada, con color oral y al nivel justo. Cuido que el trato, los saludos y los datos sean coherentes. Y si se trata de la redacción de un alumno, no la reescribo: solo señalo dónde hay un problema de gramática y por qué."
       },
       "en": {
         "rol": "Writes the sample",
