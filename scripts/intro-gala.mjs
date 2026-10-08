@@ -60,16 +60,25 @@ const CLINICA = {
   en: {
     voz: GALA.en.voz,
     escenas: [
-      { tipo: 'clinica', texto: 'We present the Clínica Cultural y Lingüística of Spanish in Granada, a place where Spanish is learned the way health is cared for, with diagnosis, treatment and follow-up.', t: 'Clínica Cultural y Lingüística', k: 'of Spanish in Granada', k2: 'diagnosis · treatment · follow-up' },
+      { tipo: 'clinica', texto: 'We present the Clínica Cultural and Linguistic of Spanish in Granada, a place where Spanish is learned the way health is cared for, with diagnosis, treatment and follow-up.', t: 'Clínica Cultural and Linguistic', k: 'of Spanish in Granada', k2: 'diagnosis · treatment · follow-up' },
       { tipo: 'herramienta', texto: 'It has many tools. One of them is the band: the one in charge of building the Granada Corpus, a linguistic corpus for students of Spanish.', t: 'The band', k: 'builds the Granada Corpus' },
     ],
   },
 }
 const CIERRE = {
   es: { voz: GALA.es.voz, escenas: [{ tipo: 'cierre', texto: 'Visita la Clínica Cultural y Lingüística de Español en Granada.', t: 'Clínica Cultural y Lingüística', k: 'de Español en Granada', web: 'www.clinicacultural.com' }] },
-  en: { voz: GALA.en.voz, escenas: [{ tipo: 'cierre', texto: 'Visit the Clínica Cultural y Lingüística of Spanish in Granada.', t: 'Clínica Cultural y Lingüística', k: 'of Spanish in Granada', web: 'www.clinicacultural.com' }] },
+  en: { voz: GALA.en.voz, escenas: [{ tipo: 'cierre', texto: 'Visit the Clínica Cultural and Linguistic of Spanish in Granada.', t: 'Clínica Cultural and Linguistic', k: 'of Spanish in Granada', web: 'www.clinicacultural.com' }] },
 }
-const CONJUNTOS = { gala: GALA, clinica: CLINICA, cierre: CIERRE }
+const accion = (texto, t, k) => ({ voz: null, escenas: [{ tipo: 'accion', texto, t, k }] })
+const ACCION1 = {
+  es: { ...accion('Ahora, a verlos trabajar. Pedimos una muestra, y los agentes se van pasando el trabajo uno a otro.', 'Así trabaja la banda', 'en directo'), voz: GALA.es.voz },
+  en: { ...accion("Now, let's watch them work. We ask for a sample, and the agents pass the work from one to the next.", 'How the band works', 'live'), voz: GALA.en.voz },
+}
+const ACCION2 = {
+  es: { ...accion('Cuando termina la cadena, la muestra llega a la Clínica. Un profesor la revisa, la publica, y entra en el Corpus Granada.', 'Así llega al Corpus Granada', 'revisar · publicar · consultar'), voz: GALA.es.voz },
+  en: { ...accion('When the chain ends, the sample reaches the Clínica. A teacher reviews it, publishes it, and it joins the Granada Corpus.', 'How it reaches the Granada Corpus', 'review · publish · search'), voz: GALA.en.voz },
+}
+const CONJUNTOS = { gala: GALA, clinica: CLINICA, cierre: CIERRE, accion1: ACCION1, accion2: ACCION2 }
 
 const dur = (f) => Number(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', f]).toString())
 function trozo(texto, voz, p, r) {
@@ -94,6 +103,7 @@ function escena(e, lang, i, set) {
 .o{color:${ORO}}.k{font-size:44px;letter-spacing:.18em;text-transform:uppercase;color:#a8a29e;margin-top:30px}.h{font-size:150px;font-weight:800;line-height:1.05}
 .l{position:absolute;top:0;width:5px;height:300px;background:linear-gradient(${ORO}aa,transparent)}`
   let cuerpo = ''
+  if (e.tipo === 'accion') cuerpo = `<div style="font-size:90px;color:${ORO};letter-spacing:.4em">▶</div><div class="h" style="font-size:120px;margin-top:20px">${esc(e.t)}</div><div class="k" style="color:${ORO}">${esc(e.k)}</div>`
   if (e.tipo === 'cierre') cuerpo = `<div style="font-size:90px;color:${ORO}">✚</div><div class="h" style="font-size:112px;margin-top:10px">${esc(e.t)}</div><div class="k" style="color:#fafaf9">${esc(e.k)}</div><div style="margin-top:70px;font-size:96px;font-weight:700;color:${ORO};border:4px solid ${ORO};border-radius:24px;padding:20px 60px">${esc(e.web)}</div>`
   if (e.tipo === 'clinica') cuerpo = `<div style="font-size:90px;color:${ORO}">✚</div><div class="h" style="font-size:112px;margin-top:10px">${esc(e.t)}</div><div class="k" style="color:#fafaf9">${esc(e.k)}</div><div class="k" style="font-size:38px;color:${ORO}">${esc(e.k2)}</div>`
   if (e.tipo === 'herramienta') cuerpo = `<div style="display:flex;gap:14px;margin-bottom:60px">${AGENTES.map((n, j) => `<div style="width:128px;height:128px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;border:5px solid ${COLORES[j]}"><svg viewBox="0 0 120 120" style="width:98px;height:98px;color:${COLORES[j]}">${avatares[n].inner}</svg></div>`).join('')}</div><div class="h o">${esc(e.t)}</div><div class="k" style="color:#fafaf9">${esc(e.k)}</div>`
@@ -111,7 +121,8 @@ function escena(e, lang, i, set) {
 
 const t2 = (s) => { const m = Math.floor(s / 60), x = s % 60; return `0:${String(m).padStart(2, '0')}:${x.toFixed(2).padStart(5, '0')}` }
 mkdirSync(salida, { recursive: true }); mkdirSync(tmp, { recursive: true }); mkdirSync(cache, { recursive: true })
-for (const [set, CONJ] of Object.entries(CONJUNTOS)) for (const lang of ['es', 'en']) {
+const solo = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1].split(',') : null
+for (const [set, CONJ] of Object.entries(CONJUNTOS).filter(([k]) => !solo || solo.includes(k))) for (const lang of ['es', 'en']) {
   const g = CONJ[lang]
   const [voz, p, r] = g.voz
   const segmentos = []
