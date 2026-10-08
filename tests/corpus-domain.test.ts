@@ -116,4 +116,17 @@ describe('dominio corpus-ele', () => {
     expect(s.finalReport).toMatchObject({ veredicto: 'sin_objeciones' })
     expect(mem.handoffs).toHaveLength(10)
   })
+
+  it('Río, Berlín y Palermo comparten el límite del subjuntivo en B1 (PCIC) y las reglas de naturalidad', () => {
+    const prompt = (n: string) => corpusEleDomain.agents.find((a) => a.codename === n)!.systemPrompt
+    for (const n of ['Río', 'Berlín', 'Palermo']) {
+      expect(prompt(n)).toMatch(/LÍMITE DEL SUBJUNTIVO/)
+      expect(prompt(n)).toMatch(/aunque \+ subjuntivo/)
+      expect(prompt(n)).toMatch(/relativas con subjuntivo/)
+    }
+    expect(prompt('Río')).toMatch(/COHERENCIA DE LOS PERSONAJES/)
+    expect(prompt('Río')).toMatch(/NO pregunta si se deja propina/)
+    expect(prompt('Berlín')).toMatch(/adecuacion-nivel/)
+    expect(prompt('Palermo')).toMatch(/\(l\) estructuras de subjuntivo fuera del nivel/)
+  })
 })
