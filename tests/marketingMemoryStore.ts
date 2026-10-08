@@ -19,6 +19,7 @@ export function createMarketingMemoryStore() {
       const now = new Date()
       const row: Tema = {
         publico: null,
+        origen: 'plan',
         palabrasClave: [],
         estado: 'propuesto',
         version: 1,

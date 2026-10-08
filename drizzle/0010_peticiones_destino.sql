@@ -1,0 +1,1 @@
+ALTER TABLE "marketing_temas" ADD COLUMN "origen" text DEFAULT 'plan' NOT NULL;

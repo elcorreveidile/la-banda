@@ -4,7 +4,7 @@ import { marketingDomain } from '@domains/marketing/config'
 import { validateDomain } from '@domains/types'
 import { contarPalabras, problemasHtml, validarArticulo, validarTemas } from '@/lib/marketing/articulo'
 import { esDiaDePlan, esDiaDeRedaccion, esHoraDeResumen, huecosSemanaSiguiente, lunesSemanaSiguiente, madridAUtc } from '@/lib/marketing/calendario'
-import { abrirRedaccion, aplicarAviso, cicloMarketing, componerResumen, datosResumen, decidirTema, enviarArticulo, estadoPorPiezas, finalizarSesion, registrarTemas, type DepsCiclo } from '@/lib/marketing/ciclo'
+import { abrirRedaccion, aplicarAviso, cicloMarketing, componerResumen, datosResumen, decidirTema, encargarArticulo, enviarArticulo, estadoPorPiezas, finalizarSesion, registrarTemas, type DepsCiclo } from '@/lib/marketing/ciclo'
 import { modeloJuez, modeloRedactor, modelosDisponibles, proveedorBusqueda, revisorEmail } from '@/lib/marketing/config'
 import { avisoFirmado, claveTraduccion, enviarPieza, firmaPlataforma, leerVistaPieza, refPieza, type EnvioPieza } from '@/lib/marketing/wordnext'
 import { leerRespuestaBusqueda } from '@/lib/marketing/busqueda'
@@ -520,5 +520,41 @@ describe('perfiles por destino (Fase 4)', () => {
     }
     expect(await abrirRedaccion(await nuevo('Primer tema del restaurante'), ctx.d)).toMatchObject({ tipo: 'abierta' })
     expect(await abrirRedaccion(await nuevo('Segundo tema del restaurante'), ctx.d)).toEqual({ tipo: 'sin-hueco' })
+  })
+
+  describe('encargo de un artículo (pestaña Peticiones)', () => {
+    const encargo = { destino: 'restaurante.wordnext.tech', titulo: 'Cómo cobrar la señal de una reserva', texto: 'Explica cómo cobrar una señal con Stripe en una reserva, para un restaurante pequeño.' }
+
+    it('crea un tema aprobado de origen «peticion» y abre la redacción aunque el hueco semanal esté lleno', async () => {
+      const ctx = deps({ now: () => VIERNES.getTime() })
+      const a = await encargarArticulo(encargo, ctx.d)
+      expect(a).toMatchObject({ ok: true })
+      expect(a.sessionId).toBeTruthy()
+      const t = await ctx.mem.store.tema(a.temaId!)
+      expect(t).toMatchObject({ origen: 'peticion', estado: 'redactando', categoria: 'restauracion', angulo: encargo.texto })
+    })
+
+    it('si el hueco semanal está ocupado, propone el siguiente día laborable a las 09:00', async () => {
+      const ctx = deps({ now: () => VIERNES.getTime() })
+      const hueco = huecosSemanaSiguiente(VIERNES, 1)[0]
+      await ctx.mem.store.insertarTema({ id: 'ocupa', destino: 'restaurante.wordnext.tech', categoria: 'restauracion', titulo: 'Ya programado', angulo: 'Ángulo suficientemente largo para pasar.', estado: 'en_revision', programadoPara: hueco, createdAt: VIERNES, updatedAt: VIERNES })
+      const a = await encargarArticulo(encargo, ctx.d)
+      expect(a.ok).toBe(true)
+      expect((await ctx.mem.store.tema(a.temaId!))?.programadoPara).toEqual(madridAUtc(2026, 10, 5, 9)) // viernes 2 → lunes 5
+    })
+
+    it('con otra redacción en curso queda en cola; y el cron lo redacta cualquier día', async () => {
+      const ctx = deps({ now: () => VIERNES.getTime() })
+      await encargarArticulo(encargo, ctx.d)
+      const cola = await encargarArticulo({ ...encargo, titulo: 'Segundo encargo en cola' }, ctx.d)
+      expect(cola).toMatchObject({ ok: true, enCola: expect.stringContaining('ya hay una redacción') })
+      expect((await ctx.mem.store.tema(cola.temaId!))?.estado).toBe('aprobado')
+    })
+
+    it('rechaza webs que no son destino y textos vacíos', async () => {
+      const ctx = deps({ now: () => VIERNES.getTime() })
+      expect(await encargarArticulo({ ...encargo, destino: 'otra.example.com' }, ctx.d)).toMatchObject({ ok: false })
+      expect(await encargarArticulo({ ...encargo, texto: 'corto' }, ctx.d)).toMatchObject({ ok: false })
+    })
   })
 })
