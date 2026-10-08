@@ -619,6 +619,17 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   (es y en). Las voces inglesas hacen sólo ~0,45 s tras un punto (las españolas ~1 s). Pendiente menor de puntuación (se
   dejó como la escribió Javier): «¿qué…?.» en Estocolmo es y «?.» en Estocolmo en.
 
+- **2026-10-08, B1 sin estructuras de B2 y escenas más naturales (v0.22.2)**. Javier revisó dos muestras de B1 de la heladería («Dos bolas, por
+  favor» y «¿Cucurucho o tarrina?»). Contrastadas con el inventario oficial de Gramática B1-B2 del PCIC (cada estructura está en el bloque B1 o en
+  el B2): en B1 el subjuntivo solo entra con «ojalá», «quizá/tal vez», «quiero que», «es bueno que», «cuando» (futuro), «antes de que» y «para
+  que», y «aunque» solo con indicativo. Eran **B2** «¿Tenéis algún sabor que no lleve nata?» (relativa con subjuntivo), «aunque solo pruebes» y «como
+  queráis». Además: pedidos que no cuadraban con lo dicho antes (la mandarina de Sofía acababa en el cucurucho de Marta), el dependiente que pregunta
+  por la propina, «Sí, la última» en vez de «Sí, yo», «va» por «vale» y escenas casi repetidas. Solo prompts (`domains/corpus-ele/config.ts`): una
+  constante `LIMITE_SUBJUNTIVO` compartida por **Río** (escribe dentro del límite y cuida coherencia de personajes, naturalidad del servicio y variedad),
+  **Berlín** (señala con `adecuacion-nivel` lo que supera el nivel) y **Palermo** (nuevos motivos de veto l, m y n). Las etiquetas fonéticas y
+  `tuteo-usted` en textos escritos NO son un fallo: es el diseño (Río escribe en ortografía normal y Lisboa anota la fonética aparte). Test en
+  `corpus-domain`. Lo ya publicado hay que corregirlo o reencargarlo a mano desde el panel de la Clínica.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&
