@@ -51,6 +51,11 @@ export function PeticionesCard({ m, error, aviso }: { m: PeticionesMetrics; erro
             Con una web, la banda escribe el artículo que pides, Palermo lo revisa y llega como <b>borrador al panel de esa web en WordNext</b>, donde lo revisas, lo editas y lo publicas en su blog. Sin web, entrega un informe (el webhook solo vale en este caso).
           </span>
         </label>
+        <label className="grid gap-1 text-xs text-stone-600">
+          Publicar el (solo con web de destino, hora de Madrid)
+          <input name="publicarEn" type="datetime-local" className="rounded border border-stone-300 px-2 py-1.5 text-sm sm:w-64" />
+          <span className="text-stone-500">Opcional. Sin fecha, el borrador llega sin programar y al aprobarlo en WordNext eliges tú el momento: puede ser en el mismo instante.</span>
+        </label>
         <div className="flex items-center justify-between gap-2">
           <span className="text-xs text-stone-500">Sin destino: la banda analiza la petición y entrega un informe (registrado y servible por la API v1).</span>
           <button type="submit" className="rounded-lg bg-violet-600 px-3 py-2 font-semibold text-white shadow-sm hover:bg-violet-700">

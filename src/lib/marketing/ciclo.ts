@@ -18,7 +18,7 @@
 import { normalizarPayload } from '@/engine/decision'
 import type { EstadoTema, Pieza, Tema } from '@/db/marketing'
 import { leerVeredicto, validarArticulo, validarTemas, type ArticuloValido } from './articulo'
-import { esDiaDePlan, esDiaDeRedaccion, esHoraDeResumen, haceDias, lunesSemanaSiguiente, madridAUtc, primerHuecoLibre, siguienteDiaLaborable } from './calendario'
+import { esDiaDePlan, esDiaDeRedaccion, esHoraDeResumen, haceDias, lunesSemanaSiguiente, madridAUtc, primerHuecoLibre } from './calendario'
 import { articulosPorSemana, destinos, idiomasDestino, MARKETING_SESION_MAX_MS, modelosDisponibles, perfilDestino, temasPorPlan } from './config'
 import { leerInforme, resultadoDeCierre, type InformeProfesor } from './informe'
 import type { MarketingStore, SesionAbierta } from './store'
@@ -79,14 +79,20 @@ export async function abrirRedaccion(tema: Tema, deps: DepsCiclo): Promise<Resul
   if (tema.estado !== 'aprobado') return { tipo: 'no-aprobado' }
   if (!(deps.modelosOk ?? modelosDisponibles)()) return { tipo: 'sin-modelos' }
   const now = ahora(deps)
+  // Un encargo de Javier no entra en el ritmo semanal: sale con la fecha que pidió o, si no pidió ninguna,
+  // sin fecha, y quien lo aprueba en WordNext elige el momento (también «ahora»).
+  if (tema.origen === 'peticion') {
+    await deps.store.actualizarTema(tema.id, { estado: 'redactando', programadoPara: tema.programadoPara ?? null, motivo: null })
+    const sessionId = await deps.abrirSesion('articulo', { kind: 'articulo', temaId: tema.id, version: tema.version, destino: tema.destino })
+    await deps.store.actualizarTema(tema.id, { sessionId })
+    return { tipo: 'abierta', sessionId, programadoPara: tema.programadoPara ?? now }
+  }
   const porSemana = articulosPorSemana(deps.env, tema.destino)
   const l = lunesSemanaSiguiente(now)
   const lunes = madridAUtc(l.y, l.m, l.d, 0)
   const siguienteLunes = madridAUtc(l.y, l.m, l.d + 7, 0)
   const ocupados = (await deps.store.programadosEntre(tema.destino, lunes, siguienteLunes)).filter((t) => t.id !== tema.id).map((t) => t.programadoPara!)
-  // Un encargo de Javier no espera a que haya hueco en el ritmo semanal: si no lo hay, propone el siguiente
-  // día laborable a las 09:00 (en WordNext una persona decide la fecha al aprobar).
-  const hueco = primerHuecoLibre(now, porSemana, ocupados) ?? (tema.origen === 'peticion' ? siguienteDiaLaborable(now) : null)
+  const hueco = primerHuecoLibre(now, porSemana, ocupados)
   if (!hueco) return { tipo: 'sin-hueco' }
   // Se marca ANTES de abrir la sesión: dos crons seguidos no abren dos mesas del mismo tema.
   await deps.store.actualizarTema(tema.id, { estado: 'redactando', programadoPara: hueco, motivo: null })
@@ -343,12 +349,15 @@ export interface EncargoArticulo {
   titulo: string
   texto: string
   nota?: string | null
+  /** Cuándo proponer la publicación (instante). Sin valor: sin fecha, y se decide al aprobar en WordNext (puede ser ahora). */
+  publicarEn?: Date | null
 }
 
 /**
  * Encargo de Javier desde la pestaña Peticiones: un artículo para UNA web concreta. Crea un tema ya
  * aprobado (origen «peticion»; el ángulo es su texto) y abre la redacción al momento. Si la web ya
  * tiene otra redacción en curso, queda en cola y el cron lo redacta en cuanto quede libre.
+ * Sin fecha pedida el borrador llega SIN fecha: quien lo aprueba en WordNext publica ahora o cuando quiera.
  * Después sigue el flujo de siempre: Palermo → borrador en WordNext → revisión en su panel.
  */
 export async function encargarArticulo(e: EncargoArticulo, deps: DepsCiclo): Promise<{ ok: boolean; temaId?: string; sessionId?: string; enCola?: string; error?: string }> {
@@ -368,6 +377,7 @@ export async function encargarArticulo(e: EncargoArticulo, deps: DepsCiclo): Pro
     angulo: texto,
     publico: perfil.publico,
     origen: 'peticion',
+    programadoPara: e.publicarEn && e.publicarEn.getTime() > now.getTime() ? e.publicarEn : null,
     estado: 'aprobado',
     nota: e.nota?.trim().slice(0, 1000) || null,
     decididoAt: now,

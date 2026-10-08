@@ -98,12 +98,3 @@ export const esHoraDeResumen = (now: Date) => {
 export function haceDias(now: Date, dias: number): Date {
   return new Date(now.getTime() - dias * 86_400_000)
 }
-
-/** Mañana a la hora de publicación (Madrid), saltando sábado y domingo (dow: 0 = domingo). */
-export function siguienteDiaLaborable(now: Date): Date {
-  const p = partesMadrid(now)
-  let sumar = 1
-  while (![1, 2, 3, 4, 5].includes((p.dow + sumar) % 7)) sumar++
-  const base = new Date(Date.UTC(p.y, p.m - 1, p.d + sumar))
-  return madridAUtc(base.getUTCFullYear(), base.getUTCMonth() + 1, base.getUTCDate(), HORA_PUBLICACION)
-}

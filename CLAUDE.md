@@ -637,8 +637,8 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `origen = 'peticion'` (el `angulo` es el texto de Javier, hasta 4.000 caracteres; categoría = la primera del perfil) y abre la redacción
   al momento (Tokio → Denver → Río → Estocolmo → Palermo → Helsinki), con el perfil, los hechos y las validaciones de siempre. El artículo
   llega como **borrador programado a WordNext**, y la persona lo **revisa, edita y publica en `/admin/publicaciones` de ESA web** (el
-  enlace «revisar y publicar» sale en la tarjeta); nada se publica solo. Diferencias con un tema del plan: (1) no espera al hueco semanal
-  —si está ocupado propone el siguiente día laborable a las 09:00 (`siguienteDiaLaborable`)—; (2) si la web ya tiene otra redacción
+  enlace «revisar y publicar» sale en la tarjeta); nada se publica solo. Diferencias con un tema del plan: (1) no entra en el ritmo semanal: el formulario tiene «Publicar el» (opcional, hora de Madrid); sin fecha el borrador llega a
+  WordNext SIN programar y quien lo aprueba allí publica **en el instante que quiera** (ahora, o la fecha que elija); (2) si la web ya tiene otra redacción
   en curso queda «en cola» y el cron la coge cualquier día, no solo jueves-sábado; (3) los prompts de Tokio y Río saben que el ángulo es
   un encargo y lo respetan. Los botones Reescribir / Redactar ahora / Descartar de la tarjeta reutilizan las acciones de Marketing
   (campo oculto `tab=peticiones` para volver a la pestaña). **Requiere SQL en Neon ANTES de desplegar**:

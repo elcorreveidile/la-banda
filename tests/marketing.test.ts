@@ -525,7 +525,7 @@ describe('perfiles por destino (Fase 4)', () => {
   describe('encargo de un artículo (pestaña Peticiones)', () => {
     const encargo = { destino: 'restaurante.wordnext.tech', titulo: 'Cómo cobrar la señal de una reserva', texto: 'Explica cómo cobrar una señal con Stripe en una reserva, para un restaurante pequeño.' }
 
-    it('crea un tema aprobado de origen «peticion» y abre la redacción aunque el hueco semanal esté lleno', async () => {
+    it('crea un tema aprobado de origen «peticion» y abre la redacción al momento', async () => {
       const ctx = deps({ now: () => VIERNES.getTime() })
       const a = await encargarArticulo(encargo, ctx.d)
       expect(a).toMatchObject({ ok: true })
@@ -534,13 +534,20 @@ describe('perfiles por destino (Fase 4)', () => {
       expect(t).toMatchObject({ origen: 'peticion', estado: 'redactando', categoria: 'restauracion', angulo: encargo.texto })
     })
 
-    it('si el hueco semanal está ocupado, propone el siguiente día laborable a las 09:00', async () => {
+    it('sin fecha pedida no programa nada (se decide al aprobar en WordNext); con fecha futura la propone', async () => {
       const ctx = deps({ now: () => VIERNES.getTime() })
       const hueco = huecosSemanaSiguiente(VIERNES, 1)[0]
       await ctx.mem.store.insertarTema({ id: 'ocupa', destino: 'restaurante.wordnext.tech', categoria: 'restauracion', titulo: 'Ya programado', angulo: 'Ángulo suficientemente largo para pasar.', estado: 'en_revision', programadoPara: hueco, createdAt: VIERNES, updatedAt: VIERNES })
       const a = await encargarArticulo(encargo, ctx.d)
       expect(a.ok).toBe(true)
-      expect((await ctx.mem.store.tema(a.temaId!))?.programadoPara).toEqual(madridAUtc(2026, 10, 5, 9)) // viernes 2 → lunes 5
+      expect((await ctx.mem.store.tema(a.temaId!))?.programadoPara).toBeNull()
+      const fecha = madridAUtc(2026, 10, 9, 18, 30)
+      const ctx2 = deps({ now: () => VIERNES.getTime() })
+      const b = await encargarArticulo({ ...encargo, publicarEn: fecha }, ctx2.d)
+      expect((await ctx2.mem.store.tema(b.temaId!))?.programadoPara).toEqual(fecha)
+      const ctx3 = deps({ now: () => VIERNES.getTime() })
+      const c = await encargarArticulo({ ...encargo, publicarEn: new Date(VIERNES.getTime() - 3600_000) }, ctx3.d)
+      expect((await ctx3.mem.store.tema(c.temaId!))?.programadoPara).toBeNull() // una fecha pasada se ignora
     })
 
     it('con otra redacción en curso queda en cola; y el cron lo redacta cualquier día', async () => {

@@ -16,6 +16,7 @@ import { NIVELES, type Nivel } from '@domains/corpus-ele/config'
 import { createPeticion, setPeticionSesion } from '@/lib/peticiones/peticiones'
 import { createSite, setSiteSesion } from '@/lib/sitios/sites'
 import { cicloMarketing, decidirLote, decidirTema, encargarArticulo, redactarTema, type Decision } from '@/lib/marketing/ciclo'
+import { madridAUtc } from '@/lib/marketing/calendario'
 import { filtroDeQuery, queryVista } from '@/lib/marketing/vista'
 import { depsMarketing } from '@/lib/marketing/deps'
 import { marketingStoreDb } from '@/lib/marketing/store'
@@ -135,7 +136,10 @@ export async function startPeticion(formData: FormData) {
   if (destino) {
     const hh = await headers()
     const o = process.env.APP_URL?.trim() || `${hh.get('x-forwarded-proto') ?? 'https'}://${hh.get('x-forwarded-host') ?? hh.get('host')}`
-    const r = await encargarArticulo({ destino, titulo, texto }, depsMarketing(o))
+    // datetime-local llega en hora de Madrid ("2026-10-09T09:00"); vacío = sin fecha, se decide al aprobar.
+    const cuando = String(formData.get('publicarEn') ?? '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/)
+    const publicarEn = cuando ? madridAUtc(+cuando[1], +cuando[2], +cuando[3], +cuando[4], +cuando[5]) : null
+    const r = await encargarArticulo({ destino, titulo, texto, publicarEn }, depsMarketing(o))
     const vuelta = (extra: Record<string, string>) => `/panel?${new URLSearchParams({ tab: 'peticiones', ...extra })}`
     if (!r.ok) redirect(vuelta({ error: r.error ?? 'error' }))
     if (r.sessionId) redirect(vuelta({ s: r.sessionId, aviso: `Artículo en redacción para ${destino}` }))
