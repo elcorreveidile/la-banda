@@ -630,6 +630,22 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `tuteo-usted` en textos escritos NO son un fallo: es el diseño (Río escribe en ortografía normal y Lisboa anota la fonética aparte). Test en
   `corpus-domain`. Lo ya publicado hay que corregirlo o reencargarlo a mano desde el panel de la Clínica.
 
+- **2026-10-08, peticiones con web de destino (v0.23.0)**. Javier: «en Peticiones un desplegable para indicar a qué tenant de WordNext
+  va la petición, revisarla en su admin y publicarla en el blog; como Marketing pero con peticiones específicas». La pestaña Peticiones
+  gana el desplegable **«Web de destino»** (las mismas webs que Marketing, `destinos()`). Sin web, todo igual (informe + webhook). Con web,
+  `encargarArticulo` (`src/lib/marketing/ciclo.ts`) **reutiliza la mesa de marketing entera**: crea un tema ya aprobado con
+  `origen = 'peticion'` (el `angulo` es el texto de Javier, hasta 4.000 caracteres; categoría = la primera del perfil) y abre la redacción
+  al momento (Tokio → Denver → Río → Estocolmo → Palermo → Helsinki), con el perfil, los hechos y las validaciones de siempre. El artículo
+  llega como **borrador programado a WordNext**, y la persona lo **revisa, edita y publica en `/admin/publicaciones` de ESA web** (el
+  enlace «revisar y publicar» sale en la tarjeta); nada se publica solo. Diferencias con un tema del plan: (1) no entra en el ritmo semanal: el formulario tiene «Publicar el» (opcional, hora de Madrid); sin fecha el borrador llega a
+  WordNext SIN programar y quien lo aprueba allí publica **en el instante que quiera** (ahora, o la fecha que elija); (2) si la web ya tiene otra redacción
+  en curso queda «en cola» y el cron la coge cualquier día, no solo jueves-sábado; (3) los prompts de Tokio y Río saben que el ángulo es
+  un encargo y lo respetan. Los botones Reescribir / Redactar ahora / Descartar de la tarjeta reutilizan las acciones de Marketing
+  (campo oculto `tab=peticiones` para volver a la pestaña). **Requiere SQL en Neon ANTES de desplegar**:
+  `scripts/peticiones-destino.sql` (`ALTER TABLE marketing_temas ADD COLUMN origen text NOT NULL DEFAULT 'plan'`; o
+  `drizzle/0010_peticiones_destino.sql`). Los encargos también aparecen en la pestaña Marketing (son temas). La web de destino debe tener
+  abierta «Aceptar artículos de La Banda» (`publish_banda`) en WordNext, como para el marketing.
+
 ## Convenciones
 
 - Validación antes de push: `npm run lint && npm run typecheck && npm test &&

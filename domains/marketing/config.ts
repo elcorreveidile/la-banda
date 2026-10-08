@@ -34,7 +34,7 @@ const agents: AgentConfig[] = [
 ${COMUN}
 - PLAN: lee el encargo, la ficha y el blog. Propón exactamente "cuantos" temas SOLO de las categorías del perfil (repartidos entre ellas si hay varias) y pensados para su "publico"; sigue sus "notas". Cada tema responde a una búsqueda real de ese público («cómo…», «cuánto cuesta…», «qué necesita…»). No repitas títulos ya usados ni temas ya publicados en el blog.
   Añade "temasPropuestos": lista de { "categoria": id de la lista, "titulo": en español, 10-120 caracteres, "angulo": qué problema resuelve y para quién (20-400), "publico": a quién va, "palabrasClave": 3-6 búsquedas en español }. Luego pass → Denver.
-- ARTICULO: lee el encargo (si es reescritura, el motivo del rechazo y la nota de Javier mandan). Añade "esquema": { "intencion": qué busca el lector en una frase, "secciones": 4-7 { "h2", "idea" }, "preguntasFrecuentes": 2-4 preguntas que el artículo debe responder, "enlacesInternos": URLs de leerBlog o de la ficha que encajan (máx. 3) }. Luego pass → Denver.`,
+- ARTICULO: lee el encargo (si es reescritura, el motivo del rechazo y la nota de Javier mandan). Si "origen" es "peticion", el "angulo" es un ENCARGO CONCRETO de Javier (qué quiere que cuente el artículo): respeta su tema, sus puntos y su intención; no lo cambies por otro enfoque, solo estructúralo. Lo que pida y no esté en la ficha ni en datos comprobables NO se afirma (va a "vacios"). Añade "esquema": { "intencion": qué busca el lector en una frase, "secciones": 4-7 { "h2", "idea" }, "preguntasFrecuentes": 2-4 preguntas que el artículo debe responder, "enlacesInternos": URLs de leerBlog o de la ficha que encajan (máx. 3) }. Luego pass → Denver.`,
   },
   {
     codename: 'Denver',
@@ -57,7 +57,7 @@ Si la búsqueda no está disponible, sigue con la ficha y marca los vacíos.`,
     model: modeloRedactor(),
     systemPrompt: `Eres Río. Escribes el artículo en ESPAÑOL: eres el ÚNICO que redacta en esta cadena (Estocolmo solo lo lleva al inglés).
 ${COMUN}
-Sigue el "esquema" de Tokio y usa solo los "datos" de Denver, la ficha y los "hechos" del perfil del destino. Español de España, claro y cercano (tú), frases cortas, ejemplos concretos para el público del perfil (por defecto, pequeños negocios), sin relleno ni frases hechas de marketing. Apunta a 1.100-1.400 palabras (el tope es 1.600 y pasarse es el fallo más habitual: 5-6 secciones de 2-3 párrafos cortos, preguntas frecuentes de 2-3 frases cada una).
+Sigue el "esquema" de Tokio (si "origen" es "peticion", cumple además el encargo de Javier del "angulo") y usa solo los "datos" de Denver, la ficha y los "hechos" del perfil del destino. Español de España, claro y cercano (tú), frases cortas, ejemplos concretos para el público del perfil (por defecto, pequeños negocios), sin relleno ni frases hechas de marketing. Apunta a 1.100-1.400 palabras (el tope es 1.600 y pasarse es el fallo más habitual: 5-6 secciones de 2-3 párrafos cortos, preguntas frecuentes de 2-3 frases cada una).
 Añade "articuloEs": {
   "titulo": 10-120 caracteres, que responda a la búsqueda,
   "slug": minúsculas-con-guiones, sin tildes, máx. 80,

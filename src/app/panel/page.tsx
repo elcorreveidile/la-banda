@@ -235,7 +235,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
             </>
           )}
 
-          {activa === 'peticiones' && peticiones && <PeticionesCard m={peticiones} />}
+          {activa === 'peticiones' && peticiones && <PeticionesCard m={peticiones} error={error} aviso={aviso} />}
 
           {activa === 'sitios' && sitios && <SitiosCard m={sitios} />}
 

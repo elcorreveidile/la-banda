@@ -79,6 +79,14 @@ export async function abrirRedaccion(tema: Tema, deps: DepsCiclo): Promise<Resul
   if (tema.estado !== 'aprobado') return { tipo: 'no-aprobado' }
   if (!(deps.modelosOk ?? modelosDisponibles)()) return { tipo: 'sin-modelos' }
   const now = ahora(deps)
+  // Un encargo de Javier no entra en el ritmo semanal: sale con la fecha que pidió o, si no pidió ninguna,
+  // sin fecha, y quien lo aprueba en WordNext elige el momento (también «ahora»).
+  if (tema.origen === 'peticion') {
+    await deps.store.actualizarTema(tema.id, { estado: 'redactando', programadoPara: tema.programadoPara ?? null, motivo: null })
+    const sessionId = await deps.abrirSesion('articulo', { kind: 'articulo', temaId: tema.id, version: tema.version, destino: tema.destino })
+    await deps.store.actualizarTema(tema.id, { sessionId })
+    return { tipo: 'abierta', sessionId, programadoPara: tema.programadoPara ?? now }
+  }
   const porSemana = articulosPorSemana(deps.env, tema.destino)
   const l = lunesSemanaSiguiente(now)
   const lunes = madridAUtc(l.y, l.m, l.d, 0)
@@ -336,6 +344,54 @@ export async function redactarTema(id: string, deps: DepsCiclo): Promise<{ ok: b
   return { ok: false, error: causa[r.tipo] }
 }
 
+export interface EncargoArticulo {
+  destino: string
+  titulo: string
+  texto: string
+  nota?: string | null
+  /** Cuándo proponer la publicación (instante). Sin valor: sin fecha, y se decide al aprobar en WordNext (puede ser ahora). */
+  publicarEn?: Date | null
+}
+
+/**
+ * Encargo de Javier desde la pestaña Peticiones: un artículo para UNA web concreta. Crea un tema ya
+ * aprobado (origen «peticion»; el ángulo es su texto) y abre la redacción al momento. Si la web ya
+ * tiene otra redacción en curso, queda en cola y el cron lo redacta en cuanto quede libre.
+ * Sin fecha pedida el borrador llega SIN fecha: quien lo aprueba en WordNext publica ahora o cuando quiera.
+ * Después sigue el flujo de siempre: Palermo → borrador en WordNext → revisión en su panel.
+ */
+export async function encargarArticulo(e: EncargoArticulo, deps: DepsCiclo): Promise<{ ok: boolean; temaId?: string; sessionId?: string; enCola?: string; error?: string }> {
+  const destino = e.destino.trim().toLowerCase()
+  if (!destinos(deps.env).includes(destino)) return { ok: false, error: 'esa web no está entre los destinos de La Banda' }
+  const titulo = e.titulo.trim().slice(0, 200)
+  const texto = e.texto.trim().slice(0, 4000)
+  if (titulo.length < 3) return { ok: false, error: 'el título es demasiado corto' }
+  if (texto.length < 10) return { ok: false, error: 'explica un poco más qué quieres que cuente el artículo' }
+  const perfil = perfilDestino(destino)
+  const now = ahora(deps)
+  const tema = await deps.store.insertarTema({
+    id: uuid(),
+    destino,
+    categoria: perfil.categorias[0],
+    titulo,
+    angulo: texto,
+    publico: perfil.publico,
+    origen: 'peticion',
+    programadoPara: e.publicarEn && e.publicarEn.getTime() > now.getTime() ? e.publicarEn : null,
+    estado: 'aprobado',
+    nota: e.nota?.trim().slice(0, 1000) || null,
+    decididoAt: now,
+    createdAt: now,
+    updatedAt: now,
+  })
+  const r = await redactarTema(tema.id, deps)
+  if (r.ok) return { ok: true, temaId: tema.id, sessionId: r.sessionId }
+  // Sin modelos no hay nada que esperar; otra redacción en curso es una cola normal.
+  if (r.error?.startsWith('ya hay una redacción')) return { ok: true, temaId: tema.id, enCola: r.error }
+  await deps.store.borrarTemas([tema.id])
+  return { ok: false, error: r.error ?? 'error' }
+}
+
 // ─── Resumen del domingo ───────────────────────────────────────────────────────
 
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!)
@@ -479,10 +535,11 @@ export async function cicloMarketing(deps: DepsCiclo, opts: { forzar?: 'plan' | 
       }
     }
     // 3. Redacción: una mesa a la vez por destino.
-    if (opts.forzar === 'redaccion' || (!opts.forzar && esDiaDeRedaccion(now))) {
+    if (opts.forzar !== 'plan') {
       const redactando = (await deps.store.temasEnEstado(['redactando'], destino)).length
       if (redactando === 0) {
-        const aprobados = await deps.store.temasEnEstado(['aprobado'], destino)
+        // Los encargos de Javier (pestaña Peticiones) se redactan cualquier día; el resto, en su ronda.
+        const aprobados = (await deps.store.temasEnEstado(['aprobado'], destino)).filter((t) => opts.forzar === 'redaccion' || esDiaDeRedaccion(now) || t.origen === 'peticion')
         if (aprobados.length) {
           const r = await abrirRedaccion(aprobados[0], deps)
           if (r.tipo === 'abierta') res.redacciones.push(r.sessionId)

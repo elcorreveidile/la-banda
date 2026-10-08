@@ -31,6 +31,8 @@ export const marketingTemas = pgTable(
     /** Enfoque del artículo: qué problema resuelve y para quién. */
     angulo: text('angulo').notNull(),
     publico: text('publico'),
+    /** `plan` (propuesto por la banda) o `peticion` (encargo de Javier desde la pestaña Peticiones: el ángulo es su texto). */
+    origen: text('origen').$type<'plan' | 'peticion'>().notNull().default('plan'),
     palabrasClave: jsonb('palabras_clave').$type<string[]>().notNull().default([]),
     estado: text('estado').$type<EstadoTema>().notNull().default('propuesto'),
     /** Sube cada vez que Javier pide reescribirlo (el externalRef de WordNext cambia con ella). */

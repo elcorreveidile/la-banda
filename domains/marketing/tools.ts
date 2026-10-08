@@ -63,6 +63,7 @@ export const marketingTools: Record<string, ToolDef> = {
         idiomas: idiomasDestino(tema.destino),
         categoria: CATEGORIAS.find((c) => c.id === tema.categoria) ?? tema.categoria,
         titulo: tema.titulo,
+        origen: tema.origen,
         angulo: tema.angulo,
         publico: tema.publico,
         palabrasClave: tema.palabrasClave,

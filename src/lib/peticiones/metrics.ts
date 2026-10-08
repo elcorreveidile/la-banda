@@ -2,6 +2,9 @@ import { and, count, eq, inArray } from 'drizzle-orm'
 import { db } from '@/db'
 import { events, sessions } from '@/db/schema'
 import { peticiones, type Peticion } from '@/db/peticiones'
+import type { Pieza, Tema } from '@/db/marketing'
+import { destinos } from '@/lib/marketing/config'
+import { marketingStoreDb } from '@/lib/marketing/store'
 import { listPeticiones } from './peticiones'
 
 export interface PeticionesMetrics {
@@ -12,6 +15,10 @@ export interface PeticionesMetrics {
   avisos: { pendientes: number; agotados: number }
   /** Devoluciones de Lisboa en este dominio. */
   returns: number
+  /** Webs de WordNext a las que se puede dirigir un encargo (las mismas que Marketing). */
+  destinos: string[]
+  /** Encargos dirigidos a una web (artículos), con sus piezas en WordNext. */
+  articulos: (Tema & { piezas: Pieza[] })[]
 }
 
 /** Métricas del dominio peticiones para la tarjeta del panel. */
@@ -28,7 +35,11 @@ export async function peticionesMetrics(): Promise<PeticionesMetrics> {
   const [pend] = await db.select({ n: count() }).from(peticiones).where(eq(peticiones.avisoEstado, 'pendiente'))
   const [agot] = await db.select({ n: count() }).from(peticiones).where(eq(peticiones.avisoEstado, 'agotado'))
   const [r] = await db.select({ n: count() }).from(events).where(and(eq(events.type, 'return'), eq(events.agentId, 'peticiones:Lisboa')))
+  const temas = (await marketingStoreDb.recientes(100)).filter((t) => t.origen === 'peticion').slice(0, 20)
+  const articulos = await Promise.all(temas.map(async (t) => ({ ...t, piezas: await marketingStoreDb.piezasDeTema(t.id, t.version) })))
   return {
+    destinos: destinos(),
+    articulos,
     recientes,
     sessions: Number(s?.n ?? 0),
     porEstado,

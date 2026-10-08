@@ -15,7 +15,8 @@ import { bombear } from '@/lib/bomba'
 import { NIVELES, type Nivel } from '@domains/corpus-ele/config'
 import { createPeticion, setPeticionSesion } from '@/lib/peticiones/peticiones'
 import { createSite, setSiteSesion } from '@/lib/sitios/sites'
-import { cicloMarketing, decidirLote, decidirTema, redactarTema, type Decision } from '@/lib/marketing/ciclo'
+import { cicloMarketing, decidirLote, decidirTema, encargarArticulo, redactarTema, type Decision } from '@/lib/marketing/ciclo'
+import { madridAUtc } from '@/lib/marketing/calendario'
 import { filtroDeQuery, queryVista } from '@/lib/marketing/vista'
 import { depsMarketing } from '@/lib/marketing/deps'
 import { marketingStoreDb } from '@/lib/marketing/store'
@@ -128,6 +129,22 @@ export async function startPeticion(formData: FormData) {
   const texto = String(formData.get('texto') ?? '').trim().slice(0, 20_000)
   const webhookUrl = String(formData.get('webhookUrl') ?? '').trim().slice(0, 500) || null
   if (titulo.length < 1 || texto.length < 10) redirect('/panel')
+
+  // Con web de destino, la petición es el encargo de un artículo: la banda lo redacta, Palermo lo revisa y
+  // llega como borrador al panel de ESA web en WordNext, donde una persona lo aprueba y lo publica en el blog.
+  const destino = String(formData.get('destino') ?? '').trim()
+  if (destino) {
+    const hh = await headers()
+    const o = process.env.APP_URL?.trim() || `${hh.get('x-forwarded-proto') ?? 'https'}://${hh.get('x-forwarded-host') ?? hh.get('host')}`
+    // datetime-local llega en hora de Madrid ("2026-10-09T09:00"); vacío = sin fecha, se decide al aprobar.
+    const cuando = String(formData.get('publicarEn') ?? '').match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/)
+    const publicarEn = cuando ? madridAUtc(+cuando[1], +cuando[2], +cuando[3], +cuando[4], +cuando[5]) : null
+    const r = await encargarArticulo({ destino, titulo, texto, publicarEn }, depsMarketing(o))
+    const vuelta = (extra: Record<string, string>) => `/panel?${new URLSearchParams({ tab: 'peticiones', ...extra })}`
+    if (!r.ok) redirect(vuelta({ error: r.error ?? 'error' }))
+    if (r.sessionId) redirect(vuelta({ s: r.sessionId, aviso: `Artículo en redacción para ${destino}` }))
+    redirect(vuelta({ aviso: `En cola para ${destino}: ${r.enCola}` }))
+  }
   if (webhookUrl && !webhookUrl.startsWith('https://') && process.env.NODE_ENV === 'production') redirect('/panel')
 
   const peticion = await createPeticion({ titulo, texto, webhookUrl, referencia: null, createdBy: session.user.email })
@@ -217,6 +234,8 @@ export async function resumeStalledSessions(formData: FormData) {
 
 /** Adónde volver tras una acción de Marketing: la pestaña con el mismo filtro (web, búsqueda, archivados, «ver más»). */
 function volverMarketing(formData: FormData, extra: Record<string, string> = {}): string {
+  // Los botones de la pestaña Peticiones reutilizan estas acciones y vuelven a ella.
+  if (formData.get('tab') === 'peticiones') return `/panel?${new URLSearchParams({ tab: 'peticiones', ...extra })}`
   return `/panel?${queryVista(filtroDeQuery(String(formData.get('volver') ?? '')), extra)}`
 }
 
