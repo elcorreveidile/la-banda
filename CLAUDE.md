@@ -174,6 +174,37 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   stop/objetivo/caducidad en cada ciclo (`manageOpenPositions`). Solo largos
   al contado. Velas: Coinbase Exchange, Kraken de respaldo (Binance bloquea
   por región). Cron `5 * * * *` en `vercel.json` (`CRON_SECRET`).
+- **2026-10-09, recomendaciones de cripto (v0.23.0)**. Javier: «quiero que los agentes de trading me
+  den recomendaciones de compra/venta de cripto». Se mantiene el fondo simulado y se añade **encima**
+  una capa de recomendaciones: el **Profesor** emite en su informe de cierre un campo
+  **`recomendaciones`** con UNA entrada por símbolo (`accion: comprar|vender|mantener|fuera`,
+  `confianza`, `entrada?/stop?/objetivo?/horizonte?`, `motivo`), derivada de la cadena y las velas del
+  ciclo (conservadora, estilo Palermo: la mayoría → mantener/fuera; «vender» = reducir/cerrar, la mesa
+  es solo-largo). Se persiste en `sessions.finalReport` (el motor no cambia) y se **sanea en lectura**:
+  `src/lib/trading/recomendaciones.ts` (puro: `parseRecomendaciones`, `recomendacionesDe`,
+  `componerResumenTrading`; test `tests/trading-recomendaciones.test.ts`), más `ultimasRecomendaciones()`
+  en `metrics.ts`. **Panel**: tarjeta `TradingRecs` en la pestaña Trading (acción con color, confianza,
+  niveles, motivo, hora y **aviso: mesa simulada, no asesoramiento financiero**). **Email**: resumen
+  diario `/api/cron/trading-resumen` (`30 7 * * *`, `Bearer CRON_SECRET`) con `sendBrevoEmail` a
+  **`TRADING_ALERT_EMAIL`** (fallback `MARKETING_REVISOR_EMAIL`); mejor esfuerzo, no envía si no hay
+  ciclo cerrado. Sin cambios de BD. Decidido con Javier: panel + email diario, por símbolo cada ciclo,
+  BTC y ETH (no API del escaparate por ahora).
+- **2026-10-09, DASH en la mesa + «Mi cartera» real en € (v0.24.0)**. Javier dio su cartera real
+  (DASH 5,71 · BTC 0,0032 · ETH 0,011 · MON 11,57) y pidió recomendaciones enfocadas a su posición y
+  llevar su cartera. Dos partes. (1) **DASH entra en la mesa**: `SYMBOLS=['BTC-USD','ETH-USD','DASH-USD']`
+  (todo lo que itera `SYMBOLS` se amplía solo; `candles.ts` añade los productos Coinbase/Kraken de DASH,
+  y además `MON-USD` y `BTC-EUR` que usa solo la cartera). El Profesor recomienda ahora 3 símbolos y
+  habla como **tenedor** (mantener/añadir/reducir/salir; `fuera` solo si no deberías tenerlo). MON queda
+  **fuera de la mesa** (dust €0,25). (2) **«Mi cartera»** (tabla nueva `crypto_cartera`, por
+  `owner`+`symbol`; **requiere `db:push`** o `scripts/cartera.sql`): el usuario registra unidades por
+  moneda y se captura el **precio de referencia USD** al guardar (no hay precio de compra: «partimos de
+  lo que tenemos», así que la **variación** es desde el registro, no P&L). Valoración en **€** sin API de
+  divisas: el **€/USD se deriva de BTC** (`BTC-EUR ÷ BTC-USD`) y se aplica a todo; niveles de
+  recomendación en USD. `src/lib/trading/cartera.ts` (`impliedEurUsd`, `calcHolding` puros +
+  `valorarCartera`, mejor esfuerzo: fuente caída → «—»). Panel: tarjeta `MiCartera` (valor €, variación
+  %, acción de la mesa por símbolo; MON «fuera de cobertura») + formulario (`guardarHolding`/
+  `quitarHolding`). El email diario incluye el bloque de cartera. Tests `tests/trading-cartera.test.ts`.
+  Las cifras del usuario NO van al repo (se meten por el panel). Versión 0.24.0.
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.

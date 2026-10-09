@@ -29,6 +29,24 @@ export const portfolio = pgTable('portfolio', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
+/**
+ * Cartera REAL del usuario (no la simulada): sus tenencias de cripto para seguir valor y variación.
+ * Una fila por (owner, symbol). `refPriceUsd` es el cierre USD al registrar la tenencia = base de la
+ * variación (no es precio de compra: «partimos de lo que tenemos»). El valor en € se estima en lectura.
+ */
+export const cryptoCartera = pgTable(
+  'crypto_cartera',
+  {
+    owner: text('owner').notNull(),
+    symbol: text('symbol').notNull(),
+    unidades: numeric('unidades', { precision: 24, scale: 12 }).notNull(),
+    refPriceUsd: numeric('ref_price_usd', { precision: 18, scale: 8 }).notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.owner, t.symbol] })],
+)
+
 export type OrderStatus = 'open' | 'closed' | 'rejected'
 export type OrderSide = 'buy'
 export type ExitReason = 'stop' | 'target' | 'manual' | 'expired'

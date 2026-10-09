@@ -9,6 +9,10 @@
       "schedule": "5 * * * *"
     },
     {
+      "path": "/api/cron/trading-resumen",
+      "schedule": "30 7 * * *"
+    },
+    {
       "path": "/api/cron/corpus",
       "schedule": "20 6 * * *"
     },

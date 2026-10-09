@@ -23,6 +23,10 @@ import { abrirBulo, abrirExtra, abrirVigiaManual, cicloPolitica, reescribir } fr
 import { depsPolitica } from '@/lib/politica/deps'
 import { politicaStoreDb } from '@/lib/politica/store'
 import { diaMadrid, EDICIONES, type EdicionId } from '@/lib/politica/calendario'
+import { and, eq } from 'drizzle-orm'
+import { db } from '@/db'
+import { cryptoCartera } from '@/db/trading'
+import { CARTERA_SIMBOLOS, cierreEnVivo, type CarteraSimbolo } from '@/lib/trading/cartera'
 
 /** Lanza un ciclo de trading a mano (mismo camino que el cron) y arranca la cadena de ticks. */
 export async function startTradingCycle() {
@@ -358,4 +362,42 @@ export async function archivarPiezaPolitica(formData: FormData) {
   const p = await politicaStoreDb.pieza(id)
   if (p && ['rechazada', 'vetada', 'fallida', 'publicada'].includes(p.estado)) await politicaStoreDb.actualizar(id, { estado: 'archivada' })
   redirect(volverPolitica())
+}
+
+/* ------------------------------------------------------------------ */
+/* Mi cartera (tenencias reales de cripto del usuario)                 */
+/* ------------------------------------------------------------------ */
+
+const volverCartera = (extra: Record<string, string> = {}) =>
+  `/panel?${new URLSearchParams({ tab: 'trading', ...extra }).toString()}`
+
+/** Añade o actualiza una tenencia: símbolo + unidades; el precio de referencia (USD) se captura ahora. */
+export async function guardarHolding(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+  const owner = session.user.email.toLowerCase()
+  const symbol = String(formData.get('symbol') ?? '').trim().toUpperCase()
+  if (!(CARTERA_SIMBOLOS as readonly string[]).includes(symbol)) redirect(volverCartera({ error: 'símbolo no válido' }))
+  const unidades = Number(String(formData.get('unidades') ?? '').replace(',', '.'))
+  if (!Number.isFinite(unidades) || unidades <= 0) redirect(volverCartera({ error: 'unidades no válidas' }))
+  const refPriceUsd = await cierreEnVivo(symbol as CarteraSimbolo)
+  if (refPriceUsd == null) redirect(volverCartera({ error: 'no pude obtener el precio ahora, reinténtalo' }))
+  await db
+    .insert(cryptoCartera)
+    .values({ owner, symbol, unidades: unidades.toFixed(12), refPriceUsd: refPriceUsd.toFixed(8) })
+    .onConflictDoUpdate({
+      target: [cryptoCartera.owner, cryptoCartera.symbol],
+      set: { unidades: unidades.toFixed(12), refPriceUsd: refPriceUsd.toFixed(8), updatedAt: new Date() },
+    })
+  redirect(volverCartera({ aviso: 'cartera guardada' }))
+}
+
+/** Quita una tenencia de la cartera. */
+export async function quitarHolding(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+  const owner = session.user.email.toLowerCase()
+  const symbol = String(formData.get('symbol') ?? '').trim().toUpperCase()
+  if (symbol) await db.delete(cryptoCartera).where(and(eq(cryptoCartera.owner, owner), eq(cryptoCartera.symbol, symbol)))
+  redirect(volverCartera({ aviso: 'tenencia quitada' }))
 }

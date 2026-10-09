@@ -9,8 +9,12 @@ import { Logo } from '@/components/Logo'
 import { SessionLive } from './SessionLive'
 import { sessionView } from '@/lib/panel/sessionView'
 import { startTradingCycle } from './actions'
-import { tradingMetrics, type TradingMetrics } from '@/lib/trading/metrics'
+import { tradingMetrics, ultimasRecomendaciones, type TradingMetrics } from '@/lib/trading/metrics'
 import { TradingMetricsCard } from './TradingMetrics'
+import { TradingRecs } from './TradingRecs'
+import { MiCartera } from './MiCartera'
+import { valorarCartera, type CarteraValorada } from '@/lib/trading/cartera'
+import type { Recomendacion } from '@/lib/trading/recomendaciones'
 import { olvidosMetrics, type OlvidosMetrics } from '@/lib/olvidos/metrics'
 import { objectionsForSession } from '@/lib/olvidos/manuscripts'
 import { ObjectionsList, OlvidosCard } from './OlvidosCard'
@@ -82,9 +86,15 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
 
   // Métricas solo del dominio que se está viendo.
   let metrics: TradingMetrics | null = null
+  let recs: { ciclo: string | null; recomendaciones: Recomendacion[] } | null = null
+  let cartera: CarteraValorada | null = null
   if (activa === 'trading') {
     try {
-      metrics = await tradingMetrics()
+      ;[metrics, recs, cartera] = await Promise.all([
+        tradingMetrics(),
+        ultimasRecomendaciones(),
+        me?.user?.email ? valorarCartera(me.user.email.toLowerCase()) : Promise.resolve(null),
+      ])
     } catch (err) {
       console.error('[la-banda] tradingMetrics', err)
     }
@@ -224,6 +234,8 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
                   Lanzar ciclo ahora
                 </button>
               </form>
+              {cartera && <MiCartera cartera={cartera} recs={recs?.recomendaciones ?? []} />}
+              {recs && <TradingRecs ciclo={recs.ciclo} recs={recs.recomendaciones} />}
               {metrics && <TradingMetricsCard m={metrics} />}
             </>
           )}
