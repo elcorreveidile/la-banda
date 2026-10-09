@@ -231,6 +231,14 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `src/lib/trading/riesgo.ts` (**puro** `analizarRiesgo(CarteraValorada)` → pesos por moneda, la mayor,
   flag de **concentración** —una >40 % o top-2 >75 %— y aviso de repartir). Panel: aviso ámbar en
   `MiCartera`; email diario: línea de aviso. Sin cambios de BD. Test `tests/trading-riesgo.test.ts`.
+- **2026-10-09, riesgo de cartera: reparto concreto (v0.31.0)**. Javier: que el aviso de concentración
+  sugiera un reparto concreto, no solo «considera repartir». `analizarRiesgo` (`src/lib/trading/riesgo.ts`)
+  calcula ahora **cuánto € mover para bajar al umbral** y lo mete en el `aviso` (p. ej. «DASH es el 50 % de
+  tu cartera (259 €): … Para bajar al 40 %, moverías ~51 € a otras posiciones»; el caso top-2 baja al 75 %).
+  Se dice el importe exacto y el peso objetivo, **sin decir qué comprar** (coherente con «mesa simulada, no
+  asesoramiento»). `RiesgoCartera` gana `sugerencia: { excesoEur, objetivoPct } | null`; el panel
+  (`MiCartera`) y el email (`avisoRiesgo`) ya pintan el mismo string → sin cambios en esas superficies.
+  Sin BD. Test `tests/trading-riesgo.test.ts` ampliado. Versión 0.31.0.
 - **2026-10-09, consejo+ (3/4): track record de recomendaciones (v0.29.0)**. Para saber cuánto fiarse de la
   mesa: foto diaria de la recomendación por símbolo y tasa de acierto evaluada contra el precio de hoy. Tabla
   **`recomendacion_historial`** (pk `symbol`+`day` UTC; `accion`, `precio_usd`, `confianza`; **requiere
