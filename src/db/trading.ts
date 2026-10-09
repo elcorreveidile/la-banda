@@ -47,6 +47,21 @@ export const cryptoCartera = pgTable(
   (t) => [primaryKey({ columns: [t.owner, t.symbol] })],
 )
 
+/**
+ * Historial diario del valor de «Mi cartera» (una fila por owner y día UTC). Lo escribe el cron diario
+ * (y al guardar una tenencia) con el valor en € calculado; sirve para el mini-gráfico de evolución.
+ */
+export const cryptoCarteraHistorial = pgTable(
+  'crypto_cartera_historial',
+  {
+    owner: text('owner').notNull(),
+    day: text('day').notNull(), // 'YYYY-MM-DD' (UTC)
+    valorEur: numeric('valor_eur', { precision: 18, scale: 2 }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.owner, t.day] })],
+)
+
 export type OrderStatus = 'open' | 'closed' | 'rejected'
 export type OrderSide = 'buy'
 export type ExitReason = 'stop' | 'target' | 'manual' | 'expired'

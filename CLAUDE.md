@@ -216,6 +216,16 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   Panel: tarjeta `TradingTendencia` (BTC/ETH/DASH: dirección, 7/30/90 d, medias); el email diario
   incluye el bloque. Ventanas 7/30/90 d (decidido). **Sin cambios de BD** (tendencia en vivo, mejor
   esfuerzo: fuente caída → «—»). Test `tests/trading-tendencia.test.ts`. Versión 0.25.0.
+- **2026-10-09, historial diario de «Mi cartera» + mini-gráfico (v0.26.0)**. Javier: guardar el valor
+  real de la cartera cada día. En vez de teclearlo, es **automático**: tabla nueva
+  **`crypto_cartera_historial`** (`owner`+`day` UTC, `valor_eur`; **requiere `db:push`** o
+  `scripts/cartera.sql`) que escribe el **cron diario** `trading-resumen` (y al **guardar una
+  tenencia**, para el primer punto) con el valor en € calculado por `valorarCartera`. Helpers en
+  `cartera.ts`: `registrarSnapshotCartera` (upsert por día), `historialCartera` (últimos N días) y
+  `sparklinePath` (puro). Panel: `MiCartera` pinta una **sparkline SVG** (sin librería) + «desde
+  {día}: {valor} → hoy ({pct})». Mejor esfuerzo, sin tecleo; la entrada manual se descartó (lo correcto
+  si cambian saldos es actualizar unidades). Test ampliado `tests/trading-cartera.test.ts`
+  (`sparklinePath`, `hoyUTC`). Versión 0.26.0.
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.

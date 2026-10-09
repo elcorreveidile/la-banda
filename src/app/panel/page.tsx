@@ -13,7 +13,7 @@ import { tradingMetrics, ultimasRecomendaciones, type TradingMetrics } from '@/l
 import { TradingMetricsCard } from './TradingMetrics'
 import { TradingRecs } from './TradingRecs'
 import { MiCartera } from './MiCartera'
-import { valorarCartera, type CarteraValorada } from '@/lib/trading/cartera'
+import { valorarCartera, historialCartera, type CarteraValorada, type PuntoHistorial } from '@/lib/trading/cartera'
 import { TradingTendencia } from './TradingTendencia'
 import { tendenciasDe, type Tendencia } from '@/lib/trading/tendencia'
 import { SYMBOLS } from '@/lib/trading/sim'
@@ -92,13 +92,16 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
   let recs: { ciclo: string | null; recomendaciones: Recomendacion[] } | null = null
   let cartera: CarteraValorada | null = null
   let tendencias: Record<string, Tendencia | null> | null = null
+  let historial: PuntoHistorial[] = []
   if (activa === 'trading') {
     try {
-      ;[metrics, recs, cartera, tendencias] = await Promise.all([
+      const email = me?.user?.email?.toLowerCase()
+      ;[metrics, recs, cartera, tendencias, historial] = await Promise.all([
         tradingMetrics(),
         ultimasRecomendaciones(),
-        me?.user?.email ? valorarCartera(me.user.email.toLowerCase()) : Promise.resolve(null),
+        email ? valorarCartera(email) : Promise.resolve(null),
         tendenciasDe(SYMBOLS),
+        email ? historialCartera(email) : Promise.resolve([]),
       ])
     } catch (err) {
       console.error('[la-banda] tradingMetrics', err)
@@ -239,7 +242,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
                   Lanzar ciclo ahora
                 </button>
               </form>
-              {cartera && <MiCartera cartera={cartera} recs={recs?.recomendaciones ?? []} />}
+              {cartera && <MiCartera cartera={cartera} recs={recs?.recomendaciones ?? []} historial={historial} />}
               {recs && <TradingRecs ciclo={recs.ciclo} recs={recs.recomendaciones} />}
               {tendencias && <TradingTendencia tendencias={tendencias} />}
               {metrics && <TradingMetricsCard m={metrics} />}

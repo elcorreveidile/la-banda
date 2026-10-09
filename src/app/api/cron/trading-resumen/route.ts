@@ -3,7 +3,7 @@ import { engineSecret } from '@/engine/tick'
 import { ultimasRecomendaciones } from '@/lib/trading/metrics'
 import { snapshot } from '@/lib/trading/portfolio'
 import { componerResumenTrading } from '@/lib/trading/recomendaciones'
-import { valorarCartera } from '@/lib/trading/cartera'
+import { valorarCartera, registrarSnapshotCartera } from '@/lib/trading/cartera'
 import { tendenciasDe } from '@/lib/trading/tendencia'
 import { SYMBOLS } from '@/lib/trading/sim'
 import { sendBrevoEmail } from '@/lib/brevo'
@@ -37,6 +37,8 @@ export async function GET(req: Request) {
       owner ? valorarCartera(owner) : Promise.resolve(null),
       tendenciasDe(SYMBOLS),
     ])
+    // Foto diaria del valor de la cartera (para el gráfico de evolución). Mejor esfuerzo.
+    if (owner && carteraPersonal?.valorEur != null) await registrarSnapshotCartera(owner, carteraPersonal.valorEur).catch(() => {})
     const correo = componerResumenTrading({
       ciclo,
       recomendaciones,
