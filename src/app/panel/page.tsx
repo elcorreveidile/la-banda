@@ -13,7 +13,15 @@ import { tradingMetrics, ultimasRecomendaciones, type TradingMetrics } from '@/l
 import { TradingMetricsCard } from './TradingMetrics'
 import { TradingRecs } from './TradingRecs'
 import { MiCartera } from './MiCartera'
-import { valorarCartera, type CarteraValorada } from '@/lib/trading/cartera'
+import { valorarCartera, historialCartera, type CarteraValorada, type PuntoHistorial } from '@/lib/trading/cartera'
+import { TradingTendencia } from './TradingTendencia'
+import { tendenciasDe, type Tendencia } from '@/lib/trading/tendencia'
+import { analizarRiesgo } from '@/lib/trading/riesgo'
+import { TradingTrackRecord } from './TradingTrackRecord'
+import { leerHistorialRecos, trackRecord, type RecoPasada } from '@/lib/trading/trackrecord'
+import { TradingPerfil } from './TradingPerfil'
+import { leerPerfil, type Perfil } from '@/lib/trading/perfil'
+import { SYMBOLS } from '@/lib/trading/sim'
 import type { Recomendacion } from '@/lib/trading/recomendaciones'
 import { olvidosMetrics, type OlvidosMetrics } from '@/lib/olvidos/metrics'
 import { objectionsForSession } from '@/lib/olvidos/manuscripts'
@@ -88,12 +96,21 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
   let metrics: TradingMetrics | null = null
   let recs: { ciclo: string | null; recomendaciones: Recomendacion[] } | null = null
   let cartera: CarteraValorada | null = null
+  let tendencias: Record<string, Tendencia | null> | null = null
+  let historial: PuntoHistorial[] = []
+  let recoHist: RecoPasada[] = []
+  let perfil: Perfil | null = null
   if (activa === 'trading') {
     try {
-      ;[metrics, recs, cartera] = await Promise.all([
+      const email = me?.user?.email?.toLowerCase()
+      ;[metrics, recs, cartera, tendencias, historial, recoHist, perfil] = await Promise.all([
         tradingMetrics(),
         ultimasRecomendaciones(),
-        me?.user?.email ? valorarCartera(me.user.email.toLowerCase()) : Promise.resolve(null),
+        email ? valorarCartera(email) : Promise.resolve(null),
+        tendenciasDe(SYMBOLS),
+        email ? historialCartera(email) : Promise.resolve([]),
+        leerHistorialRecos(),
+        email ? leerPerfil(email) : Promise.resolve(null),
       ])
     } catch (err) {
       console.error('[la-banda] tradingMetrics', err)
@@ -234,8 +251,11 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
                   Lanzar ciclo ahora
                 </button>
               </form>
-              {cartera && <MiCartera cartera={cartera} recs={recs?.recomendaciones ?? []} />}
+              {cartera && <MiCartera cartera={cartera} recs={recs?.recomendaciones ?? []} historial={historial} riesgo={analizarRiesgo(cartera)} />}
               {recs && <TradingRecs ciclo={recs.ciclo} recs={recs.recomendaciones} />}
+              {tendencias && <TradingTendencia tendencias={tendencias} />}
+              <TradingTrackRecord track={trackRecord(recoHist, Object.fromEntries(SYMBOLS.map((s) => [s, tendencias?.[s]?.precio ?? null])))} />
+              <TradingPerfil perfil={perfil} />
               {metrics && <TradingMetricsCard m={metrics} />}
             </>
           )}

@@ -205,6 +205,66 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   %, acción de la mesa por símbolo; MON «fuera de cobertura») + formulario (`guardarHolding`/
   `quitarHolding`). El email diario incluye el bloque de cartera. Tests `tests/trading-cartera.test.ts`.
   Las cifras del usuario NO van al repo (se meten por el panel). Versión 0.24.0.
+- **2026-10-09, estudio de tendencia diaria (v0.25.0)**. Javier: que la mesa estudie la tendencia de
+  días/semanas y la use al recomendar. La mesa solo miraba velas horarias (corto plazo); se añade una
+  **segunda lente diaria**. `candles.ts` se generaliza (`fetchCandles({granularitySec,limit})`,
+  `dropCurrent(candles, bucketMs)`) y añade `fetchDailyCandles`. Nuevo `src/lib/trading/tendencia.ts`
+  (**puro** `calcTendencia`: cambio 7/30/90 d, medias 20/50/200, `direccion` alcista|lateral|bajista;
+  `tendenciasDe(symbols)` descarga diarias, mejor esfuerzo). `cycle.ts` **siembra `tendencias`** en el
+  payload de apertura → viajan por el dossier y las ven todos los agentes; `COMUN` y el cierre del
+  Profesor piden **no recomendar comprar contra una tendencia bajista marcada** (contexto de fondo).
+  Panel: tarjeta `TradingTendencia` (BTC/ETH/DASH: dirección, 7/30/90 d, medias); el email diario
+  incluye el bloque. Ventanas 7/30/90 d (decidido). **Sin cambios de BD** (tendencia en vivo, mejor
+  esfuerzo: fuente caída → «—»). Test `tests/trading-tendencia.test.ts`. Versión 0.25.0.
+- **2026-10-09, historial diario de «Mi cartera» + mini-gráfico (v0.26.0)**. Javier: guardar el valor
+  real de la cartera cada día. En vez de teclearlo, es **automático**: tabla nueva
+  **`crypto_cartera_historial`** (`owner`+`day` UTC, `valor_eur`; **requiere `db:push`** o
+  `scripts/cartera.sql`) que escribe el **cron diario** `trading-resumen` (y al **guardar una
+  tenencia**, para el primer punto) con el valor en € calculado por `valorarCartera`. Helpers en
+  `cartera.ts`: `registrarSnapshotCartera` (upsert por día), `historialCartera` (últimos N días) y
+  `sparklinePath` (puro). Panel: `MiCartera` pinta una **sparkline SVG** (sin librería) + «desde
+  {día}: {valor} → hoy ({pct})». Mejor esfuerzo, sin tecleo; la entrada manual se descartó (lo correcto
+  si cambian saldos es actualizar unidades). Test ampliado `tests/trading-cartera.test.ts`
+  (`sparklinePath`, `hoyUTC`). Versión 0.26.0.
+- **2026-10-09, consejo+ (1/4): riesgo de cartera (v0.27.0)**. Primera de cuatro mejoras para aconsejar
+  mejor (Javier eligió las cuatro; se apilan en la misma PR #59). Mira la cartera como CONJUNTO:
+  `src/lib/trading/riesgo.ts` (**puro** `analizarRiesgo(CarteraValorada)` → pesos por moneda, la mayor,
+  flag de **concentración** —una >40 % o top-2 >75 %— y aviso de repartir). Panel: aviso ámbar en
+  `MiCartera`; email diario: línea de aviso. Sin cambios de BD. Test `tests/trading-riesgo.test.ts`.
+- **2026-10-09, consejo+ (3/4): track record de recomendaciones (v0.29.0)**. Para saber cuánto fiarse de la
+  mesa: foto diaria de la recomendación por símbolo y tasa de acierto evaluada contra el precio de hoy. Tabla
+  **`recomendacion_historial`** (pk `symbol`+`day` UTC; `accion`, `precio_usd`, `confianza`; **requiere
+  `db:push`** o `scripts/trading-consejo.sql`) que escribe el **cron diario** `trading-resumen` (una fila por
+  símbolo, upsert por día, precio de `tendencias[symbol].precio`). `src/lib/trading/trackrecord.ts`: **puro**
+  `evaluarReco(accion, precioRef, precioActual, banda=0.02)` → acierto|fallo|neutro (comprar acierta si sube
+  > banda; vender/salir si baja; mantener si no cae; **fuera no se puntúa**) y **puro** `trackRecord(historial,
+  precios, banda)` → aciertos/fallos y % por acción; más `registrarRecoHistorial`/`leerHistorialRecos` (BD).
+  Panel: tarjeta `TradingTrackRecord` (por acción: X/Y y %; aviso «histórico real de la mesa simulada, no una
+  promesa»). Test `tests/trading-trackrecord.test.ts`.
+- **2026-10-09, consejo+ (4/4): mi perfil / objetivo (v0.30.0)**. El usuario fija su **horizonte**
+  (largo|activo) y **tolerancia al riesgo** (baja|media|alta) y la mesa ADAPTA el consejo. Tabla
+  **`trading_perfil`** (pk `owner`; **requiere `db:push`** o `scripts/trading-consejo.sql`).
+  `src/lib/trading/perfil.ts`: **puro** `parsePerfil`/`textoPerfil` + BD `leerPerfil`/`leerPerfilUnico`/
+  `guardarPerfilDb`. Panel: formulario `TradingPerfil` (acción `guardarPerfil`, patrón `guardarHolding`).
+  `cycle.ts` **siembra `perfil`** (el del único owner, o `PERFIL_DEF`) en el payload de apertura → viaja por el
+  dossier; `COMUN` y el cierre del Profesor en `domains/trading/config.ts` piden adaptarse (largo plazo prioriza
+  «mantener» y menos trading de corto; tolerancia baja, niveles conservadores y antes «mantener» que «comprar»).
+  Solo prompt + seed, sin cambiar el grafo. Test `tests/trading-perfil.test.ts`. Versión 0.30.0. **Las cuatro
+  mejoras consejo+ (riesgo, alertas, track record, perfil) se apilan en la PR #59.** **Checklist para Javier al
+  fusionar la #59**: (1) `db:push` (o los scripts SQL) crea `crypto_cartera`, `crypto_cartera_historial`,
+  `trading_alerta_estado`, `recomendacion_historial` y `trading_perfil`; (2) variable `TRADING_ALERT_EMAIL` en
+  Vercel (fallback `MARKETING_REVISOR_EMAIL`); (3) los crons `trading-resumen` (diario) y `trading-alertas`
+  (`*/30`) ya están en `vercel.json`.
+- **2026-10-09, consejo+ (2/4): alertas «cuando pasa algo» (v0.28.0)**. Avisan SOLO en la transición
+  (no cada ciclo): la **recomendación** de una moneda cambia, un **nivel** (stop/objetivo de la
+  recomendación) se toca, o hay **movimiento fuerte** del día (|cambio| ≥ 7 %, precio en vivo vs cierre
+  diario previo). `src/lib/trading/alertas.ts` (**puro** `evaluarAlerta`/`leerEstado`; avisa una vez
+  por nivel, se rearma si el nivel cambia; movimiento una vez al día). Estado por símbolo en tabla
+  **`trading_alerta_estado`** (jsonb; **requiere `db:push`** o `scripts/trading-alertas.sql`). Cron
+  **`/api/cron/trading-alertas`** (`*/30 * * * *`, `Bearer CRON_SECRET`): recomendación
+  (`ultimasRecomendaciones`) + precio (`cierreEnVivo`) + tendencia (`tendenciasDe`, se le añadió
+  `cambio1`), un solo email a `TRADING_ALERT_EMAIL` con lo que haya; mejor esfuerzo. Test
+  `tests/trading-alertas.test.ts`.
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.

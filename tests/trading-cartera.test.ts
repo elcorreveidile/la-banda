@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calcHolding, impliedEurUsd, type CarteraValorada } from '@/lib/trading/cartera'
+import { calcHolding, impliedEurUsd, sparklinePath, hoyUTC, type CarteraValorada } from '@/lib/trading/cartera'
 import { componerResumenTrading } from '@/lib/trading/recomendaciones'
 
 describe('impliedEurUsd', () => {
@@ -65,5 +65,22 @@ describe('componerResumenTrading con cartera personal', () => {
     })
     expect(correo).not.toBeNull()
     expect(correo!.texto).not.toContain('Mi cartera')
+  })
+})
+
+describe('historial / sparkline', () => {
+  it('hoyUTC devuelve YYYY-MM-DD', () => {
+    expect(hoyUTC(new Date('2026-10-09T13:40:00.000Z'))).toBe('2026-10-09')
+  })
+
+  it('sparklinePath vacío con menos de 2 puntos', () => {
+    expect(sparklinePath([], 100, 40)).toBe('')
+    expect(sparklinePath([10], 100, 40)).toBe('')
+  })
+
+  it('sparklinePath traza un path con M inicial y una L por punto restante', () => {
+    const p = sparklinePath([10, 20, 15], 100, 40)
+    expect(p.startsWith('M')).toBe(true)
+    expect((p.match(/L/g) ?? []).length).toBe(2)
   })
 })

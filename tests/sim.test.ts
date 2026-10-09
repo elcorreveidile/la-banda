@@ -73,6 +73,6 @@ describe('velas', () => {
   it('descarta la vela en curso', () => {
     const now = 10 * 3_600_000 + 1234
     const c = [8, 9, 10].map((h) => ({ ts: h * 3_600_000, open: 1, high: 1, low: 1, close: 1, volume: 1 }))
-    expect(dropCurrent(c, now).map((x) => x.ts / 3_600_000)).toEqual([8, 9])
+    expect(dropCurrent(c, 3_600_000, now).map((x) => x.ts / 3_600_000)).toEqual([8, 9])
   })
 })

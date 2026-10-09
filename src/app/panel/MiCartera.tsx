@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { guardarHolding, quitarHolding } from './actions'
-import { baseSimbolo, CARTERA_SIMBOLOS, type CarteraValorada } from '@/lib/trading/cartera'
+import { baseSimbolo, CARTERA_SIMBOLOS, sparklinePath, type CarteraValorada, type PuntoHistorial } from '@/lib/trading/cartera'
+import type { RiesgoCartera } from '@/lib/trading/riesgo'
 import type { Accion, Recomendacion } from '@/lib/trading/recomendaciones'
 
 const eur = (v: number | null) => (v == null ? '—' : `${v.toFixed(2)} €`)
@@ -14,8 +15,34 @@ const ACCION: Record<Accion, { label: string; cls: string }> = {
   fuera: { label: 'FUERA / ESPERAR', cls: 'bg-stone-100 text-stone-600' },
 }
 
+/** Mini-gráfico de evolución del valor de la cartera (sparkline SVG, sin librería). */
+function Evolucion({ historial }: { historial: PuntoHistorial[] }) {
+  if (historial.length < 2) {
+    return <p className="text-[0.7rem] text-stone-400">La evolución aparecerá cuando haya al menos dos días de historial (se guarda uno al día).</p>
+  }
+  const W = 280
+  const H = 44
+  const valores = historial.map((p) => p.valorEur)
+  const path = sparklinePath(valores, W, H)
+  const primero = historial[0]
+  const ultimo = historial[historial.length - 1]
+  const delta = primero.valorEur > 0 ? ultimo.valorEur / primero.valorEur - 1 : null
+  const sube = (delta ?? 0) >= 0
+  return (
+    <div className="flex flex-col gap-1">
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height={H} preserveAspectRatio="none" role="img" aria-label="Evolución del valor de la cartera">
+        <path d={path} fill="none" stroke={sube ? '#047857' : '#b91c1c'} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+      </svg>
+      <p className="text-[0.7rem] text-stone-500">
+        Desde {primero.day}: {eur(primero.valorEur)} → {eur(ultimo.valorEur)}{' '}
+        <span className={clsx(sube ? 'text-emerald-700' : 'text-red-700')}>({pct(delta)})</span>
+      </p>
+    </div>
+  )
+}
+
 /** Tenencias reales del usuario, valoradas en € (variación desde que se registraron). Servidor. */
-export function MiCartera({ cartera, recs }: { cartera: CarteraValorada; recs: Recomendacion[] }) {
+export function MiCartera({ cartera, recs, historial = [], riesgo }: { cartera: CarteraValorada; recs: Recomendacion[]; historial?: PuntoHistorial[]; riesgo?: RiesgoCartera | null }) {
   const accionDe = new Map<string, Accion>(recs.map((r) => [r.symbol, r.accion]))
   const hay = cartera.holdings.length > 0
   return (
@@ -82,6 +109,15 @@ export function MiCartera({ cartera, recs }: { cartera: CarteraValorada; recs: R
         </div>
       ) : (
         <p className="text-xs text-stone-500">Aún no has añadido tenencias. Añádelas abajo para ver su valor y la lectura de la mesa.</p>
+      )}
+
+      {riesgo?.aviso && <p className="rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-800">⚠ {riesgo.aviso}</p>}
+
+      {hay && (
+        <div className="border-t border-stone-100 pt-2">
+          <p className="mb-1 text-xs font-semibold text-stone-500">Evolución</p>
+          <Evolucion historial={historial} />
+        </div>
       )}
 
       <details className="text-xs">

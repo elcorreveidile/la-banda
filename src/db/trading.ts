@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, numeric, integer, primaryKey, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, numeric, integer, jsonb, primaryKey, index } from 'drizzle-orm/pg-core'
 
 /* ------------------------------------------------------------------ */
 /* Dominio trading (brief §3): portfolio, orders_sim, prices           */
@@ -46,6 +46,53 @@ export const cryptoCartera = pgTable(
   },
   (t) => [primaryKey({ columns: [t.owner, t.symbol] })],
 )
+
+/**
+ * Historial diario del valor de «Mi cartera» (una fila por owner y día UTC). Lo escribe el cron diario
+ * (y al guardar una tenencia) con el valor en € calculado; sirve para el mini-gráfico de evolución.
+ */
+export const cryptoCarteraHistorial = pgTable(
+  'crypto_cartera_historial',
+  {
+    owner: text('owner').notNull(),
+    day: text('day').notNull(), // 'YYYY-MM-DD' (UTC)
+    valorEur: numeric('valor_eur', { precision: 18, scale: 2 }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.owner, t.day] })],
+)
+
+/**
+ * Estado de las alertas de trading por símbolo: recuerda la última acción avisada y qué niveles ya se
+ * notificaron, para avisar SOLO en la transición (no repetir en cada ciclo del cron de alertas).
+ */
+export const tradingAlertaEstado = pgTable('trading_alerta_estado', {
+  symbol: text('symbol').primaryKey(),
+  estado: jsonb('estado').$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/** Foto diaria de la recomendación por símbolo (para el track record: ¿acertó con el tiempo?). */
+export const recomendacionHistorial = pgTable(
+  'recomendacion_historial',
+  {
+    symbol: text('symbol').notNull(),
+    day: text('day').notNull(), // 'YYYY-MM-DD' (UTC)
+    accion: text('accion').notNull(),
+    precioUsd: numeric('precio_usd', { precision: 18, scale: 8 }).notNull(),
+    confianza: text('confianza').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.symbol, t.day] })],
+)
+
+/** Perfil de inversión del usuario (una fila por owner): horizonte y tolerancia al riesgo. */
+export const tradingPerfil = pgTable('trading_perfil', {
+  owner: text('owner').primaryKey(),
+  horizonte: text('horizonte').notNull(), // 'largo' | 'activo'
+  tolerancia: text('tolerancia').notNull(), // 'baja' | 'media' | 'alta'
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
 
 export type OrderStatus = 'open' | 'closed' | 'rejected'
 export type OrderSide = 'buy'

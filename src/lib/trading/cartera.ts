@@ -9,9 +9,9 @@
  *
  * `impliedEurUsd` y `calcHolding` son PUROS (testeables sin red ni BD).
  */
-import { eq } from 'drizzle-orm'
+import { desc, eq } from 'drizzle-orm'
 import { db } from '@/db'
-import { cryptoCartera } from '@/db/trading'
+import { cryptoCartera, cryptoCarteraHistorial } from '@/db/trading'
 import { latestCandle } from './portfolio'
 import { fetchHourlyCandles } from './candles'
 
@@ -103,4 +103,52 @@ export async function valorarCartera(owner: string): Promise<CarteraValorada> {
   const refValorEur = holdings.reduce((a, h) => a + (h.refValorEur ?? 0), 0)
   const pct = valorEur != null && refValorEur > 0 ? valorEur / refValorEur - 1 : null
   return { holdings, valorEur, refValorEur: refValorEur > 0 ? refValorEur : null, pct, eurUsd }
+}
+
+/* --- Historial diario (evolución del valor de la cartera) --- */
+
+export interface PuntoHistorial {
+  day: string
+  valorEur: number
+}
+
+/** Día UTC en formato 'YYYY-MM-DD'. */
+export function hoyUTC(d = new Date()): string {
+  return d.toISOString().slice(0, 10)
+}
+
+/** Guarda (o actualiza) el valor de la cartera para un día. Mejor esfuerzo; una fila por owner y día. */
+export async function registrarSnapshotCartera(owner: string, valorEur: number, day = hoyUTC()): Promise<void> {
+  if (!owner || !Number.isFinite(valorEur)) return
+  await db
+    .insert(cryptoCarteraHistorial)
+    .values({ owner, day, valorEur: valorEur.toFixed(2) })
+    .onConflictDoUpdate({ target: [cryptoCarteraHistorial.owner, cryptoCarteraHistorial.day], set: { valorEur: valorEur.toFixed(2), updatedAt: new Date() } })
+}
+
+/** Últimos `dias` puntos del historial, en orden cronológico (antiguo → reciente). */
+export async function historialCartera(owner: string, dias = 90): Promise<PuntoHistorial[]> {
+  const rows = await db
+    .select()
+    .from(cryptoCarteraHistorial)
+    .where(eq(cryptoCarteraHistorial.owner, owner))
+    .orderBy(desc(cryptoCarteraHistorial.day))
+    .limit(Math.min(Math.max(dias, 1), 365))
+  return rows.reverse().map((r) => ({ day: r.day, valorEur: Number(r.valorEur) }))
+}
+
+/** Path SVG de una sparkline normalizada a la caja (puro; '' si hay menos de 2 puntos). */
+export function sparklinePath(values: number[], width: number, height: number, pad = 2): string {
+  if (values.length < 2) return ''
+  const min = Math.min(...values)
+  const max = Math.max(...values)
+  const span = max - min || 1
+  const stepX = (width - pad * 2) / (values.length - 1)
+  return values
+    .map((v, i) => {
+      const x = pad + i * stepX
+      const y = pad + (height - pad * 2) * (1 - (v - min) / span)
+      return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`
+    })
+    .join(' ')
 }

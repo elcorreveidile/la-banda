@@ -26,7 +26,8 @@ import { diaMadrid, EDICIONES, type EdicionId } from '@/lib/politica/calendario'
 import { and, eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { cryptoCartera } from '@/db/trading'
-import { CARTERA_SIMBOLOS, cierreEnVivo, type CarteraSimbolo } from '@/lib/trading/cartera'
+import { CARTERA_SIMBOLOS, cierreEnVivo, valorarCartera, registrarSnapshotCartera, type CarteraSimbolo } from '@/lib/trading/cartera'
+import { parsePerfil, guardarPerfilDb } from '@/lib/trading/perfil'
 
 /** Lanza un ciclo de trading a mano (mismo camino que el cron) y arranca la cadena de ticks. */
 export async function startTradingCycle() {
@@ -389,7 +390,22 @@ export async function guardarHolding(formData: FormData) {
       target: [cryptoCartera.owner, cryptoCartera.symbol],
       set: { unidades: unidades.toFixed(12), refPriceUsd: refPriceUsd.toFixed(8), updatedAt: new Date() },
     })
+  // Primer punto del historial hoy (para que el gráfico no empiece vacío). Mejor esfuerzo.
+  try {
+    const v = await valorarCartera(owner)
+    if (v.valorEur != null) await registrarSnapshotCartera(owner, v.valorEur)
+  } catch {}
   redirect(volverCartera({ aviso: 'cartera guardada' }))
+}
+
+/** Guarda el perfil de inversión (horizonte + tolerancia) para adaptar el consejo de la mesa. */
+export async function guardarPerfil(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.email) redirect('/login')
+  const owner = session.user.email.toLowerCase()
+  const p = parsePerfil(formData.get('horizonte'), formData.get('tolerancia'))
+  await guardarPerfilDb(owner, p)
+  redirect(volverCartera({ aviso: 'perfil guardado' }))
 }
 
 /** Quita una tenencia de la cartera. */
