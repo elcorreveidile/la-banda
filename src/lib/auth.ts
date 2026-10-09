@@ -23,15 +23,15 @@ function brevoMagicLink(): EmailConfig {
     name: 'Brevo',
     type: 'email',
     from: process.env.BREVO_SENDER_EMAIL?.trim() || 'hola@por2duros.com',
-    maxAge: 15 * 60,
+    maxAge: 60 * 60,
     options: {},
     async sendVerificationRequest({ identifier, url }) {
       const host = new URL(url).host
       await sendBrevoEmail({
         to: identifier,
         subject: `Tu acceso a La Banda (${host})`,
-        text: `Entra en La Banda con este enlace (caduca en 15 minutos):\n\n${url}\n\nSi no lo has pedido, ignora este correo.`,
-        html: `<p>Entra en La Banda con este enlace (caduca en 15 minutos):</p><p><a href="${url}">${url}</a></p><p style="color:#777">Si no lo has pedido, ignora este correo.</p>`,
+        text: `Entra en La Banda con este enlace (caduca en 60 minutos):\n\n${url}\n\nSi no lo has pedido, ignora este correo.`,
+        html: `<p>Entra en La Banda con este enlace (caduca en 60 minutos):</p><p><a href="${url}">${url}</a></p><p style="color:#777">Si no lo has pedido, ignora este correo.</p>`,
       })
     },
   }
