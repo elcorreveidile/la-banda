@@ -7,7 +7,7 @@
 export const INITIAL_USD = 100
 export const SLIPPAGE = 0.003 // 0,3 %
 export const FEE = 0.001 // 0,1 %
-export const SYMBOLS = ['BTC-USD', 'ETH-USD'] as const
+export const SYMBOLS = ['BTC-USD', 'ETH-USD', 'DASH-USD'] as const
 export type Symbol = (typeof SYMBOLS)[number]
 
 export interface Candle {

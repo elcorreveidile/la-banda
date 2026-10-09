@@ -7,8 +7,22 @@ import type { Candle } from './sim'
 
 const TIMEOUT_MS = 10_000
 
-const COINBASE_PRODUCT: Record<string, string> = { 'BTC-USD': 'BTC-USD', 'ETH-USD': 'ETH-USD' }
-const KRAKEN_PAIR: Record<string, string> = { 'BTC-USD': 'XBTUSD', 'ETH-USD': 'ETHUSD' }
+// La mesa opera BTC/ETH/DASH (USD). El par BTC-EUR y MON-USD los usa solo «Mi cartera»
+// para valorar en € (MON no se opera; BTC-EUR da el tipo €/USD implícito).
+const COINBASE_PRODUCT: Record<string, string> = {
+  'BTC-USD': 'BTC-USD',
+  'ETH-USD': 'ETH-USD',
+  'DASH-USD': 'DASH-USD',
+  'MON-USD': 'MON-USD',
+  'BTC-EUR': 'BTC-EUR',
+}
+const KRAKEN_PAIR: Record<string, string> = {
+  'BTC-USD': 'XBTUSD',
+  'ETH-USD': 'ETHUSD',
+  'DASH-USD': 'DASHUSD',
+  'MON-USD': 'MONUSD',
+  'BTC-EUR': 'XBTEUR',
+}
 
 /** Coinbase devuelve [time(s), low, high, open, close, volume], más reciente primero. */
 export function parseCoinbase(raw: unknown): Candle[] {

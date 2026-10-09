@@ -12,6 +12,7 @@
  */
 import { SYMBOLS, type Symbol } from './sim'
 import { informeFinal } from './informe'
+import type { CarteraValorada } from './cartera'
 
 export type Accion = 'comprar' | 'vender' | 'mantener' | 'fuera'
 export type Confianza = 'alta' | 'media' | 'baja'
@@ -86,6 +87,8 @@ export interface DatosResumen {
   ciclo: string | null
   recomendaciones: Recomendacion[]
   cartera?: { equityUsd: number; cashUsd: number; initialUsd: number } | null
+  /** Cartera REAL del usuario, ya valorada (opcional). */
+  carteraPersonal?: CarteraValorada | null
 }
 
 const AVISO =
@@ -99,6 +102,9 @@ const LABEL: Record<Accion, string> = {
 }
 
 const usd = (v: number | null) => (v == null ? '—' : `${v.toFixed(2)} $`)
+const eur = (v: number | null) => (v == null ? '—' : `${v.toFixed(2)} €`)
+const pctTxt = (v: number | null) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${(v * 100).toFixed(1)} %`)
+const base = (symbol: string) => symbol.split('-')[0]
 
 /** Una línea de texto plano por recomendación. */
 function lineaTexto(r: Recomendacion): string {
@@ -125,11 +131,18 @@ export function componerResumenTrading(d: DatosResumen): { asunto: string; html:
   const asunto = `Recomendaciones de la mesa — ${fecha}`
 
   const carteraTexto = d.cartera ? `Cartera simulada: patrimonio ${usd(d.cartera.equityUsd)} · caja ${usd(d.cartera.cashUsd)} (inicio ${usd(d.cartera.initialUsd)}).` : ''
+
+  const cp = d.carteraPersonal
+  const miCarteraLineas = cp && cp.holdings.length
+    ? [`Mi cartera: ${eur(cp.valorEur)} (${pctTxt(cp.pct)} desde el registro):`, ...cp.holdings.map((h) => `   ${base(h.symbol)} ${h.unidades} → ${eur(h.valorEur)} (${pctTxt(h.pct)})`), '']
+    : []
+
   const texto = [
     `Lectura de la mesa de ${fecha}:`,
     '',
     ...d.recomendaciones.map(lineaTexto),
     '',
+    ...miCarteraLineas,
     carteraTexto,
     '',
     AVISO,
@@ -150,10 +163,19 @@ export function componerResumenTrading(d: DatosResumen): { asunto: string; html:
       return `<li style="margin-bottom:10px"><b style="font-family:monospace">${esc(r.symbol)}</b> — <b>${LABEL[r.accion]}</b> <span style="color:#777">(confianza ${r.confianza})</span>${niveles ? `<br><span style="color:#555;font-size:13px">${niveles}</span>` : ''}<br><span style="font-size:13px">${esc(r.motivo)}</span></li>`
     })
     .join('')
+  const miCarteraHtml =
+    cp && cp.holdings.length
+      ? `<p style="margin-top:14px"><b>Mi cartera: ${esc(eur(cp.valorEur))}</b> <span style="color:#777">(${esc(pctTxt(cp.pct))} desde el registro)</span></p>
+      <ul style="padding-left:18px;font-size:13px">${cp.holdings
+        .map((h) => `<li><b style="font-family:monospace">${esc(base(h.symbol))}</b> ${esc(String(h.unidades))} → ${esc(eur(h.valorEur))} <span style="color:#777">(${esc(pctTxt(h.pct))})</span></li>`)
+        .join('')}</ul>`
+      : ''
+
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#1c1917">
       <p>Lectura de la mesa de <b>${esc(fecha)}</b>:</p>
       <ul style="padding-left:18px">${filas}</ul>
+      ${miCarteraHtml}
       ${carteraTexto ? `<p style="color:#555;font-size:13px">${esc(carteraTexto)}</p>` : ''}
       <p style="color:#999;font-size:12px;line-height:1.4">${esc(AVISO)}</p>
     </div>`
