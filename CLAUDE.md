@@ -231,6 +231,16 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `src/lib/trading/riesgo.ts` (**puro** `analizarRiesgo(CarteraValorada)` → pesos por moneda, la mayor,
   flag de **concentración** —una >40 % o top-2 >75 %— y aviso de repartir). Panel: aviso ámbar en
   `MiCartera`; email diario: línea de aviso. Sin cambios de BD. Test `tests/trading-riesgo.test.ts`.
+- **2026-10-09, consejo+ (2/4): alertas «cuando pasa algo» (v0.28.0)**. Avisan SOLO en la transición
+  (no cada ciclo): la **recomendación** de una moneda cambia, un **nivel** (stop/objetivo de la
+  recomendación) se toca, o hay **movimiento fuerte** del día (|cambio| ≥ 7 %, precio en vivo vs cierre
+  diario previo). `src/lib/trading/alertas.ts` (**puro** `evaluarAlerta`/`leerEstado`; avisa una vez
+  por nivel, se rearma si el nivel cambia; movimiento una vez al día). Estado por símbolo en tabla
+  **`trading_alerta_estado`** (jsonb; **requiere `db:push`** o `scripts/trading-alertas.sql`). Cron
+  **`/api/cron/trading-alertas`** (`*/30 * * * *`, `Bearer CRON_SECRET`): recomendación
+  (`ultimasRecomendaciones`) + precio (`cierreEnVivo`) + tendencia (`tendenciasDe`, se le añadió
+  `cambio1`), un solo email a `TRADING_ALERT_EMAIL` con lo que haya; mejor esfuerzo. Test
+  `tests/trading-alertas.test.ts`.
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.

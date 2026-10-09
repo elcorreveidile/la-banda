@@ -11,6 +11,7 @@ export type Direccion = 'alcista' | 'lateral' | 'bajista'
 
 export interface Tendencia {
   precio: number
+  cambio1: number | null
   cambio7: number | null
   cambio30: number | null
   cambio90: number | null
@@ -56,7 +57,7 @@ export function calcTendencia(dailyCloses: number[]): Tendencia | null {
     else if (precio < sma50 && (cambio30 ?? 0) < 0) direccion = 'bajista'
   }
 
-  return { precio, cambio7: cambio(closes, 7), cambio30, cambio90: cambio(closes, 90), sma20, sma50, sma200, direccion }
+  return { precio, cambio1: cambio(closes, 1), cambio7: cambio(closes, 7), cambio30, cambio90: cambio(closes, 90), sma20, sma50, sma200, direccion }
 }
 
 /** Tendencia por símbolo (mejor esfuerzo; símbolo sin datos → null). */

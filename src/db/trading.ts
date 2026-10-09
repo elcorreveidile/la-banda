@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, numeric, integer, primaryKey, index } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, numeric, integer, jsonb, primaryKey, index } from 'drizzle-orm/pg-core'
 
 /* ------------------------------------------------------------------ */
 /* Dominio trading (brief §3): portfolio, orders_sim, prices           */
@@ -61,6 +61,16 @@ export const cryptoCarteraHistorial = pgTable(
   },
   (t) => [primaryKey({ columns: [t.owner, t.day] })],
 )
+
+/**
+ * Estado de las alertas de trading por símbolo: recuerda la última acción avisada y qué niveles ya se
+ * notificaron, para avisar SOLO en la transición (no repetir en cada ciclo del cron de alertas).
+ */
+export const tradingAlertaEstado = pgTable('trading_alerta_estado', {
+  symbol: text('symbol').primaryKey(),
+  estado: jsonb('estado').$type<Record<string, unknown>>().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
 
 export type OrderStatus = 'open' | 'closed' | 'rejected'
 export type OrderSide = 'buy'

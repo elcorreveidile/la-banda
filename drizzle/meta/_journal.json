@@ -85,6 +85,13 @@
       "when": 1791553290808,
       "tag": "0011_kind_exiles",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791554133280,
+      "tag": "0012_quick_annihilus",
+      "breakpoints": true
     }
   ]
 }

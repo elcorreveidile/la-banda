@@ -13,6 +13,10 @@
       "schedule": "30 7 * * *"
     },
     {
+      "path": "/api/cron/trading-alertas",
+      "schedule": "*/30 * * * *"
+    },
+    {
       "path": "/api/cron/corpus",
       "schedule": "20 6 * * *"
     },
