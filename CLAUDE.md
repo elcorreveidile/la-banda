@@ -174,6 +174,21 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   stop/objetivo/caducidad en cada ciclo (`manageOpenPositions`). Solo largos
   al contado. Velas: Coinbase Exchange, Kraken de respaldo (Binance bloquea
   por región). Cron `5 * * * *` en `vercel.json` (`CRON_SECRET`).
+- **2026-10-09, recomendaciones de cripto (v0.23.0)**. Javier: «quiero que los agentes de trading me
+  den recomendaciones de compra/venta de cripto». Se mantiene el fondo simulado y se añade **encima**
+  una capa de recomendaciones: el **Profesor** emite en su informe de cierre un campo
+  **`recomendaciones`** con UNA entrada por símbolo (`accion: comprar|vender|mantener|fuera`,
+  `confianza`, `entrada?/stop?/objetivo?/horizonte?`, `motivo`), derivada de la cadena y las velas del
+  ciclo (conservadora, estilo Palermo: la mayoría → mantener/fuera; «vender» = reducir/cerrar, la mesa
+  es solo-largo). Se persiste en `sessions.finalReport` (el motor no cambia) y se **sanea en lectura**:
+  `src/lib/trading/recomendaciones.ts` (puro: `parseRecomendaciones`, `recomendacionesDe`,
+  `componerResumenTrading`; test `tests/trading-recomendaciones.test.ts`), más `ultimasRecomendaciones()`
+  en `metrics.ts`. **Panel**: tarjeta `TradingRecs` en la pestaña Trading (acción con color, confianza,
+  niveles, motivo, hora y **aviso: mesa simulada, no asesoramiento financiero**). **Email**: resumen
+  diario `/api/cron/trading-resumen` (`30 7 * * *`, `Bearer CRON_SECRET`) con `sendBrevoEmail` a
+  **`TRADING_ALERT_EMAIL`** (fallback `MARKETING_REVISOR_EMAIL`); mejor esfuerzo, no envía si no hay
+  ciclo cerrado. Sin cambios de BD. Decidido con Javier: panel + email diario, por símbolo cada ciclo,
+  BTC y ETH (no API del escaparate por ahora).
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.

@@ -3,6 +3,7 @@ import { db } from '@/db'
 import { events, sessions } from '@/db/schema'
 import { ordersSim } from '@/db/trading'
 import { snapshot, type PortfolioSnapshot } from './portfolio'
+import { recomendacionesDe, type Recomendacion } from './recomendaciones'
 
 export interface TradeRow {
   id: string
@@ -57,4 +58,20 @@ export async function tradingMetrics(): Promise<TradingMetrics> {
     trades,
     realizedUsd: trades.reduce((a, t) => a + (t.pnlUsd ?? 0), 0),
   }
+}
+
+/**
+ * Últimas recomendaciones de la mesa: lee el informe de cierre de la sesión de
+ * trading cerrada más reciente y saca su campo `recomendaciones` (ya saneado).
+ * Lo usan la tarjeta del panel y el resumen diario por correo.
+ */
+export async function ultimasRecomendaciones(): Promise<{ ciclo: string | null; recomendaciones: Recomendacion[] }> {
+  const [s] = await db
+    .select()
+    .from(sessions)
+    .where(and(eq(sessions.domain, 'trading'), eq(sessions.status, 'closed')))
+    .orderBy(desc(sessions.startedAt))
+    .limit(1)
+  if (!s) return { ciclo: null, recomendaciones: [] }
+  return { ciclo: (s.closedAt ?? s.startedAt).toISOString(), recomendaciones: recomendacionesDe(s.finalReport) }
 }

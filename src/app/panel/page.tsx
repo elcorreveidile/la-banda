@@ -9,8 +9,10 @@ import { Logo } from '@/components/Logo'
 import { SessionLive } from './SessionLive'
 import { sessionView } from '@/lib/panel/sessionView'
 import { startTradingCycle } from './actions'
-import { tradingMetrics, type TradingMetrics } from '@/lib/trading/metrics'
+import { tradingMetrics, ultimasRecomendaciones, type TradingMetrics } from '@/lib/trading/metrics'
 import { TradingMetricsCard } from './TradingMetrics'
+import { TradingRecs } from './TradingRecs'
+import type { Recomendacion } from '@/lib/trading/recomendaciones'
 import { olvidosMetrics, type OlvidosMetrics } from '@/lib/olvidos/metrics'
 import { objectionsForSession } from '@/lib/olvidos/manuscripts'
 import { ObjectionsList, OlvidosCard } from './OlvidosCard'
@@ -82,9 +84,10 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
 
   // Métricas solo del dominio que se está viendo.
   let metrics: TradingMetrics | null = null
+  let recs: { ciclo: string | null; recomendaciones: Recomendacion[] } | null = null
   if (activa === 'trading') {
     try {
-      metrics = await tradingMetrics()
+      ;[metrics, recs] = await Promise.all([tradingMetrics(), ultimasRecomendaciones()])
     } catch (err) {
       console.error('[la-banda] tradingMetrics', err)
     }
@@ -224,6 +227,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
                   Lanzar ciclo ahora
                 </button>
               </form>
+              {recs && <TradingRecs ciclo={recs.ciclo} recs={recs.recomendaciones} />}
               {metrics && <TradingMetricsCard m={metrics} />}
             </>
           )}

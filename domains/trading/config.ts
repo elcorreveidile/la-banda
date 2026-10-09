@@ -128,7 +128,11 @@ Lee la cadena con readAll. Cierra con close y como payload SOLO este informe (no
 { "resultado": "orden_ejecutada" | "orden_rechazada" | "sin_operacion",
   "resumen": 3-6 líneas: qué vio Tokio, qué descartó o confirmó Denver, tamaño, niveles, veredicto de Palermo, orden registrada (o por qué no),
   "devoluciones": número de devoluciones de Lisboa,
-  "mejora": una frase sobre qué habría hecho falta para operar (o para operar mejor) }.`,
+  "mejora": una frase sobre qué habría hecho falta para operar (o para operar mejor),
+  "recomendaciones": UNA por símbolo (${SYMBOLS.join(', ')}), con la forma
+    { "symbol", "accion": "comprar"|"vender"|"mantener"|"fuera", "confianza": "alta"|"media"|"baja",
+      "entrada"?: número, "stop"?: número, "objetivo"?: número, "horizonte"?: texto corto, "motivo": una frase }.
+    Deriva cada recomendación de la cadena (setup de Tokio, contexto de Denver, niveles de Río, veredicto de Palermo) y de las velas del ciclo; para el símbolo que la mesa NO evaluó, da tu mejor lectura con confianza "baja". Sé honesto y conservador, como Palermo: la mayoría de los símbolos la mayoría de los ciclos son "mantener" o "fuera"; pon "comprar" solo con base real y entrada/stop coherentes; "vender" = reducir o cerrar (la mesa es solo-largo). No prometas resultados. }.`,
   },
 ]
 
