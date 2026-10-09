@@ -14,6 +14,9 @@ import { TradingMetricsCard } from './TradingMetrics'
 import { TradingRecs } from './TradingRecs'
 import { MiCartera } from './MiCartera'
 import { valorarCartera, type CarteraValorada } from '@/lib/trading/cartera'
+import { TradingTendencia } from './TradingTendencia'
+import { tendenciasDe, type Tendencia } from '@/lib/trading/tendencia'
+import { SYMBOLS } from '@/lib/trading/sim'
 import type { Recomendacion } from '@/lib/trading/recomendaciones'
 import { olvidosMetrics, type OlvidosMetrics } from '@/lib/olvidos/metrics'
 import { objectionsForSession } from '@/lib/olvidos/manuscripts'
@@ -88,12 +91,14 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
   let metrics: TradingMetrics | null = null
   let recs: { ciclo: string | null; recomendaciones: Recomendacion[] } | null = null
   let cartera: CarteraValorada | null = null
+  let tendencias: Record<string, Tendencia | null> | null = null
   if (activa === 'trading') {
     try {
-      ;[metrics, recs, cartera] = await Promise.all([
+      ;[metrics, recs, cartera, tendencias] = await Promise.all([
         tradingMetrics(),
         ultimasRecomendaciones(),
         me?.user?.email ? valorarCartera(me.user.email.toLowerCase()) : Promise.resolve(null),
+        tendenciasDe(SYMBOLS),
       ])
     } catch (err) {
       console.error('[la-banda] tradingMetrics', err)
@@ -236,6 +241,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
               </form>
               {cartera && <MiCartera cartera={cartera} recs={recs?.recomendaciones ?? []} />}
               {recs && <TradingRecs ciclo={recs.ciclo} recs={recs.recomendaciones} />}
+              {tendencias && <TradingTendencia tendencias={tendencias} />}
               {metrics && <TradingMetricsCard m={metrics} />}
             </>
           )}

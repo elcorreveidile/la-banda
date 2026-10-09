@@ -3,6 +3,7 @@ import { getDomain } from '@domains/index'
 import { fetchHourlyCandles } from './candles'
 import { manageOpenPositions, snapshot, storeCandles, type ClosedPosition } from './portfolio'
 import { SYMBOLS } from './sim'
+import { tendenciasDe } from './tendencia'
 
 /** Una sesión del cron sin cerrar tras este tiempo se da por perdida (sus velas ya no valen). */
 export const STALE_SESSION_MS = 90 * 60_000
@@ -39,6 +40,8 @@ export async function runTradingCycle(createdBy: string): Promise<CycleResult> {
 
   const closedPositions = await manageOpenPositions()
   const cartera = await snapshot()
+  // Segunda lente: tendencia (marco diario, 7/30/90 d + medias). Mejor esfuerzo.
+  const tendencias = await tendenciasDe(SYMBOLS)
 
   const domain = getDomain('trading')
   const { resume, abandoned } = await engine.recoverOpen(domain, STALE_SESSION_MS)
@@ -49,6 +52,7 @@ export async function runTradingCycle(createdBy: string): Promise<CycleResult> {
       ciclo: cycle,
       simbolos: [...SYMBOLS],
       velas: candles,
+      tendencias,
       cartera: { cajaUsd: cartera.cashUsd, patrimonioUsd: cartera.equityUsd, posicionesAbiertas: cartera.positions.map((p) => ({ symbol: p.symbol, entryPrice: p.entryPrice, stopPrice: p.stopPrice, targetPrice: p.targetPrice, hoursOpen: p.hoursOpen })) },
       cierresEsteCiclo: closedPositions.map((c) => ({ symbol: c.order.symbol, reason: c.reason, pnlUsd: Number(c.pnlUsd.toFixed(4)) })),
     },

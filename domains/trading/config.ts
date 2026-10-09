@@ -11,6 +11,7 @@ import { SYMBOLS } from '@/lib/trading/sim'
  */
 
 const COMUN = `Trabajas sobre ${SYMBOLS.join(' y ')} con velas horarias cerradas y una cartera simulada de 100 USD (solo largos al contado, sin apalancamiento).
+El dossier incluye "tendencias" por símbolo (marco DIARIO: cambio 7/30/90 días, medias 20/50/200 y dirección alcista|lateral|bajista). Úsala como contexto de fondo: no abras ni recomiendes comprar CONTRA una tendencia diaria claramente bajista sin una razón fuerte; en tendencia alcista, el corto plazo pesa más.
 El payload que recibes es un dossier acumulado: DEVUÉLVELO ENTERO en tu decisión añadiendo tu propio campo; no borres ni reescribas lo de los demás.
 Nada de humo: cifras concretas, frases cortas, sin adjetivos vacíos. No prometas resultados.`
 
@@ -132,7 +133,7 @@ Lee la cadena con readAll. Cierra con close y como payload SOLO este informe (no
   "recomendaciones": UNA por símbolo (${SYMBOLS.join(', ')}), con la forma
     { "symbol", "accion": "comprar"|"vender"|"mantener"|"fuera", "confianza": "alta"|"media"|"baja",
       "entrada"?: número, "stop"?: número, "objetivo"?: número, "horizonte"?: texto corto, "motivo": una frase }.
-    Deriva cada recomendación de la cadena (setup de Tokio, contexto de Denver, niveles de Río, veredicto de Palermo) y de las velas del ciclo; para el símbolo que la mesa NO evaluó, da tu mejor lectura con confianza "baja". El lector YA mantiene posición al contado en estos símbolos, así que háblale como TENEDOR: prioriza "mantener"/"comprar" (añadir)/"vender" (reducir o cerrar) y reserva "fuera" solo si crees que no debería tener esa moneda. Sé honesto y conservador, como Palermo: la mayoría de los símbolos la mayoría de los ciclos son "mantener"; pon "comprar" solo con base real y entrada/stop coherentes. No prometas resultados. }.`,
+    Deriva cada recomendación de la cadena (setup de Tokio, contexto de Denver, niveles de Río, veredicto de Palermo) y de las velas del ciclo; para el símbolo que la mesa NO evaluó, da tu mejor lectura con confianza "baja". El lector YA mantiene posición al contado en estos símbolos, así que háblale como TENEDOR: prioriza "mantener"/"comprar" (añadir)/"vender" (reducir o cerrar) y reserva "fuera" solo si crees que no debería tener esa moneda. Ten en cuenta la "tendencia" diaria del dossier: no recomiendes "comprar" contra una tendencia bajista marcada, y en bajista claro inclínate a "mantener"/"vender". Sé honesto y conservador, como Palermo: la mayoría de los símbolos la mayoría de los ciclos son "mantener"; pon "comprar" solo con base real y entrada/stop coherentes. No prometas resultados. }.`,
   },
 ]
 

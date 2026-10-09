@@ -60,31 +60,43 @@ export interface CandleFetch {
 }
 
 /**
- * Últimas `limit` velas horarias CERRADAS del símbolo (se descarta la vela en curso).
+ * Últimas `limit` velas CERRADAS del símbolo en la granularidad dada (se descarta la vela en curso).
+ * Coinbase usa segundos (`granularity`); Kraken usa minutos (`interval`).
  */
-export async function fetchHourlyCandles(symbol: string, limit = 120): Promise<CandleFetch> {
+export async function fetchCandles(symbol: string, { granularitySec, limit }: { granularitySec: number; limit: number }): Promise<CandleFetch> {
+  const bucketMs = granularitySec * 1000
   const errors: string[] = []
   try {
     const product = COINBASE_PRODUCT[symbol]
     if (!product) throw new Error(`símbolo desconocido ${symbol}`)
-    const raw = await getJson(`https://api.exchange.coinbase.com/products/${product}/candles?granularity=3600`)
-    return { candles: dropCurrent(parseCoinbase(raw)).slice(-limit), source: 'coinbase' }
+    const raw = await getJson(`https://api.exchange.coinbase.com/products/${product}/candles?granularity=${granularitySec}`)
+    return { candles: dropCurrent(parseCoinbase(raw), bucketMs).slice(-limit), source: 'coinbase' }
   } catch (err) {
     errors.push(`coinbase: ${err instanceof Error ? err.message : String(err)}`)
   }
   try {
     const pair = KRAKEN_PAIR[symbol]
     if (!pair) throw new Error(`símbolo desconocido ${symbol}`)
-    const raw = await getJson(`https://api.kraken.com/0/public/OHLC?pair=${pair}&interval=60`)
-    return { candles: dropCurrent(parseKraken(raw, pair)).slice(-limit), source: 'kraken' }
+    const raw = await getJson(`https://api.kraken.com/0/public/OHLC?pair=${pair}&interval=${Math.round(granularitySec / 60)}`)
+    return { candles: dropCurrent(parseKraken(raw, pair), bucketMs).slice(-limit), source: 'kraken' }
   } catch (err) {
     errors.push(`kraken: ${err instanceof Error ? err.message : String(err)}`)
   }
   throw new Error(`Sin velas para ${symbol}: ${errors.join(' | ')}`)
 }
 
-/** Quita la vela cuya hora aún no ha terminado. */
-export function dropCurrent(candles: Candle[], now = Date.now()): Candle[] {
-  const currentOpen = Math.floor(now / 3_600_000) * 3_600_000
+/** Últimas `limit` velas HORARIAS cerradas. */
+export function fetchHourlyCandles(symbol: string, limit = 120): Promise<CandleFetch> {
+  return fetchCandles(symbol, { granularitySec: 3600, limit })
+}
+
+/** Últimas `limit` velas DIARIAS cerradas (para el estudio de tendencia). */
+export function fetchDailyCandles(symbol: string, limit = 250): Promise<CandleFetch> {
+  return fetchCandles(symbol, { granularitySec: 86400, limit })
+}
+
+/** Quita la vela cuyo periodo aún no ha terminado (bucket por defecto: 1 h). */
+export function dropCurrent(candles: Candle[], bucketMs = 3_600_000, now = Date.now()): Candle[] {
+  const currentOpen = Math.floor(now / bucketMs) * bucketMs
   return candles.filter((c) => c.ts < currentOpen)
 }

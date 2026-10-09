@@ -4,6 +4,8 @@ import { ultimasRecomendaciones } from '@/lib/trading/metrics'
 import { snapshot } from '@/lib/trading/portfolio'
 import { componerResumenTrading } from '@/lib/trading/recomendaciones'
 import { valorarCartera } from '@/lib/trading/cartera'
+import { tendenciasDe } from '@/lib/trading/tendencia'
+import { SYMBOLS } from '@/lib/trading/sim'
 import { sendBrevoEmail } from '@/lib/brevo'
 import { revisorEmail } from '@/lib/marketing/config'
 
@@ -29,16 +31,18 @@ export async function GET(req: Request) {
   if (req.headers.get('authorization') !== `Bearer ${engineSecret()}`) return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   try {
     const owner = carteraOwner()
-    const [{ ciclo, recomendaciones }, cartera, carteraPersonal] = await Promise.all([
+    const [{ ciclo, recomendaciones }, cartera, carteraPersonal, tendencias] = await Promise.all([
       ultimasRecomendaciones(),
       snapshot(),
       owner ? valorarCartera(owner) : Promise.resolve(null),
+      tendenciasDe(SYMBOLS),
     ])
     const correo = componerResumenTrading({
       ciclo,
       recomendaciones,
       cartera: { equityUsd: cartera.equityUsd, cashUsd: cartera.cashUsd, initialUsd: cartera.initialUsd },
       carteraPersonal,
+      tendencias,
     })
     if (!correo) return NextResponse.json({ ok: true, enviado: false, motivo: 'sin recomendaciones' })
     const to = destinatario()

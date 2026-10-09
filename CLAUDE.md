@@ -205,6 +205,17 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   %, acción de la mesa por símbolo; MON «fuera de cobertura») + formulario (`guardarHolding`/
   `quitarHolding`). El email diario incluye el bloque de cartera. Tests `tests/trading-cartera.test.ts`.
   Las cifras del usuario NO van al repo (se meten por el panel). Versión 0.24.0.
+- **2026-10-09, estudio de tendencia diaria (v0.25.0)**. Javier: que la mesa estudie la tendencia de
+  días/semanas y la use al recomendar. La mesa solo miraba velas horarias (corto plazo); se añade una
+  **segunda lente diaria**. `candles.ts` se generaliza (`fetchCandles({granularitySec,limit})`,
+  `dropCurrent(candles, bucketMs)`) y añade `fetchDailyCandles`. Nuevo `src/lib/trading/tendencia.ts`
+  (**puro** `calcTendencia`: cambio 7/30/90 d, medias 20/50/200, `direccion` alcista|lateral|bajista;
+  `tendenciasDe(symbols)` descarga diarias, mejor esfuerzo). `cycle.ts` **siembra `tendencias`** en el
+  payload de apertura → viajan por el dossier y las ven todos los agentes; `COMUN` y el cierre del
+  Profesor piden **no recomendar comprar contra una tendencia bajista marcada** (contexto de fondo).
+  Panel: tarjeta `TradingTendencia` (BTC/ETH/DASH: dirección, 7/30/90 d, medias); el email diario
+  incluye el bloque. Ventanas 7/30/90 d (decidido). **Sin cambios de BD** (tendencia en vivo, mejor
+  esfuerzo: fuente caída → «—»). Test `tests/trading-tendencia.test.ts`. Versión 0.25.0.
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.

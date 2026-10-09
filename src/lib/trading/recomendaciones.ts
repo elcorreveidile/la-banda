@@ -13,6 +13,7 @@
 import { SYMBOLS, type Symbol } from './sim'
 import { informeFinal } from './informe'
 import type { CarteraValorada } from './cartera'
+import type { Tendencia } from './tendencia'
 
 export type Accion = 'comprar' | 'vender' | 'mantener' | 'fuera'
 export type Confianza = 'alta' | 'media' | 'baja'
@@ -89,6 +90,8 @@ export interface DatosResumen {
   cartera?: { equityUsd: number; cashUsd: number; initialUsd: number } | null
   /** Cartera REAL del usuario, ya valorada (opcional). */
   carteraPersonal?: CarteraValorada | null
+  /** Tendencia (marco diario) por símbolo (opcional). */
+  tendencias?: Record<string, Tendencia | null> | null
 }
 
 const AVISO =
@@ -137,11 +140,17 @@ export function componerResumenTrading(d: DatosResumen): { asunto: string; html:
     ? [`Mi cartera: ${eur(cp.valorEur)} (${pctTxt(cp.pct)} desde el registro):`, ...cp.holdings.map((h) => `   ${base(h.symbol)} ${h.unidades} → ${eur(h.valorEur)} (${pctTxt(h.pct)})`), '']
     : []
 
+  const tend = Object.entries(d.tendencias ?? {}).filter(([, t]) => t) as [string, Tendencia][]
+  const tendLineas = tend.length
+    ? ['Tendencia (diaria):', ...tend.map(([s, t]) => `   ${base(s)} ${t.direccion} · 7d ${pctTxt(t.cambio7)} · 30d ${pctTxt(t.cambio30)} · 90d ${pctTxt(t.cambio90)}`), '']
+    : []
+
   const texto = [
     `Lectura de la mesa de ${fecha}:`,
     '',
     ...d.recomendaciones.map(lineaTexto),
     '',
+    ...tendLineas,
     ...miCarteraLineas,
     carteraTexto,
     '',
@@ -171,10 +180,18 @@ export function componerResumenTrading(d: DatosResumen): { asunto: string; html:
         .join('')}</ul>`
       : ''
 
+  const tendHtml = tend.length
+    ? `<p style="margin-top:14px"><b>Tendencia (diaria)</b></p>
+      <ul style="padding-left:18px;font-size:13px">${tend
+        .map(([s, t]) => `<li><b style="font-family:monospace">${esc(base(s))}</b> ${esc(t.direccion)} <span style="color:#777">· 7d ${esc(pctTxt(t.cambio7))} · 30d ${esc(pctTxt(t.cambio30))} · 90d ${esc(pctTxt(t.cambio90))}</span></li>`)
+        .join('')}</ul>`
+    : ''
+
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;color:#1c1917">
       <p>Lectura de la mesa de <b>${esc(fecha)}</b>:</p>
       <ul style="padding-left:18px">${filas}</ul>
+      ${tendHtml}
       ${miCarteraHtml}
       ${carteraTexto ? `<p style="color:#555;font-size:13px">${esc(carteraTexto)}</p>` : ''}
       <p style="color:#999;font-size:12px;line-height:1.4">${esc(AVISO)}</p>
