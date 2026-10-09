@@ -92,6 +92,13 @@
       "when": 1791554133280,
       "tag": "0012_quick_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791554644258,
+      "tag": "0013_stiff_junta",
+      "breakpoints": true
     }
   ]
 }

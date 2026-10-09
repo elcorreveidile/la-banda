@@ -5,6 +5,7 @@ import { snapshot } from '@/lib/trading/portfolio'
 import { componerResumenTrading } from '@/lib/trading/recomendaciones'
 import { valorarCartera, registrarSnapshotCartera } from '@/lib/trading/cartera'
 import { analizarRiesgo } from '@/lib/trading/riesgo'
+import { registrarRecoHistorial } from '@/lib/trading/trackrecord'
 import { tendenciasDe } from '@/lib/trading/tendencia'
 import { SYMBOLS } from '@/lib/trading/sim'
 import { sendBrevoEmail } from '@/lib/brevo'
@@ -40,6 +41,11 @@ export async function GET(req: Request) {
     ])
     // Foto diaria del valor de la cartera (para el gráfico de evolución). Mejor esfuerzo.
     if (owner && carteraPersonal?.valorEur != null) await registrarSnapshotCartera(owner, carteraPersonal.valorEur).catch(() => {})
+    // Foto diaria de cada recomendación (para el track record). Mejor esfuerzo.
+    for (const r of recomendaciones) {
+      const precio = tendencias[r.symbol]?.precio
+      if (precio) await registrarRecoHistorial(r.symbol, r.accion, precio, r.confianza).catch(() => {})
+    }
     const correo = componerResumenTrading({
       ciclo,
       recomendaciones,

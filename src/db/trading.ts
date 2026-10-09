@@ -72,6 +72,28 @@ export const tradingAlertaEstado = pgTable('trading_alerta_estado', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
 
+/** Foto diaria de la recomendación por símbolo (para el track record: ¿acertó con el tiempo?). */
+export const recomendacionHistorial = pgTable(
+  'recomendacion_historial',
+  {
+    symbol: text('symbol').notNull(),
+    day: text('day').notNull(), // 'YYYY-MM-DD' (UTC)
+    accion: text('accion').notNull(),
+    precioUsd: numeric('precio_usd', { precision: 18, scale: 8 }).notNull(),
+    confianza: text('confianza').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.symbol, t.day] })],
+)
+
+/** Perfil de inversión del usuario (una fila por owner): horizonte y tolerancia al riesgo. */
+export const tradingPerfil = pgTable('trading_perfil', {
+  owner: text('owner').primaryKey(),
+  horizonte: text('horizonte').notNull(), // 'largo' | 'activo'
+  tolerancia: text('tolerancia').notNull(), // 'baja' | 'media' | 'alta'
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
 export type OrderStatus = 'open' | 'closed' | 'rejected'
 export type OrderSide = 'buy'
 export type ExitReason = 'stop' | 'target' | 'manual' | 'expired'

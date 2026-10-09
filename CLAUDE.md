@@ -231,6 +231,30 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   `src/lib/trading/riesgo.ts` (**puro** `analizarRiesgo(CarteraValorada)` → pesos por moneda, la mayor,
   flag de **concentración** —una >40 % o top-2 >75 %— y aviso de repartir). Panel: aviso ámbar en
   `MiCartera`; email diario: línea de aviso. Sin cambios de BD. Test `tests/trading-riesgo.test.ts`.
+- **2026-10-09, consejo+ (3/4): track record de recomendaciones (v0.29.0)**. Para saber cuánto fiarse de la
+  mesa: foto diaria de la recomendación por símbolo y tasa de acierto evaluada contra el precio de hoy. Tabla
+  **`recomendacion_historial`** (pk `symbol`+`day` UTC; `accion`, `precio_usd`, `confianza`; **requiere
+  `db:push`** o `scripts/trading-consejo.sql`) que escribe el **cron diario** `trading-resumen` (una fila por
+  símbolo, upsert por día, precio de `tendencias[symbol].precio`). `src/lib/trading/trackrecord.ts`: **puro**
+  `evaluarReco(accion, precioRef, precioActual, banda=0.02)` → acierto|fallo|neutro (comprar acierta si sube
+  > banda; vender/salir si baja; mantener si no cae; **fuera no se puntúa**) y **puro** `trackRecord(historial,
+  precios, banda)` → aciertos/fallos y % por acción; más `registrarRecoHistorial`/`leerHistorialRecos` (BD).
+  Panel: tarjeta `TradingTrackRecord` (por acción: X/Y y %; aviso «histórico real de la mesa simulada, no una
+  promesa»). Test `tests/trading-trackrecord.test.ts`.
+- **2026-10-09, consejo+ (4/4): mi perfil / objetivo (v0.30.0)**. El usuario fija su **horizonte**
+  (largo|activo) y **tolerancia al riesgo** (baja|media|alta) y la mesa ADAPTA el consejo. Tabla
+  **`trading_perfil`** (pk `owner`; **requiere `db:push`** o `scripts/trading-consejo.sql`).
+  `src/lib/trading/perfil.ts`: **puro** `parsePerfil`/`textoPerfil` + BD `leerPerfil`/`leerPerfilUnico`/
+  `guardarPerfilDb`. Panel: formulario `TradingPerfil` (acción `guardarPerfil`, patrón `guardarHolding`).
+  `cycle.ts` **siembra `perfil`** (el del único owner, o `PERFIL_DEF`) en el payload de apertura → viaja por el
+  dossier; `COMUN` y el cierre del Profesor en `domains/trading/config.ts` piden adaptarse (largo plazo prioriza
+  «mantener» y menos trading de corto; tolerancia baja, niveles conservadores y antes «mantener» que «comprar»).
+  Solo prompt + seed, sin cambiar el grafo. Test `tests/trading-perfil.test.ts`. Versión 0.30.0. **Las cuatro
+  mejoras consejo+ (riesgo, alertas, track record, perfil) se apilan en la PR #59.** **Checklist para Javier al
+  fusionar la #59**: (1) `db:push` (o los scripts SQL) crea `crypto_cartera`, `crypto_cartera_historial`,
+  `trading_alerta_estado`, `recomendacion_historial` y `trading_perfil`; (2) variable `TRADING_ALERT_EMAIL` en
+  Vercel (fallback `MARKETING_REVISOR_EMAIL`); (3) los crons `trading-resumen` (diario) y `trading-alertas`
+  (`*/30`) ya están en `vercel.json`.
 - **2026-10-09, consejo+ (2/4): alertas «cuando pasa algo» (v0.28.0)**. Avisan SOLO en la transición
   (no cada ciclo): la **recomendación** de una moneda cambia, un **nivel** (stop/objetivo de la
   recomendación) se toca, o hay **movimiento fuerte** del día (|cambio| ≥ 7 %, precio en vivo vs cierre
