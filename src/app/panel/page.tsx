@@ -16,6 +16,7 @@ import { MiCartera } from './MiCartera'
 import { valorarCartera, historialCartera, type CarteraValorada, type PuntoHistorial } from '@/lib/trading/cartera'
 import { TradingTendencia } from './TradingTendencia'
 import { tendenciasDe, type Tendencia } from '@/lib/trading/tendencia'
+import { analizarRiesgo } from '@/lib/trading/riesgo'
 import { SYMBOLS } from '@/lib/trading/sim'
 import type { Recomendacion } from '@/lib/trading/recomendaciones'
 import { olvidosMetrics, type OlvidosMetrics } from '@/lib/olvidos/metrics'
@@ -242,7 +243,7 @@ export default async function PanelPage({ searchParams }: { searchParams: Promis
                   Lanzar ciclo ahora
                 </button>
               </form>
-              {cartera && <MiCartera cartera={cartera} recs={recs?.recomendaciones ?? []} historial={historial} />}
+              {cartera && <MiCartera cartera={cartera} recs={recs?.recomendaciones ?? []} historial={historial} riesgo={analizarRiesgo(cartera)} />}
               {recs && <TradingRecs ciclo={recs.ciclo} recs={recs.recomendaciones} />}
               {tendencias && <TradingTendencia tendencias={tendencias} />}
               {metrics && <TradingMetricsCard m={metrics} />}

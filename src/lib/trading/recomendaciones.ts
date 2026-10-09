@@ -92,6 +92,8 @@ export interface DatosResumen {
   carteraPersonal?: CarteraValorada | null
   /** Tendencia (marco diario) por símbolo (opcional). */
   tendencias?: Record<string, Tendencia | null> | null
+  /** Aviso de concentración de la cartera (opcional). */
+  avisoRiesgo?: string | null
 }
 
 const AVISO =
@@ -152,6 +154,7 @@ export function componerResumenTrading(d: DatosResumen): { asunto: string; html:
     '',
     ...tendLineas,
     ...miCarteraLineas,
+    d.avisoRiesgo ? `⚠ ${d.avisoRiesgo}` : undefined,
     carteraTexto,
     '',
     AVISO,
@@ -193,6 +196,7 @@ export function componerResumenTrading(d: DatosResumen): { asunto: string; html:
       <ul style="padding-left:18px">${filas}</ul>
       ${tendHtml}
       ${miCarteraHtml}
+      ${d.avisoRiesgo ? `<p style="color:#92400e;font-size:13px">⚠ ${esc(d.avisoRiesgo)}</p>` : ''}
       ${carteraTexto ? `<p style="color:#555;font-size:13px">${esc(carteraTexto)}</p>` : ''}
       <p style="color:#999;font-size:12px;line-height:1.4">${esc(AVISO)}</p>
     </div>`

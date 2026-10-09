@@ -226,6 +226,11 @@ está en `docs/brief.md`; léelo antes de tocar el motor o los dominios.
   {día}: {valor} → hoy ({pct})». Mejor esfuerzo, sin tecleo; la entrada manual se descartó (lo correcto
   si cambian saldos es actualizar unidades). Test ampliado `tests/trading-cartera.test.ts`
   (`sparklinePath`, `hoyUTC`). Versión 0.26.0.
+- **2026-10-09, consejo+ (1/4): riesgo de cartera (v0.27.0)**. Primera de cuatro mejoras para aconsejar
+  mejor (Javier eligió las cuatro; se apilan en la misma PR #59). Mira la cartera como CONJUNTO:
+  `src/lib/trading/riesgo.ts` (**puro** `analizarRiesgo(CarteraValorada)` → pesos por moneda, la mayor,
+  flag de **concentración** —una >40 % o top-2 >75 %— y aviso de repartir). Panel: aviso ámbar en
+  `MiCartera`; email diario: línea de aviso. Sin cambios de BD. Test `tests/trading-riesgo.test.ts`.
 - **Dominios** (`domains/<nombre>/config.ts`): roles, prompts, herramientas y
   grafo (`transitions`, `returns`, `entry`, `closer`, `maxSteps`). El motor no
   sabe nada del contenido. `validateDomain()` corre al cargar el registro.

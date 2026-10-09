@@ -4,6 +4,7 @@ import { ultimasRecomendaciones } from '@/lib/trading/metrics'
 import { snapshot } from '@/lib/trading/portfolio'
 import { componerResumenTrading } from '@/lib/trading/recomendaciones'
 import { valorarCartera, registrarSnapshotCartera } from '@/lib/trading/cartera'
+import { analizarRiesgo } from '@/lib/trading/riesgo'
 import { tendenciasDe } from '@/lib/trading/tendencia'
 import { SYMBOLS } from '@/lib/trading/sim'
 import { sendBrevoEmail } from '@/lib/brevo'
@@ -45,6 +46,7 @@ export async function GET(req: Request) {
       cartera: { equityUsd: cartera.equityUsd, cashUsd: cartera.cashUsd, initialUsd: cartera.initialUsd },
       carteraPersonal,
       tendencias,
+      avisoRiesgo: carteraPersonal ? analizarRiesgo(carteraPersonal).aviso : null,
     })
     if (!correo) return NextResponse.json({ ok: true, enviado: false, motivo: 'sin recomendaciones' })
     const to = destinatario()

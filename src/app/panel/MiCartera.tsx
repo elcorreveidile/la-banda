@@ -1,6 +1,7 @@
 import clsx from 'clsx'
 import { guardarHolding, quitarHolding } from './actions'
 import { baseSimbolo, CARTERA_SIMBOLOS, sparklinePath, type CarteraValorada, type PuntoHistorial } from '@/lib/trading/cartera'
+import type { RiesgoCartera } from '@/lib/trading/riesgo'
 import type { Accion, Recomendacion } from '@/lib/trading/recomendaciones'
 
 const eur = (v: number | null) => (v == null ? '—' : `${v.toFixed(2)} €`)
@@ -41,7 +42,7 @@ function Evolucion({ historial }: { historial: PuntoHistorial[] }) {
 }
 
 /** Tenencias reales del usuario, valoradas en € (variación desde que se registraron). Servidor. */
-export function MiCartera({ cartera, recs, historial = [] }: { cartera: CarteraValorada; recs: Recomendacion[]; historial?: PuntoHistorial[] }) {
+export function MiCartera({ cartera, recs, historial = [], riesgo }: { cartera: CarteraValorada; recs: Recomendacion[]; historial?: PuntoHistorial[]; riesgo?: RiesgoCartera | null }) {
   const accionDe = new Map<string, Accion>(recs.map((r) => [r.symbol, r.accion]))
   const hay = cartera.holdings.length > 0
   return (
@@ -109,6 +110,8 @@ export function MiCartera({ cartera, recs, historial = [] }: { cartera: CarteraV
       ) : (
         <p className="text-xs text-stone-500">Aún no has añadido tenencias. Añádelas abajo para ver su valor y la lectura de la mesa.</p>
       )}
+
+      {riesgo?.aviso && <p className="rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-800">⚠ {riesgo.aviso}</p>}
 
       {hay && (
         <div className="border-t border-stone-100 pt-2">
